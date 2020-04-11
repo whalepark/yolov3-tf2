@@ -1,5 +1,11 @@
 import tensorflow as tf
 
+import sys, os
+cwd = os.getcwd()
+os.chdir(os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath('../tfrpc/client'))
+from tf_wrapper import TFWrapper
+os.chdir(cwd)
 
 class BatchNormalization(tf.keras.layers.BatchNormalization):
     """

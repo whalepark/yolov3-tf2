@@ -1,14 +1,27 @@
 import time
 from absl import app, flags, logging
 from absl.flags import FLAGS
-import cv2
+import cv2 ###
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf ###
 from yolov3_tf2.models import (
     YoloV3, YoloV3Tiny
 )
 from yolov3_tf2.dataset import transform_images, load_tfrecord_dataset
 from yolov3_tf2.utils import draw_outputs
+
+
+import logging
+import grpc
+import sys, os
+
+sys.path.insert(0, os.path.abspath('tfrpc/client'))
+import yolo_pb2
+import yolo_pb2_grpc
+from tf_wrapper import TFWrapper, ControlProcedure
+import signal
+
+CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
 flags.DEFINE_string('classes', './data/coco.names', 'path to classes file')
 flags.DEFINE_string('weights', './checkpoints/yolov3.tf',
@@ -20,18 +33,42 @@ flags.DEFINE_string('tfrecord', None, 'tfrecord instead of image')
 flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
+g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 
+def initialize(stub):
+    global g_stub
+
+    ControlProcedure.Connect(stub)
+    g_stub = stub
+    signal.signal(signal.SIGINT, finalize)
+
+def finalize():
+    ControlProcedure.Disconnect(g_stub)
+    
 def main(_argv):
-    physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    if len(physical_devices) > 0:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    channel = grpc.insecure_channel('localhost:1990', \
+        options=[('grpc.max_send_message_length', 50 * 1024 * 1024), \
+        ('grpc.max_receive_message_length', 50 * 1024 * 1024)] \
+    )
+    stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
+    initialize(stub)
+
+    # physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
+    if len(physical_devices) > 0: # in my settings, this if statement always returns false
+        # tf.config.experimental.set_memory_growth(physical_devices[0], True) 
+        TFWrapper.tf_config_experimental_set__memory__growth(physical_devices[0], True) 
 
     if FLAGS.tiny:
         yolo = YoloV3Tiny(classes=FLAGS.num_classes)
+        # yolo = YoloV3Tiny(stub=stub, classes=FLAGS.num_classes)
     else:
-        yolo = YoloV3(classes=FLAGS.num_classes)
+        # yolo = YoloV3(classes=FLAGS.num_classes)
+        yolo = YoloV3(stub=stub, classes=FLAGS.num_classes)
 
-    yolo.load_weights(FLAGS.weights).expect_partial()
+    # yolo.load_weights(FLAGS.weights).expect_partial()
+    status_obj_id = TFWrapper.attribute_model_load__weight(stub, yolo, FLAGS.weights)
+    TFWrapper.attribute_checkpoint_expect__partial(stub, status_obj_id)
     logging.info('weights loaded')
 
     class_names = [c.strip() for c in open(FLAGS.classes).readlines()]
@@ -43,14 +80,18 @@ def main(_argv):
         dataset = dataset.shuffle(512)
         img_raw, _label = next(iter(dataset.take(1)))
     else:
-        img_raw = tf.image.decode_image(
-            open(FLAGS.image, 'rb').read(), channels=3)
+        # img_raw = tf.image.decode_image(
+        #     open(FLAGS.image, 'rb').read(), channels=3)
+        img_raw = TFWrapper.tf_image_decode__image(stub, open(FLAGS.image, 'rb').read(), channels=3)
 
-    img = tf.expand_dims(img_raw, 0)
-    img = transform_images(img, FLAGS.size)
+    # img = tf.expand_dims(img_raw, 0)
+    img = TFWrapper.tf_expand__dims(stub, img_raw, 0)
+    img = transform_images(stub, img, FLAGS.size)
 
     t1 = time.time()
-    boxes, scores, classes, nums = yolo(img)
+    # boxes, scores, classes, nums = yolo(img)
+    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, img)
+    boxes, scores, classes, nums = ret_val[0][0]
     t2 = time.time()
     logging.info('time: {}'.format(t2 - t1))
 
@@ -65,9 +106,12 @@ def main(_argv):
     cv2.imwrite(FLAGS.output, img)
     logging.info('output saved to: {}'.format(FLAGS.output))
 
+    finalize()
+
 
 if __name__ == '__main__':
     try:
+        logging.basicConfig()
         app.run(main)
     except SystemExit:
         pass
