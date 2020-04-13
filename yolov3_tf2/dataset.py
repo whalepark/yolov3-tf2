@@ -1,13 +1,6 @@
 import tensorflow as tf
 from absl.flags import FLAGS
 
-import sys, os
-cwd = os.getcwd()
-os.chdir(os.path.dirname(__file__))
-sys.path.insert(0, os.path.abspath('../tfrpc/client'))
-from tf_wrapper import TFWrapper, YoloWrapper
-os.chdir(cwd)
-
 @tf.function
 def transform_targets_for_output(y_true, grid_size, anchor_idxs):
     # y_true: (N, boxes, (x1, y1, x2, y2, class, best_anchor))
@@ -77,9 +70,8 @@ def transform_targets(y_train, anchors, anchor_masks, size):
     return tuple(y_outs)
 
 
-def transform_images(stub, x_train, size):
-    # x_train = tf.image.resize(x_train, (size, size))
-    x_train = TFWrapper.tf_image_resize(stub, x_train, (size, size))
+def transform_images(x_train, size):
+    x_train = tf.image.resize(x_train, (size, size))
     x_train = x_train / 255
     return x_train
 
