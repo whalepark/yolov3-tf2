@@ -19,7 +19,7 @@ import numpy as np
 #     binary_crossentropy,
 #     sparse_categorical_crossentropy
 # )
-from .batch_norm import BatchNormalization ### need to be removed
+# from .batch_norm import BatchNormalization ### need to be removed
 from .utils import broadcast_iou
 
 import sys, os
