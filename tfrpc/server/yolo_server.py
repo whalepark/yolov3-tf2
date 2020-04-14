@@ -383,7 +383,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         padding = request.padding
         use_bias = request.use_bias
         kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
-        print(type(kernel_regularizer))
+        print('type', type(kernel_regularizer))
 
         conv_2d = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=use_bias, kernel_regularizer=kernel_regularizer, name=request.name)
 
