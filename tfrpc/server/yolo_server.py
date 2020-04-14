@@ -506,7 +506,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print('\nkeras_regularizers_l2')
 
         response = yolo_pb2.l2Response()
-        response.pickled_l2 = pickle.dumps(l2(request.l))
+        l2_value = l2(request.l)
+        picked_l2 = pickle.dumps(l2_value)
+        response.pickled_l2 = pickle.dumps(picked_l2)
+
+        return response
 
     def image_resize(self, request, context):
         print('\nimage_resize')
