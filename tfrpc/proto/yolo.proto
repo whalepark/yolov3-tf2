@@ -24,6 +24,7 @@ service YoloTensorflowWrapper {
     rpc keras_layers_UpSampling2D(UpSampling2DRequest) returns (UpSampling2DResponse) {}
     rpc keras_layers_Concatenate(ConcatenateRequest) returns (ContcatenateResponse) {}
     rpc image_resize(ImageResizeRequest) returns (ImageResizeResponse) {}
+    rpc keras_regularizers_l2(l2Request) returns (l2Response) {}
 
     // attribute getters
     rpc attribute_tensor_shape(TensorShapeRequest) returns (TensorShapeResponse) {}
@@ -248,6 +249,17 @@ message ConcatenateRequest {
 message ContcatenateResponse {
     uint64 obj_id = 1;
 }
+
+/// keras_regularizers_l2
+
+message l2Request {
+    float l = 1;
+} 
+
+message l2Response {
+    bytes pickled_l2 = 1;
+}
+
 
 
 /// image_resize

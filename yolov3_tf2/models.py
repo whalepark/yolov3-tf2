@@ -82,7 +82,8 @@ def DarknetConv(stub, x: int, filters, size, strides=1, batch_norm=True):
     arg_x.obj_id = x
     arg_x.release = True
 
-    conv2d_callable = TFWrapper.tf_keras_layers_Conv2D(stub, filters=filters, kernel_size=size, strides=strides, padding=padding, use_bias=not batch_norm, kernel_regularizer=l2(0.0005))
+    l2 = TFWrapper.tf_keras_regularizers_l2(stub, 0.0005)
+    conv2d_callable = TFWrapper.tf_keras_layers_Conv2D(stub, filters=filters, kernel_size=size, strides=strides, padding=padding, use_bias=not batch_norm, kernel_regularizer=l2)
     x = TFWrapper.callable_emulator(stub, conv2d_callable, False, 1, arg_x)
     if batch_norm:
         # x = BatchNormalization()(x)

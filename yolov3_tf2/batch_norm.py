@@ -1,4 +1,8 @@
-# import tensorflow as tf
+import socket, os
+print(os.uname())
+print(socket.gethostname())
+if socket.gethostname() == 'grpc_server':
+    import tensorflow as tf
 
 import sys, os
 cwd = os.getcwd()

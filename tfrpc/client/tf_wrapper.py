@@ -378,6 +378,16 @@ class TFWrapper:
         response = stub.image_resize(request)
         return pickle.loads(response.pickled_tensor)
 
+    @staticmethod
+    def tf_keras_regularizers_l2(stub, l=0.01):
+        request = yolo_pb2.l2Request()
+        response: yolo_pb2.l2Response
+
+        request.l=l
+
+        response = stub.keras_regularizers_l2(request)
+        return pickle.loads(response.pickled_l2)
+
 
 class YoloWrapper:
     @staticmethod
