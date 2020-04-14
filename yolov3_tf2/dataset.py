@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 from absl.flags import FLAGS
 
 import sys, os
