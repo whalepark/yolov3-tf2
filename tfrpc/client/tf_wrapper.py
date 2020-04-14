@@ -236,7 +236,8 @@ class TFWrapper:
         request.pickled_strides = pickle.dumps(strides)
         request.padding = padding
         request.use_bias = use_bias
-        request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
+        if kernel_regularizer is not None:
+            request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
         request.connection_id = ControlProcedure.client_id
 
         response = stub.keras_layers_Conv2D(request)

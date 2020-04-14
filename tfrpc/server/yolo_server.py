@@ -382,8 +382,12 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         strides = pickle.loads(request.pickled_strides)
         padding = request.padding
         use_bias = request.use_bias
-        kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
-        print('type', type(kernel_regularizer))
+        if request.pickled_kernel_regularizer is not None:
+            kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
+            print('misun', type(kernel_regularizer))
+            print('misun', type(request.pickled_kernel_regularizer))
+        else:
+            kernel_regularizer = None
 
         conv_2d = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=use_bias, kernel_regularizer=kernel_regularizer, name=request.name)
 
