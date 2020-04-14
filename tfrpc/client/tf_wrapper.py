@@ -237,7 +237,10 @@ class TFWrapper:
         request.padding = padding
         request.use_bias = use_bias
         if kernel_regularizer is not None:
+            print('misun:', type(kernel_regularizer))
             request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
+        else:
+            request.pickled_kernel_regularizer = None
         request.connection_id = ControlProcedure.client_id
 
         response = stub.keras_layers_Conv2D(request)
