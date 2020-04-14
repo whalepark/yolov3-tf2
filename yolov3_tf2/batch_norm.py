@@ -1,10 +1,8 @@
-import socket, os
-print(os.uname())
-print(socket.gethostname())
-if socket.gethostname() == 'grpc_server':
+import os
+if os.environ['YOLO_SERVER'] == '1':
     import tensorflow as tf
 
-import sys, os
+import sys
 cwd = os.getcwd()
 os.chdir(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath('../tfrpc/client'))
