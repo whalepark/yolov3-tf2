@@ -519,6 +519,7 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=os.cpu_count() - 1), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
     yolo_pb2_grpc.add_YoloTensorflowWrapperServicer_to_server(YoloFunctionWrapper(), server)
     server.add_insecure_port('[::]:1990')
+    print('Hello TF!')
     server.start()
     server.wait_for_termination()
 
