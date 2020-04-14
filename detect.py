@@ -46,7 +46,8 @@ def finalize():
     ControlProcedure.Disconnect(g_stub)
     
 def main(_argv):
-    channel = grpc.insecure_channel(f'{os.environ['SERVER_ADDR']}:1990', \
+    server_addr = os.environ.get('SERVER_ADDR')
+    channel = grpc.insecure_channel(f'{server_addr}:1990', \
         options=[('grpc.max_send_message_length', 50 * 1024 * 1024), \
         ('grpc.max_receive_message_length', 50 * 1024 * 1024)] \
     )
