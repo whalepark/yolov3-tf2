@@ -525,7 +525,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response.pickled_tensor = pickle.dumps(result)
         return response
 
-    @staticmethod
     def iterable_indexing(self, request, context):
         print('\niterable_indexing')
         
