@@ -538,8 +538,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 if isinstance(elem, bytes):
                     pickled_elem = elem
                 else:
-                    print(f'misun: unserialized_elem type={type(elem)}')
-                    pickled_elem = pickle.dumps(elem)
+                    print(f'misun: unserialized_elem type={type(elem.numpy())}')
+                    pickled_elem = pickle.dumps(elem.numpy())
                 print(f'misun: elem type={type(pickled_elem)}')
                 response.elements.append(pickled_elem)
         except TypeError:
