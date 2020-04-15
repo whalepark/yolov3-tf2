@@ -240,6 +240,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         if request.num_of_returns == 1:
             ret_val1 = callable_obj(args)
+            try:
+                print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
+            except:
+                pass
             ret_val.append(ret_val1)
         elif request.num_of_returns == 2:
             ret_val1, ret_val2 = callable_obj(args)
