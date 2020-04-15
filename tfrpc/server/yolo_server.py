@@ -534,7 +534,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         try:
             for elem in unpickled_iterable[index]:
-                pickled_elem = pickle.dumps(elem)
+                pickled_elem = elem
+                if isinstance(elem, byte):
+                    pickled_elem = elem
+                else:
+                    pickled_elem = pickle.dumps(elem)
                 response.elements.append(pickled_elem)
         except TypeError:
             pickled_elem = pickle.dumps(elem)
