@@ -526,7 +526,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
     @staticmethod
-    def iterable_indexing(self, request, contexte):
+    def iterable_indexing(self, request, context):
         print('\niterable_indexing')
         
         response = yolo_pb2.IndexingResponse()
