@@ -414,11 +414,14 @@ class TFWrapper:
         return response.pickled_l2
 
     @staticmethod
-    def iterable_indexing(stub, iterable, index=0, result_unpickle=True):
+    def iterable_indexing(stub, iterable, index=0, iterable_pickled=False, result_unpickle=True):
         request = yolo_pb2.IndexingRequest()
         response: yolo_pb2.IndexingResponse
 
-        request.pickled_iterable = iterable
+        if iterable_pickled:
+            request.pickled_iterable = iterable
+        else:
+            request.pickled_iterable = pickle.dumps(iterable)
         request.index = index
 
         response = stub.iterable_indexing(request)
@@ -428,7 +431,7 @@ class TFWrapper:
             elements = response.elements
             for element in elements:
                 results.append(pickle.loads(element))
-                
+
         return results
 
 
