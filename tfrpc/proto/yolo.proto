@@ -335,7 +335,7 @@ message DivideResponse {
 
 /// iterable_indexing
 message IndexingRequest {
-    bytes iterable = 1;
+    bytes pickled_iterable = 1;
     uint32 index = 2;
 }
 

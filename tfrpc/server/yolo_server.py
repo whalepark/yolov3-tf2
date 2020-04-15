@@ -530,7 +530,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print('\niterable_indexing')
         
         response = yolo_pb2.IndexingResponse()
-        unpickled_iterable = pickle.loads(request.iterable)
+        unpickled_iterable = pickle.loads(request.pickled_iterable)
         index = request.index
 
         try:
