@@ -350,11 +350,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
     def keras_layers_ZeroPadding2D(self, request, context):
-        # global zero_padding2d_count
-        # zero_padding2d_count += 1
-        # name = 'zero_padding2d_{:010d}'.format(zero_padding2d_count)
-
-
         print('\nkeras_layers_ZeroPadding2D')
         response = yolo_pb2.ZeroPadding2DResponse()
         
@@ -370,10 +365,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
     
     def keras_layers_Conv2D(self, request, context):
-        # global conv2d_count
-        # conv2d_count += 1
-        # name = 'conv2d_{:010d}'.format(conv2d_count)
-
         print('\nkeras_layers_Conv2D')
         response = yolo_pb2.Conv2DResponse()
 
@@ -384,10 +375,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         use_bias = request.use_bias
         if request.pickled_kernel_regularizer is not None:
             kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
-            print('misun', type(kernel_regularizer))
-            print('misun', type(request.pickled_kernel_regularizer))
         else:
             kernel_regularizer = None
+        print('type', type(kernel_regularizer))
 
         conv_2d = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=use_bias, kernel_regularizer=kernel_regularizer, name=request.name)
 
@@ -395,10 +385,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
     def batch_normalization(self, request, context):
-        # global batch_norm_count
-        # batch_norm_count += 1
-        # name = 'batch_norm_{:010d}'.format(batch_norm_count)
-
         print('\nbatch_normalization')
         response = yolo_pb2.BatchNormResponse()
         callable_obj = BatchNormalization(name=request.name)
@@ -407,10 +393,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
     def keras_layers_LeakyReLU(self, request, context):
-        # global leaky_re_lu_count
-        # leaky_re_lu_count += 1
-        # name = 'leaky_re_lu_{:010d}'.format(leaky_re_lu_count)
-
         print('\nkeras_layers_LeakyReLU')
         response = yolo_pb2.LeakyReluResponse()
         alpha = request.alpha
@@ -421,10 +403,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
     def keras_layers_Add(self, request, context):
-        # global add_count
-        # add_count += 1
-        # name = 'add_{:010d}'.format(add_count)
-
         print('\nkeras_layers_Add')
         response = yolo_pb2.AddResponse()
         callable_obj = Add(name = request.name)
@@ -476,10 +454,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
     
     def keras_layers_Lambda(self, request, context):
-        # global lambda_count
-        # lambda_count += 1
-        # name = 'lambda_{:010d}'.format(lambda_count)
-
         print('\nkeras_layers_Lambda')
 
         response = yolo_pb2.LambdaResponse()
@@ -513,7 +487,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.l2Response()
         l2_value = l2(request.l)
         picked_l2 = pickle.dumps(l2_value)
-        response.pickled_l2 = pickle.dumps(picked_l2)
+        response.pickled_l2 = picked_l2
 
         return response
 

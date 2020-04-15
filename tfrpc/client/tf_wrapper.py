@@ -401,9 +401,9 @@ class TFWrapper:
 class YoloWrapper:
     @staticmethod
     def BatchNormalization(stub):
-        global conv2d_count
-        conv2d_count += 1
-        name = 'conv2d_{:010d}'.format(conv2d_count)
+        global batch_norm_count
+        batch_norm_count += 1
+        name = 'batchnorm_{:010d}'.format(batch_norm_count)
 
         request = yolo_pb2.BatchNormRequest()
         response: yolo_pb2.BatchNormResponse
