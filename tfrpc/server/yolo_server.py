@@ -242,6 +242,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             ret_val1 = callable_obj(args)
             try:
                 print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
+                print(f'misun: type={type(ret_val1[0])}, length={len(ret_val1[0])}')
             except:
                 pass
             ret_val.append(ret_val1)
