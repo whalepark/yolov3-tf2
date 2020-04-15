@@ -108,7 +108,9 @@ def main(_argv):
                                            np.array(scores[0][i]),
                                            np.array(boxes[0][i])))
 
-    img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+    # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+    img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
+    img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
     img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
     cv2.imwrite(FLAGS.output, img)
     logging.info('output saved to: {}'.format(FLAGS.output))

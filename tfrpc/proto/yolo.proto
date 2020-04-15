@@ -36,6 +36,7 @@ service YoloTensorflowWrapper {
 
     // common operations
     rpc iterable_indexing(IndexingRequest) returns (IndexingResponse) {}
+    rpc byte_tensor_to_numpy(TensorToNumpyRequest) returns (TensorToNumPyResponse) {}
     
     // YoloWrappers
     rpc batch_normalization (BatchNormRequest) returns (BatchNormResponse) {}
@@ -343,6 +344,16 @@ message IndexingResponse {
     repeated bytes elements = 1;
 }
 
+
+/// byte_tensor_to_numpy
+
+message TensorToNumpyRequest {
+    bytes pickled_tensor = 1;
+}
+
+message TensorToNumPyResponse {
+    byte pickled_ndarray = 1;
+}
 
 
 /////////////////////////////////

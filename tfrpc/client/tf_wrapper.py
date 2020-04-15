@@ -434,6 +434,17 @@ class TFWrapper:
 
         return results
 
+    @staticmethod
+    def byte_tensor_to_numpy(stub, pickled_tensor):
+        request = yolo_pb2.TensorToNumpyRequest()
+        response: yolo_pb2.TensorToNumPyResponse
+
+        request.pickled=tensor = pickled_tensor
+
+        response = stub.byte_tensor_to_numpy(request)
+
+        return pickle.loads(response.pickled_ndarray)
+
 
 
 class YoloWrapper:

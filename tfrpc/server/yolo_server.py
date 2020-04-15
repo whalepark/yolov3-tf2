@@ -550,6 +550,17 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
+    def byte_tensor_to_numpy(self, request, context):
+        print('\nbyte_tensor_to_numpy')
+
+        response = yolo_pb2.TensorToNumPyResponse()
+
+        tensor = pickle.loads(request.pickled_tensor)
+        ndarray = tensor.numpy()
+        response.pickled_ndarray = pickle.dumps(ndarray)
+
+        return response
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=os.cpu_count() - 1), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
