@@ -417,6 +417,14 @@ class TFWrapper:
         # return unpickled_l2
         return response.pickled_l2
 
+    # @staticmethod
+    # def iterable_indexing(stub, iterable, index=0):
+    #     request = yolo_pb2.IndexingRequest()
+    #     response: yolo_pb2.IndexingResponse
+
+    #     request.iterable
+
+
 
 class YoloWrapper:
     @staticmethod

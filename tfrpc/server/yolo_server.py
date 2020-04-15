@@ -267,7 +267,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         try:
             # print('try')
-            pickled_result = pickle.dumps(ret_val)
+            # pickled_result = pickle.dumps(ret_val)
             response.pickled = True
             for elem in ret_val:
                 pickled = pickle.dumps(elem)
