@@ -91,7 +91,7 @@ def main(_argv):
 
     t1 = time.time()
     # boxes, scores, classes, nums = yolo(img)
-    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, img)
+    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 4, img)
     print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
     print(f'misun: ret_val[0]={type(ret_val[0])}, {len(ret_val[0])}')
     boxes, scores, classes, nums = ret_val[0][0]
