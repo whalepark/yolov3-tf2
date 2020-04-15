@@ -98,7 +98,7 @@ def main(_argv):
     # print(f'misun: pickle.loads(ret_val[0])={type(pickle.loads(ret_val[0]))}, {len(pickle.loads(ret_val[0]))}')
     ret_val = TFWrapper.iterable_indexing(stub, ret_val[0], 0, iterable_pickled=True)
     print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
-    boxes, scores, classes, nums = ret_val[0][0]
+    boxes, scores, classes, nums = ret_val
     t2 = time.time()
     logging.info('time: {}'.format(t2 - t1))
 
