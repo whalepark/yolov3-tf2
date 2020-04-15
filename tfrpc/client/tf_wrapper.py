@@ -161,7 +161,7 @@ class TFWrapper:
         request = yolo_pb2.ExpandDemensionRequest()
         response: yolo_pb2.ExpandDemensionResponse
 
-        request.tensor=pickle.dumps(input)
+        request.tensor=input
         request.axis=axis
         request.connection_id = ControlProcedure.client_id
 
