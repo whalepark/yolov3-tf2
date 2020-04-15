@@ -391,8 +391,9 @@ class TFWrapper:
         request.l=l
 
         response = stub.keras_regularizers_l2(request)
-        print("misun:", type(response.pickled_l2))
-        return pickle.loads(response.pickled_l2)
+        unpickled_l2 = pickle.loads(response.pickled_l2)
+        print("misun:", type(response.pickled_l2), type(unpickled_l2))
+        return unpickled_l2
 
 
 class YoloWrapper:
