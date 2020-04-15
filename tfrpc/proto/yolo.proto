@@ -33,6 +33,9 @@ service YoloTensorflowWrapper {
 
     // tensor operations
     rpc tensor_op_divide(DivideRequest) returns (DivideResponse) {}
+
+    // common operations
+    rpc iterable_indexing(IndexingRequest) returns (IndexingResponse) {}
     
     // YoloWrappers
     rpc batch_normalization (BatchNormRequest) returns (BatchNormResponse) {}
@@ -324,6 +327,20 @@ message DivideRequest {
 
 message DivideResponse {
     bytes pickled_tensor = 1;
+}
+
+
+
+/////////////////////////////////
+
+/// iterable_indexing
+message IndexingRequest {
+    bytes iterable = 1;
+    uint32 index = 2;
+}
+
+message IndexingResponse {
+    repeated bytes elements = 1;
 }
 
 

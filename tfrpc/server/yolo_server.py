@@ -525,6 +525,26 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response.pickled_tensor = pickle.dumps(result)
         return response
 
+    @staticmethod
+    def iterable_indexing(self, request, contexte):
+        print('\niterable_indexing')
+        
+        response = yolo_pb2.IndexingResponse()
+        unpickled_iterable = pickle.loads(request.iterable)
+        index = request.index
+
+        try:
+            for elem in unpickled_iterable[index]:
+                pickled_elem = pickle.dumps(elem)
+                response.elements.append(pickled_elem)
+        except TypeError:
+            pickled_elem = pickle.dumps(elem)
+            response.elements.append(pickled_elem)
+
+        print(f'misun: unpickled_iterable[index]={type(unpickled_iterable[index])}, len={len(unpickled_iterable[index])}')
+
+        return response
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=os.cpu_count() - 1), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])

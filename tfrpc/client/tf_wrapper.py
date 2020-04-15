@@ -63,13 +63,9 @@ class TFWrapper:
         response = stub.callable_emulator(request)
 
         if response.pickled:
-            # deserialized_result = []
             serialized_result = []
             for elem in response.pickled_result:
-                # deserialized_result.append(pickle.loads(elem))
                 serialized_result.append(elem)
-            # print(deserialized_result)
-            # return deserialized_result
             return serialized_result
         else:
             if len(response.obj_ids) > 1:
@@ -417,12 +413,23 @@ class TFWrapper:
         # return unpickled_l2
         return response.pickled_l2
 
-    # @staticmethod
-    # def iterable_indexing(stub, iterable, index=0):
-    #     request = yolo_pb2.IndexingRequest()
-    #     response: yolo_pb2.IndexingResponse
+    @staticmethod
+    def iterable_indexing(stub, iterable, index=0, result_unpickle=True):
+        request = yolo_pb2.IndexingRequest()
+        response: yolo_pb2.IndexingResponse
 
-    #     request.iterable
+        request.pickled_iterable = iterable
+        request.index = index
+
+        response = stub.iterable_indexing(request)
+
+        results = []
+        if result_unpickle:
+            elements = response.elements
+            for element in elements:
+                results.append(pickle.loads(element))
+                
+        return results
 
 
 
