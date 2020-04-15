@@ -236,12 +236,13 @@ class TFWrapper:
         request.pickled_strides = pickle.dumps(strides)
         request.padding = padding
         request.use_bias = use_bias
-        if kernel_regularizer is not None:
-            print('misun:', type(kernel_regularizer))
-            request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
-        else:
-            print('misun:', type(kernel_regularizer))
-            request.pickled_kernel_regularizer = None
+        # if kernel_regularizer is not None:
+        #     print('misun:', type(kernel_regularizer))
+        #     request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
+        # else:
+        #     print('misun:', type(kernel_regularizer))
+        #     request.pickled_kernel_regularizer = None
+        request.pickled_kernel_regularizer=kernel_regularizer
         request.connection_id = ControlProcedure.client_id
 
         response = stub.keras_layers_Conv2D(request)
@@ -391,9 +392,10 @@ class TFWrapper:
         request.l=l
 
         response = stub.keras_regularizers_l2(request)
-        unpickled_l2 = pickle.loads(response.pickled_l2)
-        print("misun:", type(response.pickled_l2), type(unpickled_l2))
-        return unpickled_l2
+        # unpickled_l2 = pickle.loads(response.pickled_l2)
+        # print("misun:", type(response.pickled_l2), type(unpickled_l2))
+        # return unpickled_l2
+        return response.pickled_l2
 
 
 class YoloWrapper:
