@@ -539,6 +539,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                     pickled_elem = elem
                 else:
                     pickled_elem = pickle.dumps(elem)
+                print(f'misun: elem type={type(pickled_elem)}')
                 response.elements.append(pickled_elem)
         except TypeError:
             pickled_elem = pickle.dumps(elem)
