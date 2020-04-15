@@ -309,12 +309,12 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def expand__dims(self, request, context):
         print('\nexpand__dims')
         response=yolo_pb2.ExpandDemensionResponse()
-        print('misun: request.tensor=', type(request.tensor))
+        # print('misun: request.tensor=', type(request.tensor))
         unpickled_tensor = pickle.loads(request.tensor)
-        print('misun: unpickled_tensor=', type(unpickled_tensor))
-        print('misun: tensor_shape=', unpickled_tensor.shape)
+        # print('misun: unpickled_tensor=', type(unpickled_tensor))
+        # print('misun: tensor_shape=', unpickled_tensor.shape)
         tensor = tf.expand_dims(unpickled_tensor, request.axis)
-        print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
+        # print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
         pickled_tensor = pickle.dumps(tensor)
         response.tensor=pickled_tensor
         return response
@@ -502,11 +502,22 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         image = pickle.loads(request.pickled_image)
         size = request.size
 
-        print('misun: pickled_image=', type(request.pickled_image), 'image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
+        # print('misun: pickled_image=', type(request.pickled_image), 'image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
         
         tensor = tf.image.resize(image, size)
         response.pickled_tensor = pickle.dumps(tensor)
 
+        return response
+
+    def tensor_op_divide(self, request, context):
+        print('\ntensor_op_divide')
+        
+        response = yolo_pb2.DivideResponse()
+        tensor = pickle.loads(request.pickled_tensor)
+        divisor = request.divisor
+
+        result = tensor / divisor
+        response.pickled_tensor = pickle.dumps(result)
         return response
 
 

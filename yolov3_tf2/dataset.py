@@ -80,7 +80,8 @@ def transform_targets(y_train, anchors, anchor_masks, size):
 def transform_images(stub, x_train, size):
     # x_train = tf.image.resize(x_train, (size, size))
     x_train = TFWrapper.tf_image_resize(stub, x_train, (size, size))
-    x_train = x_train / 255
+    # x_train = x_train / 255
+    x_train = TFWrapper.tensor_op_divide(stub, x_train, 255)
     return x_train
 
 

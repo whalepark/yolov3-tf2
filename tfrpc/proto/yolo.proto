@@ -31,6 +31,9 @@ service YoloTensorflowWrapper {
     rpc attribute_model_load__weight(LoadWeightsRequest) returns (LoadWeightsResponse) {}
     rpc attribute_checkpoint_expect__partial(ExpectPartialRequest) returns (ExpectPartialResponse) {}
 
+    // tensor operations
+    rpc tensor_op_divide(DivideRequest) returns (DivideResponse) {}
+    
     // YoloWrappers
     rpc batch_normalization (BatchNormRequest) returns (BatchNormResponse) {}
 
@@ -311,6 +314,16 @@ message ExpectPartialRequest {
 
 message ExpectPartialResponse {
 
+}
+
+/// tensor_op_divide
+message DivideRequest {
+    bytes pickled_tensor = 1;
+    int32 divisor = 2;
+}
+
+message DivideResponse {
+    bytes pickled_tensor = 1;
 }
 
 
