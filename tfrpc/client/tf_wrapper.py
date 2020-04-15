@@ -240,6 +240,7 @@ class TFWrapper:
             print('misun:', type(kernel_regularizer))
             request.pickled_kernel_regularizer = pickle.dumps(kernel_regularizer)
         else:
+            print('misun:', type(kernel_regularizer))
             request.pickled_kernel_regularizer = None
         request.connection_id = ControlProcedure.client_id
 
