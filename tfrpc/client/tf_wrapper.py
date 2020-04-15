@@ -54,7 +54,7 @@ class TFWrapper:
         if args_picklable:
             request.args_pickled = True
             for arg in argv:
-                request.pickled_args.append(pickle.dumps(arg))
+                request.pickled_args.append(arg)
         else:
             request.args_pickled = False
             for arg in argv:
@@ -166,7 +166,7 @@ class TFWrapper:
         request.connection_id = ControlProcedure.client_id
 
         response = stub.expand__dims(request) 
-        unpickled_tensor = pickle.loads(response.tensor)
+        # unpickled_tensor = pickle.loads(response.tensor)
         # return unpickled_tensor
         return response.tensor
 
@@ -381,14 +381,14 @@ class TFWrapper:
         request = yolo_pb2.ImageResizeRequest()
         response: yolo_pb2.ImageResizeResponse
 
-        request.pickled_image = pickle.dumps(image)
+        request.pickled_image = image
         request.connection_id = ControlProcedure.client_id
 
         for elem in size:
             request.size.append(elem)
 
         response = stub.image_resize(request)
-        return pickle.loads(response.pickled_tensor)
+        return response.pickled_tensor
 
     @staticmethod
     def tf_keras_regularizers_l2(stub, l=0.01):
