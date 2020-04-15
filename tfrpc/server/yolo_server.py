@@ -311,6 +311,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response=yolo_pb2.ExpandDemensionResponse()
         unpickled_tensor = pickle.loads(request.tensor)
         tensor = tf.expand_dims(unpickled_tensor, request.axis)
+        print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
         pickled_tensor = pickle.dumps(tensor)
         response.tensor=pickled_tensor
         return response
