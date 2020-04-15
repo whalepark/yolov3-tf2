@@ -439,7 +439,7 @@ class TFWrapper:
         request = yolo_pb2.TensorToNumpyRequest()
         response: yolo_pb2.TensorToNumPyResponse
 
-        request.pickled=tensor = pickled_tensor
+        request.pickled_tensor = pickled_tensor
 
         response = stub.byte_tensor_to_numpy(request)
 
