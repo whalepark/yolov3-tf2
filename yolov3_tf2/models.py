@@ -465,7 +465,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_boxes_0.obj_id = output_0
     arg_boxes_0.release = True
     boxes_0 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, arg_boxes_0)
-    print('boxes_s=', boxes_0)
+    # print('boxes_s=', boxes_0)
     boxes_0_0_to_3 = TFWrapper.get_iterable_slicing(stub, boxes_0, 0, 3)
 
     # boxes_1 = Lambda(lambda x: yolo_boxes(x, anchors[masks[1]], classes),

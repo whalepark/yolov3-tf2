@@ -497,6 +497,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.ImageResizeResponse()
         image = pickle.loads(request.pickled_image)
         size = request.size
+
+        print('misun:', image, type(image))
         
         tensor = tf.image.resize(image, size)
         response.pickled_tensor = pickle.dumps(tensor)
