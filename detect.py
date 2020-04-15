@@ -21,6 +21,8 @@ import yolo_pb2_grpc
 from tf_wrapper import TFWrapper, ControlProcedure
 import signal
 
+import pickle ###
+
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
 flags.DEFINE_string('classes', './data/coco.names', 'path to classes file')
