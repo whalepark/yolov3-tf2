@@ -530,11 +530,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         
         response = yolo_pb2.IndexingResponse()
         unpickled_iterable = pickle.loads(request.pickled_iterable)
-        print(f'misun: unpickled_iterable={type(unpickled_iterable)}, len={len(unpickled_iterable)}')
-        print(f'misun: unpickled_iterable[0]={type(unpickled_iterable[0])}, len={len(unpickled_iterable[0])}')
-        print(f'misun: unpickled_unpickled_iterable[0]={type(pickle.loads(unpickled_iterable[0]))}, len={len(pickle.loads(unpickled_iterable[0]))}')
-        print(f'misun: (unpickled_(unpickled_iterable[0]))[0]={type(pickle.loads(unpickled_iterable[0])[0])}, len={len(pickle.loads(unpickled_iterable[0])[0])}')
-
         index = request.index
 
         try:
