@@ -63,11 +63,14 @@ class TFWrapper:
         response = stub.callable_emulator(request)
 
         if response.pickled:
-            deserialized_result = []
+            # deserialized_result = []
+            serialized_result = []
             for elem in response.pickled_result:
-                deserialized_result.append(pickle.loads(elem))
+                # deserialized_result.append(pickle.loads(elem))
+                serialized_result.append(elem)
             # print(deserialized_result)
-            return deserialized_result
+            # return deserialized_result
+            return serialized_result
         else:
             if len(response.obj_ids) > 1:
                 return response.obj_ids
@@ -109,8 +112,9 @@ class TFWrapper:
 
         response = stub.constant(request)
 
-        unpickled_result = pickle.loads(response.tensor)
-        return unpickled_result
+        # unpickled_result = pickle.loads(response.tensor)
+        # return unpickled_result
+        return response.tensor
 
     @staticmethod
     def tf_config_experimental_list__physical__devices(stub, device_type=None):
@@ -146,9 +150,10 @@ class TFWrapper:
         request.connection_id = ControlProcedure.client_id
 
         response = stub.image_decode__image(request)
-        unpickled_tensor = pickle.loads(response.tensor)
+        # unpickled_tensor = pickle.loads(response.tensor)
 
-        return unpickled_tensor
+        # return unpickled_tensor
+        return response.tensor
 
     @staticmethod
     def tf_expand__dims(stub, input, axis):
@@ -162,7 +167,8 @@ class TFWrapper:
 
         response = stub.expand__dims(request) 
         unpickled_tensor = pickle.loads(response.tensor)
-        return unpickled_tensor
+        # return unpickled_tensor
+        return response.tensor
 
     @staticmethod
     def tf_keras_layers_Input(stub, shape: tuple, name: str = None):
