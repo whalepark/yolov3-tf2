@@ -96,7 +96,7 @@ def main(_argv):
     ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, img)
     print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
     # print(f'misun: pickle.loads(ret_val[0])={type(pickle.loads(ret_val[0]))}, {len(pickle.loads(ret_val[0]))}')
-    ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
+    ret_val = TFWrapper.iterable_indexing(stub, ret_val[0], 0, iterable_pickled=True)
     print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
     boxes, scores, classes, nums = ret_val[0][0]
     t2 = time.time()
