@@ -247,7 +247,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'callable={type(callable_obj)}\narg_type={type(args)}')
 
         if request.num_of_returns == 1:
-            print(args.shape,args)
             ret_val1 = callable_obj(args)
             try:
                 print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
