@@ -94,13 +94,10 @@ def main(_argv):
     t1 = time.time()
     # boxes, scores, classes, nums = yolo(img)
     ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, img)
-    print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
-    # print(f'misun: pickle.loads(ret_val[0])={type(pickle.loads(ret_val[0]))}, {len(pickle.loads(ret_val[0]))}')
     ret_val = TFWrapper.iterable_indexing(stub, ret_val[0], 0, iterable_pickled=True)
-    print(f'misun: ret_val={type(ret_val)}, {len(ret_val)}')
     boxes, scores, classes, nums = ret_val
     t2 = time.time()
-    logging.info('time: {}'.format(t2 - t1))
+    logging.info('inference_time: {}'.format(t2 - t1))
 
     logging.info('detections:')
     for i in range(nums[0]):
