@@ -107,7 +107,7 @@ def main(_argv):
     #                                     np.array(scores[0][i]),
     #                                     np.array(boxes[0][i])))
     nums_id = TFWrapper.iterable_indexing(stub, nums, 0)
-    nums_value = TFWrapper.get_object_by_id(stub, nums_id)
+    nums_value = TFWrapper.get_object_by_id(stub, nums_id[0])
     print(f'misun: nums_value={nums_value}')
     for i in range(nums_value):
         classes_value = TFWrapper.iterable_indexing(stub, nums, 0)
