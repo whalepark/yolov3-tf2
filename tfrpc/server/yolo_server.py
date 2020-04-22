@@ -247,7 +247,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 args = temp_args[0]
             
             callable_obj = utils_get_obj(callable_obj_id)
-            print(f'callable={type(callable_obj)}\narg_type={type(args)}')
+            print(f'callable={type(callable_obj)}\nname={callable_obj.name}\narg_type={type(args)}')
 
             if request.num_of_returns == 1:
                 ret_val1 = callable_obj(args)
@@ -454,11 +454,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_LeakyReLU')
         with tf.name_scope(request.connection_id):
-
             response = yolo_pb2.LeakyReluResponse()
             alpha = request.alpha
 
             callable_obj = LeakyReLU(alpha = alpha, name=request.name)
+            print(f'leakyreluname={callable_obj.name})
             response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
             return response
