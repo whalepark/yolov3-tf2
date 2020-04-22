@@ -604,7 +604,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             response = yolo_pb2.ImageResizeResponse()
             image_id = request.obj_id
             image = utils_get_obj(image_id)
-            size = tf.sparse.to_dense()
+            size = tf.sparse.to_dense(request.size)
             print(f'misun: image={image}, obj_id={image_id}, shape={image.shape}')
             print('misun: image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
             print(f'misun: size={size}, size.shape={size.shape}')
