@@ -635,11 +635,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         with tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.IndexingResponse()
-            unpickled_iterable = pickle.loads(request.pickled_iterable)
+            iterable = utils_get_obj(request.obj_id)
             index = request.index
 
             try:
-                for elem in unpickled_iterable[index]:
+                for elem in iterable[index]:
                     pickled_elem = elem
                     if isinstance(elem, bytes):
                         pickled_elem = elem
