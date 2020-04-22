@@ -329,7 +329,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         with tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response=yolo_pb2.DecodeImageResponse()
-            image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
+            # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
+            image_raw = tf.image.decode_jpeg(request.byte_image, channels=request.channels)
             obj_id = utils_set_obj(image_raw, request.connection_id)
             print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
 
@@ -351,7 +352,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             # print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
             tensor_obj_id = utils_set_obj(tensor, request.connection_id)
             response.obj_id=tensor_obj_id
-            print(f'misun: image={tensor}, obj_id={tensor_obj_id}, shape={image.shape}')
+            print(f'misun: image={tensor}, obj_id={tensor_obj_id}, shape={tensor.shape}')
 
             return response
 
