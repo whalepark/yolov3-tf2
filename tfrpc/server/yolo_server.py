@@ -351,6 +351,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             # print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
             tensor_obj_id = utils_set_obj(tensor, request.connection_id)
             response.obj_id=tensor_obj_id
+            print(f'misun: image={tensor}, obj_id={tensor_obj_id}')
+
             return response
 
     def keras_Model(self, request, context):
