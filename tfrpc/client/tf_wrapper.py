@@ -333,6 +333,7 @@ class TFWrapper:
 
         request.pickled_tensor = tensor
         request.divisor = divisor
+        request.connection_id = ControlProcedure.client_id
 
         response = stub.tensor_op_divide(request)
         return response.pickled_tensor
@@ -360,7 +361,7 @@ class TFWrapper:
             request.name = ''
         else:
             request.name = name
-            
+
         response = stub.keras_layers_Lambda(request)
 
         return response.obj_id
@@ -406,6 +407,7 @@ class TFWrapper:
         response: yolo_pb2.l2Response
 
         request.l=l
+        request.connection_id = ControlProcedure.client_id
 
         response = stub.keras_regularizers_l2(request)
         # unpickled_l2 = pickle.loads(response.pickled_l2)
@@ -423,6 +425,7 @@ class TFWrapper:
         else:
             request.pickled_iterable = pickle.dumps(iterable)
         request.index = index
+        request.connection_id = ControlProcedure.client_id
 
         response = stub.iterable_indexing(request)
 
@@ -440,6 +443,7 @@ class TFWrapper:
         response: yolo_pb2.TensorToNumPyResponse
 
         request.pickled_tensor = pickled_tensor
+        request.connection_id = ControlProcedure.client_id
 
         response = stub.byte_tensor_to_numpy(request)
 
