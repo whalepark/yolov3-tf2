@@ -331,7 +331,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             response=yolo_pb2.DecodeImageResponse()
             image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
             obj_id = utils_set_obj(image_raw, request.connection_id)
-            print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image.shape}')
+            print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
 
             response.obj_id=obj_id
             return response
