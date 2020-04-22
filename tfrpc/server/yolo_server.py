@@ -602,7 +602,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             image = utils_get_obj(image_id)
             size = request.size
 
-            # print('misun: pickled_image=', type(request.pickled_image), 'image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
+            print('misun: image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
             
             tensor = tf.image.resize(image, size)
             response.obj_id = utils_set_obj(tensor, request.connection_id)
