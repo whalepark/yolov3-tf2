@@ -416,14 +416,11 @@ class TFWrapper:
         return response.pickled_l2
 
     @staticmethod
-    def iterable_indexing(stub, iterable, index=0, iterable_pickled=False, result_unpickle=True):
+    def iterable_indexing(stub, iterable, index=0, result_unpickle=True):
         request = yolo_pb2.IndexingRequest()
         response: yolo_pb2.IndexingResponse
 
-        if iterable_pickled:
-            request.pickled_iterable = iterable
-        else:
-            request.pickled_iterable = pickle.dumps(iterable)
+        request.obj_id = iterable
         request.index = index
         request.connection_id = ControlProcedure.client_id
 
