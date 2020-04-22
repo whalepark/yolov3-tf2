@@ -430,7 +430,10 @@ class TFWrapper:
         if result_unpickle:
             elements = response.elements
             for element in elements:
-                results.append(pickle.loads(element))
+                if result_unpickle:
+                    results.append(pickle.loads(element))
+                else:
+                    results.append(element)
 
         return results
 
