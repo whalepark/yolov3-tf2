@@ -648,11 +648,13 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 for elem in ref_val:
                     print(f'misun: attribute={elem.__dir__()}')
                     print(f'misun: ref_val={elem}')
-                    print(f'misun: try pickle={pickle.dumps(elem)}')
+                    print(f'misun: try eval={elem.eval()}')
+                    print(f'misun: try pickle={pickle.dumps(elem.eval())}')
             except:
                 print(f'misun: attribute={ref_val.__dir__()}')
                 print(f'misun: ref_val={ref_val}')
-                print(f'misun: try pickle={pickle.dumps(ref_val)}')
+                print(f'misun: try eval={ref_val.eval()}')
+                print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
 
             try:
                 for elem in ref_val:
