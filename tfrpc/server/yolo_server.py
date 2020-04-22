@@ -643,6 +643,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 indices.append(index) ## no point?
                 ref_val = ref_val[index]
 
+            print(f'misun: type={type(ref_val)}')
+            print(f'misun: ref_val.shape={ref_val.shape}')
+            print(f'misun: attribute={ref_val.__dir__()}')
+            print(f'misun: ref_val={ref_val}')
+
             try:
                 for elem in ref_val:
                     response.obj_ids.append(utils_set_obj(elem, request.connection_id))
