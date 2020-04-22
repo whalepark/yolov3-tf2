@@ -340,7 +340,7 @@ message DivideResponse {
 /// iterable_indexing
 message IndexingRequest {
     uint64 obj_id = 1;
-    uint32 index = 2;
+    repeated uint32 indices = 2;
     string connection_id = 3;
 
 }

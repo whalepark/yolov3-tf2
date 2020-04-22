@@ -416,25 +416,21 @@ class TFWrapper:
         return response.pickled_l2
 
     @staticmethod
-    def iterable_indexing(stub, iterable, index=0, result_unpickle=True):
+    def iterable_indexing(stub, iterable, *args):
         request = yolo_pb2.IndexingRequest()
         response: yolo_pb2.IndexingResponse
 
         request.obj_id = iterable
-        request.index = index
+        for index in args:
+            request.indices.append(index)
         request.connection_id = ControlProcedure.client_id
 
         response = stub.iterable_indexing(request)
 
         results = []
-        if result_unpickle:
-            obj_id_list = response.obj_ids
-            for obj_id in obj_id_list:
-                results.append(obj_id)
-                # if result_unpickle:
-                #     results.append(pickle.loads(element))
-                # else:
-                #     results.append(element)
+        obj_id_list = response.obj_ids
+        for obj_id in obj_id_list:
+            results.append(obj_id)
 
         return results
 

@@ -636,25 +636,19 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             response = yolo_pb2.IndexingResponse()
             iterable = utils_get_obj(request.obj_id)
-            index = request.index
+            indices = []
+
+            ref_val = iterable[request.indices[0]]
+            for index in request.indices[1:]:
+                indices.append(index) ## no point?
+                ref_val = ref_val[index]
 
             try:
-                for elem in iterable[index]:
+                for elem in ref_val[index]:
                     response.obj_ids.append(utils_set_obj(elem, request.connection_id))
-                    # pickled_elem = elem
-                    # if isinstance(elem, bytes):
-                    #     pickled_elem = elem
-                    # else:
-                    #     # print(f'misun: unserialized_elem type={type(elem.numpy())}')
-                    #     pickled_elem = pickle.dumps(elem)
-                    # # print(f'misun: elem type={type(pickled_elem)}')
-                    # response.elements.append(pickled_elem)
             except TypeError:
                 response.obj_ids.append(utils_set_obj(iterable[index], request.connection_id))
-                # pickled_elem = pickle.dumps(elem)
-                # response.elements.append(pickled_elem)
 
-            # print(f'misun: unpickled_iterable[index]={type(unpickled_iterable[index])}, len={len(unpickled_iterable[index])}')
 
             return response
 
