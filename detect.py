@@ -106,8 +106,10 @@ def main(_argv):
     # logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
     #                                     np.array(scores[0][i]),
     #                                     np.array(boxes[0][i])))
-    nums_value = TFWrapper.iterable_indexing(stub, nums, 0)
-    for i in range(nums[0]):
+    nums_id = TFWrapper.iterable_indexing(stub, nums, 0)
+    nums_value = TFWrapper.get_object_by_id(stub, nums_id)
+    print(f'misun: nums_value={nums_value}')
+    for i in range(nums_value):
         classes_value = TFWrapper.iterable_indexing(stub, nums, 0)
         scores_value = TFWrapper.iterable_indexing(stub, nums, 0)
         boxex_value = TFWrapper.iterable_indexing(stub, nums, 0)

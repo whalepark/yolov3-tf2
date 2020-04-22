@@ -446,6 +446,18 @@ class TFWrapper:
 
         return pickle.loads(response.pickled_ndarray)
 
+    @staticmethod
+    def get_object_by_id(stub, obj_id):
+        request = yolo_pb2.GetObjectRequest()
+        response: yolo_pb2.GetObjectResponse
+
+        request.obj_id = obj_id
+        request.connection_id = ControlProcecure.client_id
+
+        response = stub.get_object_by_id(request)
+
+        return pickle.loads(response.object)
+
 
 
 class YoloWrapper:

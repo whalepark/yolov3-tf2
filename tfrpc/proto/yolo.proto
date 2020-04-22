@@ -37,6 +37,7 @@ service YoloTensorflowWrapper {
     // common operations
     rpc iterable_indexing(IndexingRequest) returns (IndexingResponse) {}
     rpc byte_tensor_to_numpy(TensorToNumpyRequest) returns (TensorToNumPyResponse) {}
+    rpc get_object_by_id(GetObjectRequest) returns (GetObjectResponse) {}
 
     // YoloWrappers
     rpc batch_normalization (BatchNormRequest) returns (BatchNormResponse) {}
@@ -362,6 +363,15 @@ message TensorToNumPyResponse {
     bytes pickled_ndarray = 1;
 }
 
+
+/// get_object_by_id
+message GetObjectRequest {
+    uint64 obj_id = 1;
+    string connection_id = 2;
+}
+message GetObjectResponse {
+    bytes object = 1;
+}
 
 /////////////////////////////////
 

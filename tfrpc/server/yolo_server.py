@@ -665,6 +665,18 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             return response
 
+    def get_object_by_id(self, request, context):
+        print('\nget_object_by_id')
+        _id = request.connection_id
+        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+
+            response = yolo_pb2.GetObjectResponse()
+
+            _object = utils_get_obj(request.obj_id)
+            response.object = pickle.dumps(_object)
+
+            return response
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=os.cpu_count() - 1), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
