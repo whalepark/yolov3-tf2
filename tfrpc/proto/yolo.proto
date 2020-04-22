@@ -323,14 +323,14 @@ message ExpectPartialResponse {
 
 /// tensor_op_divide
 message DivideRequest {
-    bytes pickled_tensor = 1;
+    uint64 obj_id = 1;
     int32 divisor = 2;
     string connection_id = 3;
 
 }
 
 message DivideResponse {
-    bytes pickled_tensor = 1;
+    uint64 obj_id = 1;
 }
 
 

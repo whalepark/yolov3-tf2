@@ -622,11 +622,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         with tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.DivideResponse()
-            tensor = pickle.loads(request.pickled_tensor)
+            tensor_obj = utils_get_obj(request.obj_id)
             divisor = request.divisor
 
-            result = tensor / divisor
-            response.pickled_tensor = pickle.dumps(result)
+            result = tensor_obj / divisor
+            response.obj_id = utils_set_obj(result, request.connection_id)
             return response
 
     def iterable_indexing(self, request, context):

@@ -326,17 +326,17 @@ class TFWrapper:
         return 
 
     @staticmethod
-    def tensor_op_divide(stub, tensor, divisor):
+    def tensor_op_divide(stub, tensor_obj_id, divisor):
         request = yolo_pb2.DivideRequest()
         response: yolo_pb2.DivideResponse
         ##
 
-        request.pickled_tensor = tensor
+        request.obj_id = tensor_obj_id
         request.divisor = divisor
         request.connection_id = ControlProcedure.client_id
 
         response = stub.tensor_op_divide(request)
-        return response.pickled_tensor
+        return response.obj_id
 
 
 
