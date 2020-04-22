@@ -640,17 +640,19 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             try:
                 for elem in iterable[index]:
-                    pickled_elem = elem
-                    if isinstance(elem, bytes):
-                        pickled_elem = elem
-                    else:
-                        # print(f'misun: unserialized_elem type={type(elem.numpy())}')
-                        pickled_elem = pickle.dumps(elem)
-                    # print(f'misun: elem type={type(pickled_elem)}')
-                    response.elements.append(pickled_elem)
+                    response.obj_ids.append(utils_set_obj(elem, request.connection_id))
+                    # pickled_elem = elem
+                    # if isinstance(elem, bytes):
+                    #     pickled_elem = elem
+                    # else:
+                    #     # print(f'misun: unserialized_elem type={type(elem.numpy())}')
+                    #     pickled_elem = pickle.dumps(elem)
+                    # # print(f'misun: elem type={type(pickled_elem)}')
+                    # response.elements.append(pickled_elem)
             except TypeError:
-                pickled_elem = pickle.dumps(elem)
-                response.elements.append(pickled_elem)
+                response.obj_ids.append(utils_set_obj(iterable[index], request.connection_id))
+                # pickled_elem = pickle.dumps(elem)
+                # response.elements.append(pickled_elem)
 
             # print(f'misun: unpickled_iterable[index]={type(unpickled_iterable[index])}, len={len(unpickled_iterable[index])}')
 

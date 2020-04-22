@@ -428,12 +428,13 @@ class TFWrapper:
 
         results = []
         if result_unpickle:
-            elements = response.elements
-            for element in elements:
-                if result_unpickle:
-                    results.append(pickle.loads(element))
-                else:
-                    results.append(element)
+            obj_id_list = response.obj_ids
+            for obj_id in obj_id_list:
+                results.append(obj_id)
+                # if result_unpickle:
+                #     results.append(pickle.loads(element))
+                # else:
+                #     results.append(element)
 
         return results
 

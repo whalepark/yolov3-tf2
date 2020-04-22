@@ -346,7 +346,7 @@ message IndexingRequest {
 }
 
 message IndexingResponse {
-    repeated bytes elements = 1;
+    repeated uint64 obj_ids = 1;
 }
 
 

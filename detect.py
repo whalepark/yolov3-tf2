@@ -98,6 +98,7 @@ def main(_argv):
     ret_val = TFWrapper.callable_emulator(stub, yolo, False, 1, img_obj_wrapper)
     ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
     boxes, scores, classes, nums = ret_val
+    print(f'misun: {boxes} {scores} {classes} {nums}')
     t2 = time.time()
     logging.info('inference_time: {}'.format(t2 - t1))
 
