@@ -330,9 +330,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             response=yolo_pb2.DecodeImageResponse()
             image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
-            pickled_image = pickle.dumps(image_raw)
+            obj_id = utils_set_obj(image_raw, request.connection_id)
 
-            response.tensor=pickled_image
+            response.obj_id=obj_id
             return response
 
     def expand__dims(self, request, context):
@@ -342,13 +342,14 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             response=yolo_pb2.ExpandDemensionResponse()
             # print('misun: request.tensor=', type(request.tensor))
-            unpickled_tensor = pickle.loads(request.tensor)
+            image_obj_id = request.obj_id
+            image_obj = utils_get_obj(image_obj_id)
             # print('misun: unpickled_tensor=', type(unpickled_tensor))
             # print('misun: tensor_shape=', unpickled_tensor.shape)
-            tensor = tf.expand_dims(unpickled_tensor, request.axis)
+            tensor = tf.expand_dims(image_obj, request.axis)
             # print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
-            pickled_tensor = pickle.dumps(tensor)
-            response.tensor=pickled_tensor
+            tensor_obj_id = utils_set_obj(tensor, request.connection_id)
+            response.obj_id=tensor_obj_id
             return response
 
     def keras_Model(self, request, context):
@@ -597,13 +598,14 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         _id = request.connection_id
         with tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
             response = yolo_pb2.ImageResizeResponse()
-            image = pickle.loads(request.pickled_image)
+            image_id = request.obj_id
+            image = utils_get_obj(image_id)
             size = request.size
 
             # print('misun: pickled_image=', type(request.pickled_image), 'image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
             
             tensor = tf.image.resize(image, size)
-            response.pickled_tensor = pickle.dumps(tensor)
+            response.obj_id = utils_set_obj(tensor, request.connection_id)
 
         return response
 
@@ -654,7 +656,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             response = yolo_pb2.TensorToNumPyResponse()
 
-            tensor = pickle.loads(request.pickled_tensor)
+            tensor = utils_get_obj(request.obj_id)
             ndarray = tensor.numpy()
             response.pickled_ndarray = pickle.dumps(ndarray)
 

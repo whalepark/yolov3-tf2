@@ -141,13 +141,13 @@ message DecodeImageResponse {
 
 /// expand__dims
 message ExpandDemensionRequest {
-    bytes tensor = 1;
+    uint64 obj_id = 1;
     int32 axis = 2;
     string connection_id = 3;
 }
 
 message ExpandDemensionResponse {
-    bytes tensor = 1;
+    uint64 obj_id = 1;
 }
 
 /// keras_layers_Input
@@ -272,13 +272,13 @@ message l2Response {
 
 /// image_resize
 message ImageResizeRequest {
-    bytes pickled_image = 1;
+    uint64 obj_id = 1;
     repeated uint32 size = 2;
     string connection_id = 3;
 } 
 
 message ImageResizeResponse {
-    bytes pickled_tensor = 1;
+    uint64 obj_id = 1;
 }
 
 
@@ -353,7 +353,7 @@ message IndexingResponse {
 /// byte_tensor_to_numpy
 
 message TensorToNumpyRequest {
-    bytes pickled_tensor = 1;
+    uint64 obj_id = 1;
     string connection_id = 2;
 
 }

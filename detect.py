@@ -93,7 +93,7 @@ def main(_argv):
 
     t1 = time.time()
     # boxes, scores, classes, nums = yolo(img)
-    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, img)
+    ret_val = TFWrapper.callable_emulator(stub, yolo, False, 1, img)
     ret_val = TFWrapper.iterable_indexing(stub, ret_val[0], 0, iterable_pickled=True)
     boxes, scores, classes, nums = ret_val
     t2 = time.time()
@@ -107,9 +107,15 @@ def main(_argv):
 
     # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
     img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
-    img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
-    img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
-    cv2.imwrite(FLAGS.output, img)
+
+    # img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+    # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
+    # cv2.imwrite(FLAGS.output, img)
+
+    img_result = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+    img_result = draw_outputs(img_result, (boxes, scores, classes, nums), class_names)
+    cv2.imwrite(FLAGS.output, img_result)
+
     logging.info('output saved to: {}'.format(FLAGS.output))
 
     finalize()

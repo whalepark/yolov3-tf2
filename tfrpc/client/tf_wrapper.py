@@ -149,7 +149,7 @@ class TFWrapper:
         # unpickled_tensor = pickle.loads(response.tensor)
 
         # return unpickled_tensor
-        return response.tensor
+        return response.obj_id
 
     @staticmethod
     def tf_expand__dims(stub, input, axis):
@@ -157,14 +157,14 @@ class TFWrapper:
         request = yolo_pb2.ExpandDemensionRequest()
         response: yolo_pb2.ExpandDemensionResponse
 
-        request.tensor=input
+        request.obj_id=input
         request.axis=axis
         request.connection_id = ControlProcedure.client_id
 
         response = stub.expand__dims(request) 
         # unpickled_tensor = pickle.loads(response.tensor)
         # return unpickled_tensor
-        return response.tensor
+        return response.obj_id
 
     @staticmethod
     def tf_keras_layers_Input(stub, shape: tuple, name: str = None):
@@ -388,18 +388,18 @@ class TFWrapper:
         return response.obj_id
 
     @staticmethod
-    def tf_image_resize(stub, image, size):
+    def tf_image_resize(stub, image_id, size):
         request = yolo_pb2.ImageResizeRequest()
         response: yolo_pb2.ImageResizeResponse
 
-        request.pickled_image = image
+        request.obj_id = image_id
         request.connection_id = ControlProcedure.client_id
 
         for elem in size:
             request.size.append(elem)
 
         response = stub.image_resize(request)
-        return response.pickled_tensor
+        return response.obj_id
 
     @staticmethod
     def tf_keras_regularizers_l2(stub, l=0.01):
@@ -438,11 +438,11 @@ class TFWrapper:
         return results
 
     @staticmethod
-    def byte_tensor_to_numpy(stub, pickled_tensor):
+    def byte_tensor_to_numpy(stub, image_obj_id):
         request = yolo_pb2.TensorToNumpyRequest()
         response: yolo_pb2.TensorToNumPyResponse
 
-        request.pickled_tensor = pickled_tensor
+        request.obj_id = image_obj_id
         request.connection_id = ControlProcedure.client_id
 
         response = stub.byte_tensor_to_numpy(request)
