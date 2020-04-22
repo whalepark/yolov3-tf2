@@ -136,7 +136,7 @@ message DecodeImageRequest {
 }
 
 message DecodeImageResponse {
-    bytes tensor = 1;
+    uint64 obj_id = 1;
 }
 
 /// expand__dims
