@@ -609,7 +609,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 size.append(elem)
             print(f'misun: image={image}, obj_id={image_id}, shape={image.shape}')
             print('misun: image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
-            print(f'misun: size={size}, size.shape={size.shape}')
+            print(f'misun: size={size}')
             
             tensor = tf.image.resize(image, size)
             response.obj_id = utils_set_obj(tensor, request.connection_id)
