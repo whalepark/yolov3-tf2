@@ -93,7 +93,7 @@ def main(_argv):
 
     t1 = time.time()
     # boxes, scores, classes, nums = yolo(img)
-    img_obj_wrapper = CallRequest.ObjId()
+    img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
     img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
     ret_val = TFWrapper.callable_emulator(stub, yolo, False, 1, img_obj_wrapper)
     ret_val = TFWrapper.iterable_indexing(stub, ret_val[0], 0, iterable_pickled=True)
