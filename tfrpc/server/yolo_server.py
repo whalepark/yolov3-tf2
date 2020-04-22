@@ -644,10 +644,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 ref_val = ref_val[index]
 
             try:
-                for elem in ref_val[index]:
+                for elem in ref_val:
                     response.obj_ids.append(utils_set_obj(elem, request.connection_id))
             except TypeError:
-                response.obj_ids.append(utils_set_obj(iterable[index], request.connection_id))
+                response.obj_ids.append(utils_set_obj(ref_val, request.connection_id))
 
 
             return response
