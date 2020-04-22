@@ -452,7 +452,7 @@ class TFWrapper:
         response: yolo_pb2.GetObjectResponse
 
         request.obj_id = obj_id
-        request.connection_id = ControlProcecure.client_id
+        request.connection_id = ControlProcedure.client_id
 
         response = stub.get_object_by_id(request)
 
