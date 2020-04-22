@@ -458,7 +458,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             alpha = request.alpha
 
             callable_obj = LeakyReLU(alpha = alpha, name=request.name)
-            print(f'leakyreluname={callable_obj.name})
+            print(f'leakyreluname={callable_obj.name}')
             response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
             return response
