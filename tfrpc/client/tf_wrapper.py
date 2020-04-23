@@ -123,10 +123,6 @@ class TFWrapper:
 
         response = stub.config_experimental_list__physical__devices(request)
 
-        # for device in response.devices:
-        #     print(device.name)
-
-        # print(len(response.devices))
         return response.devices
         
     @staticmethod
@@ -411,7 +407,6 @@ class TFWrapper:
 
         response = stub.keras_regularizers_l2(request)
         # unpickled_l2 = pickle.loads(response.pickled_l2)
-        # print("misun:", type(response.pickled_l2), type(unpickled_l2))
         # return unpickled_l2
         return response.pickled_l2
 

@@ -122,7 +122,7 @@ def utils_is_iterable(obj):
         _ = (e for e in obj)
         return True
     except TypeError:
-        # print my_object, 'is not iterable'
+        #  my_object, 'is not iterable'
         return False      
 
 def utils_flatten_container(container):
@@ -677,6 +677,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             #     print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
 
             try:
+                print(f'misun: ref_val={ref_val}')
                 if len(ref_val) > 0:
                     new_ref_val = []
                     utils_convert_elem_into_array(ref_val, new_ref_val)

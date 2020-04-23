@@ -508,7 +508,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
 
     arg_outputs = (arg_boxes_0_0_to_3, arg_boxes_1_0_to_3, arg_boxes_2_0_to_3)
     # arg_outputs = (boxes_0[:3], boxes_1[:3], boxes_2[:3])
-    print(arg_outputs, '\n\n\n\n')
+    # print(arg_outputs, '\n\n\n\n')
     outputs = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, *arg_outputs)
 
     # return tf.keras.Model(inputs, outputs, name='yolov3')
