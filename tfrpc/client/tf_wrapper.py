@@ -439,7 +439,7 @@ class TFWrapper:
 
         response = stub.byte_tensor_to_numpy(request)
 
-        return pickle.loads(response.pickled_ndarray)
+        return pickle.loads(response.pickled_array)
 
     @staticmethod
     def get_object_by_id(stub, obj_id):

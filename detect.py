@@ -109,17 +109,6 @@ def main(_argv):
                                             np.array(scores[0][i]),
                                             np.array(boxes[0][i])))
 
-    # # # # nums_id = TFWrapper.iterable_indexing(stub, nums, 0)
-    # # # # nums_value = TFWrapper.get_object_by_id(stub, nums_id[0])
-    # # # # print(f'misun: nums_value={nums_value}')
-    # # # # for i in range(nums_value):
-    # # # #     classes_value = TFWrapper.iterable_indexing(stub, nums, 0)
-    # # # #     scores_value = TFWrapper.iterable_indexing(stub, nums, 0)
-    # # # #     boxex_value = TFWrapper.iterable_indexing(stub, nums, 0)
-    # # # #     logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
-    # # # #                                        np.array(scores[0][i]),
-    # # # #                                        np.array(boxes[0][i])))
-
     # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
     img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
 

@@ -657,32 +657,14 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             ref_val = iterable[request.indices[0]]
             for index in request.indices[1:]:
-                # indices.append(index) ## no point?
                 ref_val = ref_val[index]
 
-            # print(f'misun: type={type(ref_val)}')
-            # try:
-            #     for elem in ref_val:
-                    
-            #         print(f'misun: attribute={elem.__dir__()}')
-            #         print(f'misun: ref_val={elem}')
-            #         # tf.print(elem)
-            #         # with Global_Sess_Dict[request.connection_id].as_default():
-            #         print(f'misun: try eval={elem.eval()}')
-            #         print(f'misun: try pickle={pickle.dumps(elem.eval())}')
-            # except:
-            #     print(f'misun: attribute={ref_val.__dir__()}')
-            #     print(f'misun: ref_val={ref_val}')
-            #     # with Global_Sess_Dict[request.connection_id].as_default():
-            #     print(f'misun: try eval={ref_val.eval()}')
-            #     print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
-
             try:
-                print(f'misun: ref_val={ref_val}')
+                # print(f'misun: ref_val={ref_val}')
                 if len(ref_val) > 0:
                     new_ref_val = [[]]
                     utils_convert_elem_into_array(ref_val, new_ref_val)
-                    print(f'misun: new_ref_val={new_ref_val[0]}')
+                    # print(f'misun: new_ref_val={new_ref_val[0]}')
                     response.pickled_result = pickle.dumps(new_ref_val[0])
             except TypeError:
                 response.pickled_result = pickle.dumps(ref_val.eval())
@@ -697,8 +679,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             response = yolo_pb2.TensorToNumPyResponse()
 
             tensor = utils_get_obj(request.obj_id)
-            ndarray = tensor.numpy()
-            response.pickled_ndarray = pickle.dumps(ndarray)
+            array = tensor.eval()
+            response.pickled_array = pickle.dumps(array)
 
             return response
 

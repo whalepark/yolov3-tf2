@@ -360,7 +360,7 @@ message TensorToNumpyRequest {
 }
 
 message TensorToNumPyResponse {
-    bytes pickled_ndarray = 1;
+    bytes pickled_array = 1;
 }
 
 
