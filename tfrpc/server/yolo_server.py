@@ -360,16 +360,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response=yolo_pb2.ExpandDemensionResponse()
-            # print('misun: request.tensor=', type(request.tensor))
             image_obj_id = request.obj_id
             image_obj = utils_get_obj(image_obj_id)
-            # print('misun: unpickled_tensor=', type(unpickled_tensor))
-            # print('misun: tensor_shape=', unpickled_tensor.shape)
             tensor = tf.expand_dims(image_obj, request.axis)
-            # print('misun: tensor_type=', type(tensor), 'tensor_shape=', tensor.shape)
             tensor_obj_id = utils_set_obj(tensor, request.connection_id)
             response.obj_id=tensor_obj_id
-            print(f'misun: image={tensor}, obj_id={tensor_obj_id}, shape={tensor.shape}')
 
             return response
 
@@ -624,9 +619,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             size = []
             for elem in request.size:
                 size.append(elem)
-            print(f'misun: image={image}, obj_id={image_id}, shape={image.shape}')
-            print('misun: image=', type(image), 'tensor_shape=', image.shape, 'image[0].shape=', image[0].shape, 'size=', request.size)
-            print(f'misun: size={size}')
             
             tensor = tf.image.resize(image, size)
             response.obj_id = utils_set_obj(tensor, request.connection_id)
@@ -660,11 +652,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 ref_val = ref_val[index]
 
             try:
-                # print(f'misun: ref_val={ref_val}')
                 if len(ref_val) > 0:
                     new_ref_val = [[]]
                     utils_convert_elem_into_array(ref_val, new_ref_val)
-                    # print(f'misun: new_ref_val={new_ref_val[0]}')
                     response.pickled_result = pickle.dumps(new_ref_val[0])
             except TypeError:
                 response.pickled_result = pickle.dumps(ref_val.eval())

@@ -96,9 +96,7 @@ def main(_argv):
     img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
     img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
     ret_val = TFWrapper.callable_emulator(stub, yolo, False, 1, img_obj_wrapper)
-    print(f'misun: ret_val={ret_val}')
     ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
-    print(f'misun: ret_val={ret_val}')
     boxes, scores, classes, nums = ret_val
     t2 = time.time()
     logging.info('inference_time: {}'.format(t2 - t1))
