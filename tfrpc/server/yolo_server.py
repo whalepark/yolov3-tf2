@@ -677,6 +677,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             try:
                 if len(ref_val) > 0:
+                    new_ref_val = []
                     utils_convert_elem_into_array(ref_val, new_ref_val)
                     response.pickled_result = pickle.dumps(new_ref_val)
             except TypeError:
