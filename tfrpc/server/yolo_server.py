@@ -202,10 +202,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            Global_Sess_Dict[request.id] = tf.compat.v1.Session()
-            with Global_Sess_Dict[request.id].as_default():
-                Global_Graph_Dict[request.id] = tf.Graph()
-
+            Global_Graph_Dict[request.id] = tf.Graph()
+            Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
+          
         return response
 
     def Disconnect(self, request, context):
