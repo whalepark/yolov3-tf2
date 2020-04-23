@@ -669,7 +669,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             #     for elem in ref_val:
             #         response.pickled_result = .append(utils_set_obj(elem, request.connection_id))
             # except TypeError:
-            response.pickled_result = pickle.dumps(ref_val)
+            response.pickled_result = pickle.dumps(ref_val.eval())
 
 
             return response
