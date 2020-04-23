@@ -133,16 +133,17 @@ def utils_flatten_container(container):
         else:
             yield i
 
-def utils_convert_elem_into_array(iterable: list, new_iterable: list):
-    new_iterable = [None for _ in range(len(iterable))]
-    for index in range(len(iterable)):
-        if isinstance(iterable[index], (list, tuple)):
+def utils_convert_elem_into_array(source: list, destination: list):
+    destination[0] = [None for _ in range(len(source))]
+    new_iterable = destination[0]
+    for index in range(len(source)):
+        if isinstance(source[index], (list, tuple)):
             new_iterable[index]=[]
-            utils_convert_elem_into_array(iterable[index], new_iterable[index])
-        elif isinstance(iterable[index], tf.Tensor):
-            new_iterable[index] = iterable[index].eval()
+            utils_convert_elem_into_array(source[index], new_iterable[index])
+        elif isinstance(source[index], tf.Tensor):
+            new_iterable[index] = source[index].eval()
         else:
-            new_iterable[index] = iterable[index]
+            new_iterable[index] = source[index]
 
 def utils_collect_garbage(connection_id: str):
     global Global_Tensor_Dict
@@ -679,10 +680,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             try:
                 print(f'misun: ref_val={ref_val}')
                 if len(ref_val) > 0:
-                    new_ref_val = []
+                    new_ref_val = [[]]
                     utils_convert_elem_into_array(ref_val, new_ref_val)
-                    print(f'misun: new_ref_val={new_ref_val}')
-                    response.pickled_result = pickle.dumps(new_ref_val)
+                    print(f'misun: new_ref_val={new_ref_val[0]}')
+                    response.pickled_result = pickle.dumps(new_ref_val[0])
             except TypeError:
                 response.pickled_result = pickle.dumps(ref_val.eval())
 

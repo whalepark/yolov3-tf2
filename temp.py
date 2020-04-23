@@ -18,8 +18,24 @@
 
 # dill.dumps(f)
 
-import tensorflow as tf
-import pickle, dill
+# import tensorflow as tf
+# import pickle, dill
 
-inputs = tf.keras.Input([None, None, 3], name='input')
-pickle.dumps(inputs)
+# inputs = tf.keras.Input([None, None, 3], name='input')
+# pickle.dumps(inputs)
+
+
+
+def function(templist: list):
+    templist=[1,2,3]
+
+def function_altered(templist: list):
+    templist[0]=[1,2,3]
+
+misun=[]
+function(misun)
+print(misun)
+
+jimin=[[],]
+function_altered(jimin)
+print(jimin)
