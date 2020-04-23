@@ -134,6 +134,7 @@ def utils_flatten_container(container):
             yield i
 
 def utils_convert_elem_into_array(iterable: list, new_iterable: list):
+    new_iterable = [None for _ in range(len(iterable))]
     for index in range(len(iterable)):
         if isinstance(iterable[index], (list, tuple)):
             new_iterable[index]=[]
@@ -679,6 +680,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 if len(ref_val) > 0:
                     new_ref_val = []
                     utils_convert_elem_into_array(ref_val, new_ref_val)
+                    print(f'misun: new_ref_val={new_ref_val}')
                     response.pickled_result = pickle.dumps(new_ref_val)
             except TypeError:
                 response.pickled_result = pickle.dumps(ref_val.eval())
