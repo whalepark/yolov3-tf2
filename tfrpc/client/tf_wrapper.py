@@ -8,12 +8,12 @@ import string, random
 #     - In-Progress: models.py, utils.py
 #     - Undone: dataset.py, batch_norm.py,
 
-# conv2d_count = 0
-# batch_norm_count = 0
-# leaky_re_lu_count = 0
-# zero_padding2d_count=0
-# add_count = 0
-# lambda_count = 0
+conv2d_count = 0
+batch_norm_count = 0
+leaky_re_lu_count = 0
+zero_padding2d_count=0
+add_count = 0
+lambda_count = 0
 
 def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -202,16 +202,16 @@ class TFWrapper:
 
     @staticmethod
     def tf_keras_layers_ZeroPadding2D(stub, padding=(1, 1), data_format=None):
-        # global zero_padding2d_count
-        # zero_padding2d_count += 1
-        # name = 'zero_padding2d_{:010d}'.format(zero_padding2d_count)
+        global zero_padding2d_count
+        zero_padding2d_count += 1
+        name = 'zero_padding2d_{:010d}'.format(zero_padding2d_count)
 
         request = yolo_pb2.ZeroPadding2DRequest()
         response: yolo_pb2.ZeroPadding2DResponse
 
         request.connection_id = ControlProcedure.client_id
         request.padding = pickle.dumps(padding)
-        # request.name = name
+        request.name = name ###
         if data_format is not None:
             request.data_format=data_format
 
@@ -221,14 +221,14 @@ class TFWrapper:
 
     @staticmethod
     def tf_keras_layers_Conv2D(stub, filters: int, kernel_size, strides=(1, 1), padding='valid', use_bias=True, kernel_regularizer=None):
-        # global conv2d_count
-        # conv2d_count += 1
-        # name = 'conv2d_{:010d}'.format(conv2d_count)
+        global conv2d_count
+        conv2d_count += 1
+        name = 'conv2d_{:010d}'.format(conv2d_count)
 
         request = yolo_pb2.Conv2DRequest()
         response: yolo_pb2.Conv2DResponse
 
-        # request.name = name
+        request.name = name ###
         request.filters = filters
         request.pickled_kernel_size = pickle.dumps(kernel_size)
         request.pickled_strides = pickle.dumps(strides)
@@ -245,14 +245,14 @@ class TFWrapper:
 
     @staticmethod
     def tf_keras_layers_LeakyReLU(stub, alpha):
-        # global leaky_re_lu_count
-        # leaky_re_lu_count += 1
-        # name = 'leaky_re_lu_{:010d}'.format(leaky_re_lu_count)
+        global leaky_re_lu_count
+        leaky_re_lu_count += 1
+        name = 'leaky_re_lu_{:010d}'.format(leaky_re_lu_count)
 
         request = yolo_pb2.LeakyReluRequest()
         response: yolo_pb2.LeakyReluResponse
 
-        # request.name = name
+        request.name = name ###
         request.alpha = alpha
         request.connection_id = ControlProcedure.client_id
 
@@ -262,14 +262,14 @@ class TFWrapper:
 
     @staticmethod
     def tf_keras_layers_Add(stub):
-        # global add_count
-        # add_count += 1
-        # name = 'add_{:010d}'.format(add_count)
+        global add_count
+        add_count += 1
+        name = 'add_{:010d}'.format(add_count)
         
         request = yolo_pb2.AddRequest()
         response: yolo_pb2.AddResponse
 
-        # request.name = name
+        request.name = name ###
         request.connection_id = ControlProcedure.client_id
 
         response = stub.keras_layers_Add(request)
@@ -339,10 +339,10 @@ class TFWrapper:
 
     @staticmethod
     def tf_keras_layers_Lambda(stub, lambda_str: str, name=None):
-        # global lambda_count
-        # lambda_count += 1
-        # if name is None:
-        #     name = 'lambda_{:010d}'.format(lambda_count)
+        global lambda_count
+        lambda_count += 1
+        if name is None:
+            name = 'lambda_{:010d}'.format(lambda_count)
 
         request = yolo_pb2.LambdaRequest()
         response: yolo_pb2.LambdaResponse
@@ -350,8 +350,8 @@ class TFWrapper:
         request.expr = lambda_str
         request.connection_id = ControlProcedure.client_id
 
-        # if name is not None:
-        #     request.name = name
+        if name is not None:
+            request.name = name ###
 
         if name is None:
             request.name = ''
@@ -458,14 +458,14 @@ class TFWrapper:
 class YoloWrapper:
     @staticmethod
     def BatchNormalization(stub):
-        # global batch_norm_count
-        # batch_norm_count += 1
-        # name = 'batchnorm_{:010d}'.format(batch_norm_count)
+        global batch_norm_count
+        batch_norm_count += 1
+        name = 'batchnorm_{:010d}'.format(batch_norm_count)
 
         request = yolo_pb2.BatchNormRequest()
         response: yolo_pb2.BatchNormResponse
 
-        # request.name = name
+        request.name = name ###
         request.connection_id = ControlProcedure.client_id
 
         response = stub.batch_normalization(request)
