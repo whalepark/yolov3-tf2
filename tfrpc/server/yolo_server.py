@@ -202,8 +202,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            Global_Graph_Dict[request.id] = tf.Graph()
             Global_Sess_Dict[request.id] = tf.compat.v1.Session()
+            with Global_Sess_Dict[request.id].as_default():
+                Global_Graph_Dict[request.id] = tf.Graph()
 
         return response
 
@@ -212,6 +213,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.DisconnectResponse()
 
         Connection_Set.remove(request.id)
+        Global_Sess_Dict[request.id].close()
         del Global_Graph_Dict[request.id]
         del Global_Sess_Dict[request.id]
         threading.Thread(target = utils_collect_garbage, args=[request.id]).start()
@@ -224,7 +226,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def callable_emulator(self, request, context):
         print(f'\ncallable_emulator')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
         # with tf.variable_scope(request.connection_id, reuse=True):
             response = yolo_pb2.CallResponse()
             
@@ -300,7 +302,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
     def get_iterable_slicing(self, request, context):
         print('\nget_iterable_slcing')
-        with tf.name_scope(request.connection_id):
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.SlicingResponse()
 
@@ -313,7 +315,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def config_experimental_list__physical__devices(self, request, context):
         print('\nconfig_experimental_list__physical__devices')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response=yolo_pb2.PhysicalDevices()
             
@@ -329,7 +331,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def image_decode__image(self, request, context):
         print('\nimage_decode__image')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response=yolo_pb2.DecodeImageResponse()
             # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
@@ -343,7 +345,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def expand__dims(self, request, context):
         print('\nexpand__dims')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response=yolo_pb2.ExpandDemensionResponse()
             # print('misun: request.tensor=', type(request.tensor))
@@ -362,7 +364,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def keras_Model(self, request, context):
         print('\nkeras_Model')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.ModelResponse()
 
@@ -382,7 +384,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def keras_layers_Input(self, request, context):
         print('\nkeras_layers_Input')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.InputResponse()
             shape=[]
@@ -407,7 +409,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_ZeroPadding2D')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.ZeroPadding2DResponse()
             
@@ -430,7 +432,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Conv2D')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.Conv2DResponse()
 
@@ -458,7 +460,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nbatch_normalization')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.BatchNormResponse()
             callable_obj = BatchNormalization(name=request.name)
@@ -474,7 +476,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_LeakyReLU')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
             response = yolo_pb2.LeakyReluResponse()
             alpha = request.alpha
 
@@ -492,7 +494,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Add')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.AddResponse()
             callable_obj = Add(name = request.name)
@@ -503,7 +505,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def attribute_tensor_shape(self, request, context):
         print('\nattribute_tensor_shape')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.TensorShapeResponse()
             obj = utils_get_obj(request.obj_id)
@@ -530,7 +532,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def attribute_model_load__weight(self, request, context):
         print('\attribute_model_load__weight')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.LoadWeightsResponse()
             model = utils_get_obj(request.model_obj_id)
@@ -542,7 +544,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def attribute_checkpoint_expect__partial(self, request, context):
         print('\attribute_checkpoint_expect__partial')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.ExpectPartialResponse()
             checkpoint = utils_get_obj(request.obj_id)
@@ -557,7 +559,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Lambda')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.LambdaResponse()
             lambda_func = lambda x: eval(request.expr)
@@ -569,7 +571,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def keras_layers_UpSampling2D(self, request, context):
         print('\keras_layers_UpSampling2D')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.UpSampling2DResponse()
             callable_obj = UpSampling2D(request.size)
@@ -580,7 +582,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def keras_layers_Concatenate(self, request, context):
         print('\keras_layers_UpSampling2D')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.ContcatenateResponse()
             callable_obj = Concatenate()
@@ -591,7 +593,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def keras_regularizers_l2(self, request, context):
         print('\nkeras_regularizers_l2')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.l2Response()
             l2_value = l2(request.l)
@@ -603,7 +605,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def image_resize(self, request, context):
         print('\nimage_resize')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
             response = yolo_pb2.ImageResizeResponse()
             image_id = request.obj_id
             image = utils_get_obj(image_id)
@@ -622,7 +624,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def tensor_op_divide(self, request, context):
         print('\ntensor_op_divide')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.DivideResponse()
             tensor_obj = utils_get_obj(request.obj_id)
@@ -635,7 +637,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def iterable_indexing(self, request, context):
         print('\niterable_indexing')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.IndexingResponse()
             iterable = utils_get_obj(request.obj_id)
@@ -674,7 +676,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def byte_tensor_to_numpy(self, request, context):
         print('\nbyte_tensor_to_numpy')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.TensorToNumPyResponse()
 
@@ -687,7 +689,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def get_object_by_id(self, request, context):
         print('\nget_object_by_id')
         _id = request.connection_id
-        with tf.name_scope(_id), Global_Graph_Dict[_id].as_default(), Global_Sess_Dict[_id].as_default():
+        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.GetObjectResponse()
 
