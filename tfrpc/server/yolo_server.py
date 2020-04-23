@@ -133,6 +133,16 @@ def utils_flatten_container(container):
         else:
             yield i
 
+def utils_convert_elem_into_array(iterable: list, new_iterable: list):
+    for index in range(len(iterable)):
+        if isinstance(iterable[index], (list, tuple)):
+            new_iterable[index]=[]
+            utils_convert_elem_into_array(iterable[index], new_iterable[index])
+        elif isinstance(iterable[index], tf.Tensor):
+            new_iterable[index] = iterable[index].eval
+        else:
+            new_iterable[index] = iterable[index]
+
 def utils_collect_garbage(connection_id: str):
     global Global_Tensor_Dict
 
@@ -665,12 +675,12 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             #     print(f'misun: try eval={ref_val.eval()}')
             #     print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
 
-            # try:
-            #     for elem in ref_val:
-            #         response.pickled_result = .append(utils_set_obj(elem, request.connection_id))
-            # except TypeError:
-            response.pickled_result = pickle.dumps(ref_val.eval())
-
+            try:
+                if len(ref_val) > 0:
+                    utils_convert_elem_into_array(ref_val, new_ref_val)
+                    response.pickled_result = pickle.dumps(new_ref_val)
+            except TypeError:
+                response.pickled_result = pickle.dumps(ref_val.eval())
 
             return response
 
