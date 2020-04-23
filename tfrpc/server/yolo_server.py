@@ -139,7 +139,7 @@ def utils_convert_elem_into_array(iterable: list, new_iterable: list):
             new_iterable[index]=[]
             utils_convert_elem_into_array(iterable[index], new_iterable[index])
         elif isinstance(iterable[index], tf.Tensor):
-            new_iterable[index] = iterable[index].eval
+            new_iterable[index] = iterable[index].eval()
         else:
             new_iterable[index] = iterable[index]
 
