@@ -42,8 +42,9 @@ sys.path.insert(0, os.path.abspath('yolov3_tf2'))
 from batch_norm import BatchNormalization
 from utils import broadcast_iou
 import threading
-
-from multiprocessing import Manager
+# os.chdir(cwd)
+# from collections.abc import Iterable
+# import inspect
 
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45),
@@ -75,12 +76,12 @@ Global_Graph_Dict = {}
 Global_Sess_Dict = {}
 
 
-# conv2d_count = 0
-# batch_norm_count = 0
-# leaky_re_lu_count = 0
-# zero_padding2d_count=0
-# add_count = 0
-# lambda_count = 0
+conv2d_count = 0
+batch_norm_count = 0
+leaky_re_lu_count = 0
+zero_padding2d_count=0
+add_count = 0
+lambda_count = 0
 
 
 def utils_byte_chunk(data: bytes, chunk_size: int):
@@ -413,10 +414,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             return response
 
     def keras_layers_ZeroPadding2D(self, request, context):
-        # global zero_padding2d_count
-        # zero_padding2d_count += 1
-        # name = 'zero_padding2d_{:010d}'.format(zero_padding2d_count)
-        # request.name=name
+        global zero_padding2d_count
+        zero_padding2d_count += 1
+        name = 'zero_padding2d_{:010d}'.format(zero_padding2d_count)
+        request.name=name
 
         print('\nkeras_layers_ZeroPadding2D')
         _id = request.connection_id
@@ -436,10 +437,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
     
     def keras_layers_Conv2D(self, request, context):
-        # global conv2d_count
-        # conv2d_count += 1
-        # name = 'conv2d_{:010d}'.format(conv2d_count)
-        # request.name=name
+        global conv2d_count
+        conv2d_count += 1
+        name = 'conv2d_{:010d}'.format(conv2d_count)
+        request.name=name
 
         print('\nkeras_layers_Conv2D')
         _id = request.connection_id
@@ -464,10 +465,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             return response
 
     def batch_normalization(self, request, context):
-        # global batch_norm_count
-        # batch_norm_count += 1
-        # name = 'batchnorm_{:010d}'.format(batch_norm_count)
-        # request.name=name
+        global batch_norm_count
+        batch_norm_count += 1
+        name = 'batchnorm_{:010d}'.format(batch_norm_count)
+        request.name=name
 
         print('\nbatch_normalization')
         _id = request.connection_id
@@ -480,10 +481,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             return response
 
     def keras_layers_LeakyReLU(self, request, context):
-        # global leaky_re_lu_count
-        # leaky_re_lu_count += 1
-        # name = 'leaky_re_lu_{:010d}'.format(leaky_re_lu_count)
-        # request.name=name
+        global leaky_re_lu_count
+        leaky_re_lu_count += 1
+        name = 'leaky_re_lu_{:010d}'.format(leaky_re_lu_count)
+        request.name=name
 
         print('\nkeras_layers_LeakyReLU')
         _id = request.connection_id
@@ -498,10 +499,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             return response
 
     def keras_layers_Add(self, request, context):
-        # global add_count
-        # add_count += 1
-        # name = 'add_{:010d}'.format(add_count)
-        # request.name=name
+        global add_count
+        add_count += 1
+        name = 'add_{:010d}'.format(add_count)
+        request.name=name
 
         print('\nkeras_layers_Add')
         _id = request.connection_id
@@ -563,10 +564,10 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             return response
     
     def keras_layers_Lambda(self, request, context):
-        # global lambda_count
-        # lambda_count += 1
-        # if request.name is None or len(request.name) is 0:
-        #     request.name = 'lambda_{:010d}'.format(lambda_count)
+        global lambda_count
+        lambda_count += 1
+        if request.name is None or len(request.name) is 0:
+            request.name = 'lambda_{:010d}'.format(lambda_count)
 
         print('\nkeras_layers_Lambda')
         _id = request.connection_id
