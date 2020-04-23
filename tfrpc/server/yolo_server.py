@@ -302,6 +302,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
     def get_iterable_slicing(self, request, context):
         print('\nget_iterable_slcing')
+        _id = request.connection_id
         with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
             response = yolo_pb2.SlicingResponse()
