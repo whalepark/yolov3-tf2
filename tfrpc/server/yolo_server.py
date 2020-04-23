@@ -73,6 +73,8 @@ Global_Tensor_Dict = {}
 Object_Ownership = {}
 Connection_Set = set()
 Global_Graph_Dict = {}
+Global_Sess_Dict = {}
+
 
 conv2d_count = 0
 batch_norm_count = 0
@@ -201,6 +203,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             response.accept = True
             Connection_Set.add(request.id)
             Global_Graph_Dict[request.id] = tf.Graph()
+            Global_Sess_Dict[request.id] = tf.compat.v1.Session()
 
         return response
 
@@ -210,6 +213,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         Connection_Set.remove(request.id)
         del Global_Graph_Dict[request.id]
+        del Global_Sess_Dict[request.id]
         threading.Thread(target = utils_collect_garbage, args=[request.id]).start()
 
         return response
@@ -648,17 +652,16 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 for elem in ref_val:
                     print(f'misun: attribute={elem.__dir__()}')
                     print(f'misun: ref_val={elem}')
-                    tf.print(elem)
-                    # with sess.as_default():
-                    #     print(f'misun: try eval={elem.eval()}')
-                    #     print(f'misun: try pickle={pickle.dumps(elem.eval())}')
+                    # tf.print(elem)
+                    with Global_Sess_Dict[request.connection_id].as_default():
+                        print(f'misun: try eval={elem.eval()}')
+                        print(f'misun: try pickle={pickle.dumps(elem.eval())}')
             except:
                 print(f'misun: attribute={ref_val.__dir__()}')
                 print(f'misun: ref_val={ref_val}')
-                # with sess.as_default():
-
-                #     print(f'misun: try eval={ref_val.eval()}')
-                #     print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
+                with Global_Sess_Dict[request.connection_id].as_default():
+                    print(f'misun: try eval={ref_val.eval()}')
+                    print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
 
             try:
                 for elem in ref_val:
