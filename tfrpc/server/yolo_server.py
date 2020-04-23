@@ -645,30 +645,31 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
             ref_val = iterable[request.indices[0]]
             for index in request.indices[1:]:
-                indices.append(index) ## no point?
+                # indices.append(index) ## no point?
                 ref_val = ref_val[index]
 
-            print(f'misun: type={type(ref_val)}')
-            try:
-                for elem in ref_val:
-                    print(f'misun: attribute={elem.__dir__()}')
-                    print(f'misun: ref_val={elem}')
-                    # tf.print(elem)
-                    # with Global_Sess_Dict[request.connection_id].as_default():
-                    print(f'misun: try eval={elem.eval()}')
-                    print(f'misun: try pickle={pickle.dumps(elem.eval())}')
-            except:
-                print(f'misun: attribute={ref_val.__dir__()}')
-                print(f'misun: ref_val={ref_val}')
-                # with Global_Sess_Dict[request.connection_id].as_default():
-                print(f'misun: try eval={ref_val.eval()}')
-                print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
+            # print(f'misun: type={type(ref_val)}')
+            # try:
+            #     for elem in ref_val:
+                    
+            #         print(f'misun: attribute={elem.__dir__()}')
+            #         print(f'misun: ref_val={elem}')
+            #         # tf.print(elem)
+            #         # with Global_Sess_Dict[request.connection_id].as_default():
+            #         print(f'misun: try eval={elem.eval()}')
+            #         print(f'misun: try pickle={pickle.dumps(elem.eval())}')
+            # except:
+            #     print(f'misun: attribute={ref_val.__dir__()}')
+            #     print(f'misun: ref_val={ref_val}')
+            #     # with Global_Sess_Dict[request.connection_id].as_default():
+            #     print(f'misun: try eval={ref_val.eval()}')
+            #     print(f'misun: try pickle={pickle.dumps(ref_val.eval())}')
 
-            try:
-                for elem in ref_val:
-                    response.obj_ids.append(utils_set_obj(elem, request.connection_id))
-            except TypeError:
-                response.obj_ids.append(utils_set_obj(ref_val, request.connection_id))
+            # try:
+            #     for elem in ref_val:
+            #         response.pickled_result = .append(utils_set_obj(elem, request.connection_id))
+            # except TypeError:
+            response.pickled_result = pickle.dumps(ref_val)
 
 
             return response

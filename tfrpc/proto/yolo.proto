@@ -347,7 +347,7 @@ message IndexingRequest {
 }
 
 message IndexingResponse {
-    repeated uint64 obj_ids = 1;
+    bytes pickled_result = 1;
 }
 
 

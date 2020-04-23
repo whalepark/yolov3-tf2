@@ -426,13 +426,13 @@ class TFWrapper:
         request.connection_id = ControlProcedure.client_id
 
         response = stub.iterable_indexing(request)
+        result = pickle.loads(response.pickled_result)
+        # results = []
+        # obj_id_list = response.obj_ids
+        # for obj_id in obj_id_list:
+        #     results.append(obj_id)
 
-        results = []
-        obj_id_list = response.obj_ids
-        for obj_id in obj_id_list:
-            results.append(obj_id)
-
-        return results
+        return result
 
     @staticmethod
     def byte_tensor_to_numpy(stub, image_obj_id):
