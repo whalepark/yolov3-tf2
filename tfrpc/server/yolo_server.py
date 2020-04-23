@@ -69,17 +69,11 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 
 ## global variables
-# Global_Tensor_Dict = {}
-# Object_Ownership = {}
-# Connection_Set = set()
-# Global_Graph_Dict = {}
-# Global_Sess_Dict = {}
-MP_Manager=Manager()
-Global_Tensor_Dict = MP_Manager.dict()
-Object_Ownership = MP_Manager.dict()
-# Connection_Set = set()
-Global_Graph_Dict = MP_Manager.dict()
-Global_Sess_Dict = MP_Manager.dict()
+Global_Tensor_Dict = {}
+Object_Ownership = {}
+Connection_Set = set()
+Global_Graph_Dict = {}
+Global_Sess_Dict = {}
 
 
 conv2d_count = 0
@@ -116,7 +110,7 @@ def utils_set_obj(obj, connection_id):
     if connection_id in Object_Ownership:
         Object_Ownership[connection_id].append(obj_id)
     else:
-        print('error!, unknown connection!')
+        Object_Ownership[connection_id] = [obj_id]
     return obj_id
 
 def utils_rm_obj(obj_ids):
@@ -215,13 +209,13 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'\nConnect: {request.id}')
         response = yolo_pb2.ConnectResponse()
 
-        if request.id in Object_Ownership:
+        if request.id in Connection_Set:
             response.accept = False
         else:
             response.accept = True
+            Connection_Set.add(request.id)
             Global_Graph_Dict[request.id] = tf.Graph()
             Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
-            Object_Ownership[request.id] = []
           
         return response
 
@@ -229,6 +223,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'\nDisconnect: {request.id}')
         response = yolo_pb2.DisconnectResponse()
 
+        Connection_Set.remove(request.id)
         Global_Sess_Dict[request.id].close()
         del Global_Graph_Dict[request.id]
         del Global_Sess_Dict[request.id]
