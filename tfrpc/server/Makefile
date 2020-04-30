@@ -1,6 +1,6 @@
 CC = g++
 INC = 
-LFLAGS = -lssh -ltensorflow
+LFLAGS = -ltensorflow
 CFLAGS = -g $(INC) -W -Wall
 
 OBJS = yolo_server.o
@@ -11,7 +11,7 @@ TARGET = yolo_server
 all : $(TARGET)
 
 $(TARGET) : $(OBJS)
-	$(CC) $^ -o $@ $(OBJS) $(LFLAGS)
+	$(CC) $^ -o $@ $(LFLAGS)
 
 dep :
 	gccmakedep $(INC) $(SRCS)
