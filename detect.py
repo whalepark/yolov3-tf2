@@ -56,6 +56,9 @@ def main(_argv):
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)
 
+    ControlProcedure.SayHello(stub, 'misun')
+    exit()
+
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
     if len(physical_devices) > 0: # in my settings, this if statement always returns false

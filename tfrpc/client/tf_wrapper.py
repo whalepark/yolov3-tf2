@@ -41,6 +41,15 @@ class ControlProcedure:
         request.id = ControlProcedure.client_id
         response = stub.Disconnect(request)
 
+    @staticmethod
+    def SayHello(stub, name):
+        request = yolo_pb2.HelloRequest()
+        response: yolo_pb2.HelloReply
+
+        request.name = name
+        response = stub.SayHello(request)
+        print(response.name)
+
 class TFWrapper:
     @staticmethod
     def callable_emulator(stub, callable_obj_id, args_picklable, ret_num, *argv):
