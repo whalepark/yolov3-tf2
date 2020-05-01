@@ -1,8 +1,5 @@
 #include <stdio.h>
 
-#include <atomic>
-#include <thread> 
-
 #include <tensorflow/c/c_api.h>
 
 #include <grpcpp/grpcpp.h>
@@ -10,6 +7,11 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 
 #include "yolo.grpc.pb.h"
+
+#include <atomic>
+#include <thread> 
+
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
