@@ -50,6 +50,16 @@ class ControlProcedure:
         response = stub.SayHello(request)
         print(response.name)
 
+    @staticmethod
+    def CheckIfModelExist(stub, name):
+        request = yolo_pb2.CheckModelExistResponse()
+        response: yolo_pb2.HelloReply
+
+        request.connection_id = ControlProcedure.client_id
+        request.name = name
+        response = stub.CheckIfModelExist(request)
+        return response.exist, response.model_obj_id
+
 class TFWrapper:
     @staticmethod
     def callable_emulator(stub, callable_obj_id, args_picklable, ret_num, *argv):

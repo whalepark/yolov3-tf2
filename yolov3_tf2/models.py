@@ -435,6 +435,11 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
 def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
            masks=yolo_anchor_masks, classes=80, training=False):
     # x = inputs = Input([size, size, channels], name='input')
+    is_exist, keras_model_id = ControlProcedure.CheckIfModelExist(stub, name='yolov3')
+    if is_exist:
+        return keras_model_id
+
+
     x = inputs = TFWrapper.tf_keras_layers_Input(stub, [size, size, channels], name='input')
 
     # x_36, x_61, x = Darknet(stub, name='yolo_darknet')(x)

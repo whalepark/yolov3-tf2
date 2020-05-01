@@ -3,11 +3,12 @@ package yolo_tf;
 
 service YoloTensorflowWrapper {
     // Control Procedures
+    rpc SayHello (HelloRequest) returns (HelloReply) {}
     rpc Connect (ConnectRequest) returns (ConnectResponse) {}
     rpc Disconnect (DisconnectRequest) returns (DisconnectResponse) {}
+    rpc CheckIfModelExist (CheckModelExistRequest) returns (CheckModelExistResponse) {}
 
     // TF Wrappers
-    rpc SayHello (HelloRequest) returns (HelloReply) {}
     rpc callable_emulator (CallRequest) returns (CallResponse) {}
     rpc get_iterable_slicing(SlicingRequest) returns (SlicingResponse) {}
     rpc constant (ConstantRequest) returns (ConstantResponse) {}
@@ -71,6 +72,20 @@ message HelloRequest {
 message HelloReply {
     string message = 1;
 }
+
+
+/// CheckIfModelExist
+
+message CheckModelExistRequest {
+    string connection_id = 1;
+    string name = 2;
+}
+
+message CheckModelExistResponse {
+    bool exist = 1;
+    uint64 model_obj_id = 2;
+}
+
 
 /// callable_emulator
 message CallRequest {
