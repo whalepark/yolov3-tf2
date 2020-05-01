@@ -35,8 +35,8 @@ ifeq ($(SYSTEM),Darwin)
 #-ltensorflow
 LDFLAGS += -L/usr/local/lib -ltensorflow `pkg-config --libs protobuf grpc++`\
            -pthread\
+		   -ltensorflow\
            -lgrpc++_reflection\
-		   -ltensorflow
            -ldl
 # LDFLAGS += -ltensorflow\
 # 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
@@ -46,6 +46,7 @@ LDFLAGS += -L/usr/local/lib -ltensorflow `pkg-config --libs protobuf grpc++`\
 else
 LDFLAGS += -L/usr/local/lib -ltensorflow `pkg-config --libs protobuf grpc++`\
            -pthread\
+		   -ltensorflow\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl
 # LDFLAGS += -ltensorflow\
