@@ -30,12 +30,12 @@ using yolo_tf::YoloTensorflowWrapper;
 // Global_Sess_Dict = {}
 
 
-std::atomic<int> conv2d_count = 0
-std::atomic<int> batch_norm_count = 0
-std::atomic<int> leaky_re_lu_count = 0
-std::atomic<int> zero_padding2d_count=0
-std::atomic<int> add_count = 0
-std::atomic<int> lambda_count = 0
+std::atomic<int> conv2d_count = 0;
+std::atomic<int> batch_norm_count = 0;
+std::atomic<int> leaky_re_lu_count = 0;
+std::atomic<int> zero_padding2d_count=0;
+std::atomic<int> add_count = 0;
+std::atomic<int> lambda_count = 0;
 
 class YoloTensorflowServiceImpl final : public YoloTensorflowWrapper::Service
 {
