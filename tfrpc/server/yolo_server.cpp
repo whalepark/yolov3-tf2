@@ -241,6 +241,7 @@ void RunServer()
 
 int main()
 {
+    std::cout << "here?" << std::endl;
     printf("Hello from TensorFlow C library version %s\n", TF_Version());
     RunServer();
     return 0;
