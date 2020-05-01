@@ -44,7 +44,7 @@ class YoloTensorflowServiceImpl final : public YoloTensorflowWrapper::Service
     {
         std::string prefix("Hello ");
         reply->set_message(prefix + request->name());
-        std::cout << "is lock free?: " << conv2d_count.is_lock_free() << std::endl;
+        // std::cout << "is lock free?: " << conv2d_count.is_lock_free() << std::endl;
         return Status::OK;
     }
 
