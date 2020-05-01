@@ -64,7 +64,7 @@ vpath %.proto $(PROTOS_PATH)
 all: system-check yolo_server
 
 yolo_server: yolo_server.o
-	$(CXX) -I/usr/local/include -L/usr/local/lib $^ $(LDFLAGS) -ltensorflow -o $@
+	$(CXX) $^ $(LDFLAGS) -ltensorflow -o $@
 
 # yolo_server: yolo.pb.o yolo.grpc.pb.o yolo_server.o
 # 	$(CXX) $^ $(LDFLAGS) -o $@
