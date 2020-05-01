@@ -36,7 +36,8 @@ ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
            -lgrpc++_reflection\
-           -ldl
+           -ldl\
+		   -ltensorflow 
 # LDFLAGS += -ltensorflow\
 # 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
 #            -pthread\
@@ -46,7 +47,8 @@ else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
+           -ldl\
+		   -ltensorflow 
 # LDFLAGS += -ltensorflow\
 # 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
 #            -pthread\
@@ -64,7 +66,7 @@ vpath %.proto $(PROTOS_PATH)
 all: system-check yolo_server
 
 yolo_server: yolo_server.o
-	$(CXX) $^ $(LDFLAGS) -ltensorflow -o $@
+	$(CXX) $^ $(LDFLAGS) -o $@
 
 # yolo_server: yolo.pb.o yolo.grpc.pb.o yolo_server.o
 # 	$(CXX) $^ $(LDFLAGS) -o $@
