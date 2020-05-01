@@ -1,30 +1,4 @@
-# CC = g++
-# INC = 
-# LDFLAGS = -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-#            -pthread\
-#            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-#            -ldl -ltensorflow
-# CFLAGS = -g $(INC) -W -Wall `pkg-config --cflags protobuf grpc` -std=c++11
-
-# OBJS = yolo_server.o
-# SRCS = yolo_server.cpp
-
-# TARGET = yolo_server
-
-# all : $(TARGET)
-
-# $(TARGET) : $(OBJS)
-# 	$(CC) $^ -o $@ $(LDFLAGS)
-
-# dep :
-# 	gccmakedep $(INC) $(SRCS)
-
-# clean :
-# 	rm -rf $(OBJS) $(TARGET) core
-
 # https://www.tensorflow.org/install/lang_c
-
-
 
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
@@ -32,28 +6,17 @@ CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
-#-ltensorflow
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
            -lgrpc++_reflection\
            -ldl\
 		   -ltensorflow 
-# LDFLAGS += -ltensorflow\
-# 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-#            -pthread\
-#            -lgrpc++_reflection\
-#            -ldl
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl\
 		   -ltensorflow 
-# LDFLAGS += -ltensorflow\
-# 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-#            -pthread\
-#            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-#            -ldl
 endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
@@ -65,19 +28,19 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check yolo_server
 
-yolo_server: yolo_server.o
-	$(CXX) $^ $(LDFLAGS) -o $@
-
-# yolo_server: yolo.pb.o yolo.grpc.pb.o yolo_server.o
+# yolo_server: yolo_server.o
 # 	$(CXX) $^ $(LDFLAGS) -o $@
 
-# .PRECIOUS: %.grpc.pb.cc
-# %.grpc.pb.cc: %.proto
-# 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+yolo_server: yolo.pb.o yolo.grpc.pb.o yolo_server.o
+	$(CXX) $^ $(LDFLAGS) -o $@
 
-# .PRECIOUS: %.pb.cc
-# %.pb.cc: %.proto
-# 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
+.PRECIOUS: %.grpc.pb.cc
+%.grpc.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+
+.PRECIOUS: %.pb.cc
+%.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
