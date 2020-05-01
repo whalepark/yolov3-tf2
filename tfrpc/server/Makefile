@@ -34,7 +34,7 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -ltensorflow\
 		   -lpthread\
-		   -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed
+		   -ldl
  		#    -L/usr/local/lib `pkg-config --libs protobuf grpc++`
 # LDFLAGS += -ltensorflow\
 # 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
@@ -44,7 +44,7 @@ LDFLAGS += -ltensorflow\
 else
 LDFLAGS += -ltensorflow\
 		   -lpthread\
-		   -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed
+		   -ldl
  		#    -L/usr/local/lib `pkg-config --libs protobuf grpc++`
 # LDFLAGS += -ltensorflow\
 # 		   -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
