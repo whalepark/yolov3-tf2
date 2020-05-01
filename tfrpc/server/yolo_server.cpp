@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#if 0
 // #include <atomic>
 // #include <thread>
 
@@ -234,7 +234,7 @@
 //     // responsible for shutting down the server for this call to ever return.
 //     server->Wait();
 // }
-
+#endif
 int main(int argc, char *argv[])
 {
     printf("hello world!");
