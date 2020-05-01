@@ -239,7 +239,7 @@
 //     server->Wait();
 // }
 
-int main()
+int main(int argc, char* argv[])
 {
     printf("hello world!");
     // printf("Hello from TensorFlow C library version %s\n", TF_Version());
