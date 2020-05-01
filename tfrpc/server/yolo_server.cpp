@@ -241,7 +241,8 @@
 
 int main()
 {
-    printf("Hello from TensorFlow C library version %s\n", TF_Version());
+    print("hello world!");
+    // printf("Hello from TensorFlow C library version %s\n", TF_Version());
     // RunServer();
     return 0;
 }
