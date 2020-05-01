@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include <atomic>
-#include <thread> 
+// #include <atomic>
+// #include <thread> 
 
 #include <tensorflow/c/c_api.h>
 
