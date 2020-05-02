@@ -54,22 +54,24 @@ class ControlProcedure:
 
 class TFWrapper:
     @staticmethod
-    def callable_emulator(stub, callable_obj_id, args_picklable, ret_num, *argv):
+    def callable_emulator(stub, callable_obj_id, inference, ret_num, model_name, *argv):
         request = yolo_pb2.CallRequest()
         response: yolo_pb2.CallResponse
 
         request.callable_obj_id = callable_obj_id
         request.num_of_returns = ret_num
         request.connection_id = ControlProcedure.client_id
+        request.inference=inference
+        request.callable_model_name = model_name
 
-        if args_picklable:
-            request.args_pickled = True
-            for arg in argv:
-                request.pickled_args.append(arg)
-        else:
-            request.args_pickled = False
-            for arg in argv:
-                request.obj_ids.append(arg)
+        # if args_picklable:
+        #     request.args_pickled = True
+        #     for arg in argv:
+        #         request.pickled_args.append(arg)
+        # else:
+        # request.args_pickled = False
+        for arg in argv:
+            request.obj_ids.append(arg)
 
         response = stub.callable_emulator(request)
 
@@ -311,15 +313,15 @@ class TFWrapper:
         return tuple(temp_list)
 
     @staticmethod
-    def attribute_model_load__weight(stub, model_obj_id, weights_path: str):
+    def attribute_model_load__weights(stub, model_name, weights_path: str):
         request = yolo_pb2.LoadWeightsRequest()
         response: yolo_pb2.LoadWeightsResponse
 
         request.weights_path = weights_path
-        request.model_obj_id = model_obj_id
+        request.model_name = model_name
         request.connection_id = ControlProcedure.client_id
 
-        response = stub.attribute_model_load__weight(request)
+        response = stub.attribute_model_load__weights(request)
         return response.obj_id
 
     @staticmethod

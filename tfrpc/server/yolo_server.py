@@ -106,18 +106,19 @@ class ModelInfo:
         self.is_weight_loaded = False
         self.weight_checkpoint = None
 
-    def set_done(self, obj_id):
+    def set_done(self, model):
         global Graph_Build_In_Progress, Connection_Id
 
         self.state = ModelInfo.State.BUILD_DONE
         Graph_Build_In_Progress = False
         Connection_Id = ""
-        self.obj_id = obj_id
+        self.model = model
+        self.obj_id = id(model)
 
     def is_done(self):
         return self.state
 
-    def load_weight(self, model, weights_path):
+    def load_weights(self, model, weights_path):
         if self.is_weight_loaded:
             return self.weight_checkpoint
         else:
@@ -148,29 +149,6 @@ class Color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
-
-class ModelBuildingAPI:
-    def __init__(self, func):
-        self.func = func
-    
-    def __call__(self, *args, **kwargs):
-        request = args[0]
-        # print('misun: length=', len(args))
-        # for arg in args:
-        #     print('misun: arg=', arg)
-        #     print('misun: type=', type(arg))
-        # print('misun: length=', len(kwargs))
-
-        # for k,v in kwargs:
-        #     print('misun: kwarg=',  k,v )
-        #     print('misun: type=',  type(k), type(v) )
-        if request.connection_id != Connection_Id:
-            print(Color.RED + 'ERROR: Connection ID mismatch!' + Color.END)
-            print(f'request.connection_id={request.connection_id}, Connection_Id={Connection_Id}')
-            raise IllegalModelBuildException
-        else: 
-            return self.func(*args, **kwargs)
-
 
 # def utils_byte_chunk(data: bytes, chunk_size: int):
 #     start = 0
@@ -221,7 +199,7 @@ def utils_convert_elem_into_array(source: list, destination: list):
             new_iterable[index]=[]
             utils_convert_elem_into_array(source[index], new_iterable[index])
         elif isinstance(source[index], tf.Tensor):
-            new_iterable[index] = source[index].eval()
+            new_iterable[index] = source[index].numpy()
         else:
             new_iterable[index] = source[index]
 
@@ -288,15 +266,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def ModelBuildingAPI(decoratee_func):
         def decorator_func(self, *args, **kwargs):
             request = args[0]
-            # print('misun: length=', len(args))
-            # for arg in args:
-            #     print('misun: arg=', arg)
-            #     print('misun: type=', type(arg))
-            # print('misun: length=', len(kwargs))
-
-            # for k,v in kwargs:
-            #     print('misun: kwarg=',  k,v )
-            #     print('misun: type=',  type(k), type(v) )
             if request.connection_id != Connection_Id:
                 print(Color.RED + 'ERROR: Connection ID mismatch!' + Color.END)
                 print(f'request.connection_id={request.connection_id}, Connection_Id={Connection_Id}')
@@ -368,6 +337,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.CallResponse()
         
         callable_obj_id = request.callable_obj_id
+        callable_obj = None
         temp_args = []
         del_list = []
 
@@ -377,22 +347,25 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         ret_val3: int
         ret_val4: int
 
-        if request.args_pickled:
-            for arg in request.pickled_args:
-                temp_args.append(pickle.loads(arg))
-        else:
-            for arg in request.obj_ids:
-                obj = utils_get_obj(arg.obj_id)
-                temp_args.append(obj)
-                if arg.release:
-                    del_list.append(arg.obj_id)
+        # if request.args_pickled:
+        #     for arg in request.pickled_args:
+        #         temp_args.append(pickle.loads(arg))
+        # else:
+        for arg in request.obj_ids:
+            obj = utils_get_obj(arg.obj_id)
+            temp_args.append(obj)
+            if arg.release:
+                del_list.append(arg.obj_id)
 
         if len(temp_args) > 1:
             args = temp_args
         else:
             args = temp_args[0]
         
-        callable_obj = utils_get_obj(callable_obj_id)
+        if request.inference:
+            callable_obj = Global_Model_Dict[request.callable_model_name].model
+        else:
+            callable_obj = utils_get_obj(callable_obj_id)
         print(f'callable={type(callable_obj)}\nname={callable_obj.name}\narg_type={type(args)}')
 
         if request.num_of_returns == 1:
@@ -422,20 +395,26 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             print('error!, request.num_of_returns=',request.num_of_returns)
             return None
 
-        try:
-            # print('try')
-            # pickled_result = pickle.dumps(ret_val)
-            response.pickled = True
-            for elem in ret_val:
-                pickled = pickle.dumps(elem)
-                response.pickled_result.append(pickled)
-        except TypeError:
-            # print('except TypeError')
-            response.pickled = False
-            for val in ret_val:
-                response.obj_ids.append(utils_set_obj(val, request.connection_id))
-        finally:
-            return response
+        # try:
+        #     # print('try')
+        #     # pickled_result = pickle.dumps(ret_val)
+        #     response.pickled = True
+        #     for elem in ret_val:
+        #         pickled = pickle.dumps(elem)
+        #         response.pickled_result.append(pickled)
+        # except TypeError:
+        #     # print('except TypeError')
+        #     response.pickled = False
+        #     for val in ret_val:
+        #         response.obj_ids.append(utils_set_obj(val, request.connection_id))
+        # finally:
+        #     return response
+
+        response.pickled = False
+        for val in ret_val:
+            response.obj_ids.append(utils_set_obj(val, request.connection_id))
+            
+        return response
 
     def get_iterable_slicing(self, request, context):
         print('\nget_iterable_slcing')
@@ -475,7 +454,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
         image_raw = tf.image.decode_image(request.byte_image, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)
-        print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
+        # print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
 
         response.obj_id=obj_id
         return response
@@ -511,13 +490,14 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         name = request.name
 
         result = Model(inputs, outputs, name=name)
-        response.obj_id = utils_set_obj(result, request.connection_id)
 
         if request.fixed:
             if request.name not in Global_Model_Dict:
                 raise IllegalModelBuildException
             else:
-                Global_Model_Dict[request.name].set_done(response.obj_id)
+                Global_Model_Dict[request.name].set_done(result)
+        else:
+            response.obj_id = utils_set_obj(result, request.connection_id)
 
         return response
 
@@ -674,14 +654,15 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
-    def attribute_model_load__weight(self, request, context):
+    def attribute_model_load__weights(self, request, context):
         print('\attribute_model_load__weight')
         _id = request.connection_id
         # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
         response = yolo_pb2.LoadWeightsResponse()
-        model = utils_get_obj(request.model_obj_id)
-        checkpoint = model.load_weights(request.weights_path) # check if already weighted
+        model_info = Global_Model_Dict[request.model_name]
+        # checkpoint = model.load_weights(request.weights_path) # check if already weighted
+        checkpoint = Global_Model_Dict[model_info.name].load_weights(model_info.model, request.weights_path)
         response.obj_id = utils_set_obj(checkpoint, request.connection_id)
 
         return response
@@ -790,6 +771,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         indices = []
 
         ref_val = iterable[request.indices[0]]
+
         for index in request.indices[1:]:
             ref_val = ref_val[index]
 
@@ -811,7 +793,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.TensorToNumPyResponse()
 
         tensor = utils_get_obj(request.obj_id)
-        array = tensor.eval()
+        array = tensor.numpy()
         response.pickled_array = pickle.dumps(array)
 
         return response

@@ -28,7 +28,7 @@ service YoloTensorflowWrapper {
 
     // attribute getters
     rpc attribute_tensor_shape(TensorShapeRequest) returns (TensorShapeResponse) {}
-    rpc attribute_model_load__weight(LoadWeightsRequest) returns (LoadWeightsResponse) {}
+    rpc attribute_model_load__weights(LoadWeightsRequest) returns (LoadWeightsResponse) {}
     rpc attribute_checkpoint_expect__partial(ExpectPartialRequest) returns (ExpectPartialResponse) {}
 
     // tensor operations
@@ -80,11 +80,12 @@ message CallRequest {
         bool release = 2;
     }
     uint64 callable_obj_id = 1;
-    bool args_pickled = 2;
-    repeated bytes pickled_args = 3;
-    repeated ObjId obj_ids = 4;
-    int32 num_of_returns = 5;
-    string connection_id = 6;
+    string callable_model_name = 2;
+    bool inference = 3;
+    repeated bytes pickled_args = 4;
+    repeated ObjId obj_ids = 5;
+    int32 num_of_returns = 6;
+    string connection_id = 7;
 }
 
 message CallResponse {
@@ -303,9 +304,9 @@ message TensorShapeResponse {
 }
 
 
-/// attribute_model_load__weight
+/// attribute_model_load__weights
 message LoadWeightsRequest {
-    uint64 model_obj_id = 1;
+    string model_name = 1;
     string weights_path = 2;
     string connection_id = 3;
 }

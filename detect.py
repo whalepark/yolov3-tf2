@@ -73,7 +73,7 @@ def main(_argv):
         yolo = YoloV3(stub=stub, classes=FLAGS.num_classes)
 
     # yolo.load_weights(FLAGS.weights).expect_partial()
-    status_obj_id = TFWrapper.attribute_model_load__weight(stub, yolo, FLAGS.weights) ## todo check if already weighted
+    status_obj_id = TFWrapper.attribute_model_load__weights(stub, 'yolov3', FLAGS.weights) ## todo check if already weighted
     TFWrapper.attribute_checkpoint_expect__partial(stub, status_obj_id)
     logging.info('weights loaded')
 
@@ -98,7 +98,7 @@ def main(_argv):
     # boxes, scores, classes, nums = yolo(img)
     img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
     img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
-    ret_val = TFWrapper.callable_emulator(stub, yolo, False, 1, img_obj_wrapper)
+    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
     ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
     boxes, scores, classes, nums = ret_val
     t2 = time.time()

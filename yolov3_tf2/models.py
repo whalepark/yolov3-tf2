@@ -72,7 +72,7 @@ def DarknetConv(stub, x: int, filters, size, strides=1, batch_norm=True):
         arg_x = CallRequest.ObjId()
         arg_x.obj_id = x
         arg_x.release = True
-        x = TFWrapper.callable_emulator(stub, zero_padding_2d_callable, False, 1, arg_x)
+        x = TFWrapper.callable_emulator(stub, zero_padding_2d_callable, False, 1, '', arg_x)
         padding = 'valid'
     # x = Conv2D(filters=filters, kernel_size=size,
     #            strides=strides, padding=padding,
@@ -84,20 +84,20 @@ def DarknetConv(stub, x: int, filters, size, strides=1, batch_norm=True):
 
     l2_val = TFWrapper.tf_keras_regularizers_l2(stub, 0.0005)
     conv2d_callable = TFWrapper.tf_keras_layers_Conv2D(stub, filters=filters, kernel_size=size, strides=strides, padding=padding, use_bias=not batch_norm, kernel_regularizer=l2_val)
-    x = TFWrapper.callable_emulator(stub, conv2d_callable, False, 1, arg_x)
+    x = TFWrapper.callable_emulator(stub, conv2d_callable, False, 1, '', arg_x)
     if batch_norm:
         # x = BatchNormalization()(x)
         batch_norm_callable = YoloWrapper.BatchNormalization(stub)
         arg_x = CallRequest.ObjId()
         arg_x.obj_id = x
         arg_x.release = True
-        x = TFWrapper.callable_emulator(stub, batch_norm_callable, False, 1, arg_x)
+        x = TFWrapper.callable_emulator(stub, batch_norm_callable, False, 1, '', arg_x)
         # x = LeakyReLU(alpha=0.1)(x)
         leaky_relu_callable = TFWrapper.tf_keras_layers_LeakyReLU(stub, alpha=0.1)
         arg_x = CallRequest.ObjId()
         arg_x.obj_id = x
         arg_x.release = True
-        x = TFWrapper.callable_emulator(stub, leaky_relu_callable, False, 1, arg_x)
+        x = TFWrapper.callable_emulator(stub, leaky_relu_callable, False, 1, '', arg_x)
     return x
 
 # def DarknetResidual(x, filters):
@@ -119,7 +119,7 @@ def DarknetResidual(stub, x, filters):
     arg_prev = CallRequest.ObjId()
     arg_prev.obj_id = prev
     arg_prev.release = True
-    x = TFWrapper.callable_emulator(stub, add_callable, False, 1, arg_prev, arg_x)
+    x = TFWrapper.callable_emulator(stub, add_callable, False, 1, '', arg_prev, arg_x)
     return x
 
 
@@ -212,7 +212,7 @@ def YoloConv(stub, filters, name=None):
             arg_x = CallRequest.ObjId()
             arg_x.obj_id = x
             arg_x.release = True
-            x = TFWrapper.callable_emulator(stub, upsampling_callable_id, False, 1, arg_x)
+            x = TFWrapper.callable_emulator(stub, upsampling_callable_id, False, 1, '', arg_x)
             
             # x = Concatenate()([x, x_skip])
             concatenate_callable_id = TFWrapper.tf_keras_layers_Concatenate(stub)
@@ -220,7 +220,7 @@ def YoloConv(stub, filters, name=None):
             arg_x_skip = CallRequest.ObjId()
             arg_x_skip.obj_id = x_skip
             arg_x_skip.release = True
-            x = TFWrapper.callable_emulator(stub, concatenate_callable_id, False, 1, arg_x, arg_x_skip)
+            x = TFWrapper.callable_emulator(stub, concatenate_callable_id, False, 1, '', arg_x, arg_x_skip)
         else:
             # x = inputs = Input(x_in.shape[1:])
             shape_of_input = TFWrapper.attribute_tensor_shape(stub, x_in, start=1, end=0)
@@ -245,7 +245,7 @@ def YoloConv(stub, filters, name=None):
             arg.release = True
             arg_x_in.append(arg)
 
-        output = TFWrapper.callable_emulator(stub, keras_model_id, False, 1, *arg_x_in)
+        output = TFWrapper.callable_emulator(stub, keras_model_id, False, 1, '', *arg_x_in)
         return output
     return yolo_conv
 
@@ -323,7 +323,7 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
         arg_x = CallRequest.ObjId()
         arg_x.obj_id = x
         arg_x.release = True
-        x = TFWrapper.callable_emulator(stub, callable_layer_object, False, 1, arg_x)
+        x = TFWrapper.callable_emulator(stub, callable_layer_object, False, 1, '', arg_x)
 
         # return tf.keras.Model(inputs, x, name=name)(x_in)
         keras_model_id = TFWrapper.tf_keras_Model(stub, [inputs], [x], name=name)
@@ -334,7 +334,7 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
             arg.obj_id = elem
             arg.release = True
             arg_x_in.append(arg)
-        output = TFWrapper.callable_emulator(stub, keras_model_id, False, 1, *arg_x_in)
+        output = TFWrapper.callable_emulator(stub, keras_model_id, False, 1, '', *arg_x_in)
         return output
     return yolo_output
 
@@ -454,7 +454,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_x = CallRequest.ObjId()
     arg_x.obj_id = x
     arg_x.release = True
-    x_36, x_61, x = TFWrapper.callable_emulator(stub, callable_model_obj_id, False, 3, arg_x)
+    x_36, x_61, x = TFWrapper.callable_emulator(stub, callable_model_obj_id, False, 3, '', arg_x)
     # x_36 = ret_vals[0], x_61 = ret_vals[1], x=ret_vals[0]
 
     x = YoloConv(stub, 512, name='yolo_conv_0')([x])
@@ -476,7 +476,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_boxes_0 = CallRequest.ObjId()
     arg_boxes_0.obj_id = output_0
     arg_boxes_0.release = True
-    boxes_0 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, arg_boxes_0)
+    boxes_0 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, '', arg_boxes_0)
     # print('boxes_s=', boxes_0)
     boxes_0_0_to_3 = TFWrapper.get_iterable_slicing(stub, boxes_0, 0, 3)
 
@@ -487,7 +487,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_boxes_1 = CallRequest.ObjId()
     arg_boxes_1.obj_id = output_1
     arg_boxes_1.release = True
-    boxes_1 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, arg_boxes_1)
+    boxes_1 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, '', arg_boxes_1)
     # print(boxes_1, '\n\n\n')
     boxes_1_0_to_3 = TFWrapper.get_iterable_slicing(stub, boxes_1, 0, 3)
 
@@ -498,7 +498,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_boxes_2 = CallRequest.ObjId()
     arg_boxes_2.obj_id = output_2
     arg_boxes_2.release = True
-    boxes_2 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, arg_boxes_2)
+    boxes_2 = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, '', arg_boxes_2)
     boxes_2_0_to_3 = TFWrapper.get_iterable_slicing(stub, boxes_2, 0, 3)
 
     # outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
@@ -521,7 +521,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     arg_outputs = (arg_boxes_0_0_to_3, arg_boxes_1_0_to_3, arg_boxes_2_0_to_3)
     # arg_outputs = (boxes_0[:3], boxes_1[:3], boxes_2[:3])
     # print(arg_outputs, '\n\n\n\n')
-    outputs = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, *arg_outputs)
+    outputs = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, '', *arg_outputs)
 
     # return tf.keras.Model(inputs, outputs, name='yolov3')
     keras_model_id = TFWrapper.tf_keras_Model(stub, [inputs], [outputs], name='yolov3', fixed=True)
