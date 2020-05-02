@@ -1,23 +1,24 @@
 #include <stdio.h>
-#if 0
-// #include <atomic>
-// #include <thread>
+#include <unistd.h>
 
-// #include <tensorflow/c/c_api.h>
+#include <atomic>
+#include <thread>
 
-// #include <grpcpp/grpcpp.h>
-// #include <grpcpp/health_check_service_interface.h>
-// #include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <tensorflow/c/c_api.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
 
-// #include "yolo.grpc.pb.h"
-// using grpc::Server;
-// using grpc::ServerBuilder;
-// using grpc::ServerContext;
-// using grpc::Status;
+#include "yolo.grpc.pb.h"
 
-// using yolo_tf::HelloReply;
-// using yolo_tf::HelloRequest;
-// using yolo_tf::YoloTensorflowWrapper;
+using grpc::Server;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+
+using yolo_tf::HelloReply;
+using yolo_tf::HelloRequest;
+using yolo_tf::YoloTensorflowWrapper;
 
 // Global Variables
 // Global_Tensor_Dict = {}
@@ -26,12 +27,14 @@
 // Global_Graph_Dict = {}
 // Global_Sess_Dict = {}
 
-// std::atomic<int> conv2d_count(0);
-// std::atomic<int> batch_norm_count(0);
-// std::atomic<int> leaky_re_lu_count(0);
-// std::atomic<int> zero_padding2d_count(0);
-// std::atomic<int> add_count(0);
-// std::atomic<int> lambda_count(0);
+std::atomic<int> conv2d_count(0);
+std::atomic<int> batch_norm_count(0);
+std::atomic<int> leaky_re_lu_count(0);
+std::atomic<int> zero_padding2d_count(0);
+std::atomic<int> add_count(0);
+std::atomic<int> lambda_count(0);
+
+#if 0
 
 // class YoloTensorflowServiceImpl final : public YoloTensorflowWrapper::Service
 // {
@@ -237,8 +240,8 @@
 #endif
 int main(int argc, char *argv[])
 {
-    printf("hello world!");
-    // printf("Hello from TensorFlow C library version %s\n", TF_Version());
+    printf("hello world!\n");
+    printf("Hello from TensorFlow C library version %s\n", TF_Version());
     // RunServer();
     return 0;
 }

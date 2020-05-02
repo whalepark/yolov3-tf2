@@ -3,21 +3,27 @@
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
-CPPFLAGS += `pkg-config --cflags protobuf grpc`
+CPPFLAGS += `pkg-config --cflags protobuf grpc` -pthread
 CXXFLAGS += -std=c++11
+# LDFLAGS += -ltensorflow
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -pthread\
-           -lgrpc++_reflection\
-           -ldl\
-		   -ltensorflow 
+LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -ltensorflow_cc -ltensorflow_framework -lpthread -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -pthread\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl\
-		   -ltensorflow 
+LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -ltensorflow_cc -ltensorflow_framework -lpthread -ldl
 endif
+# ifeq ($(SYSTEM),Darwin)
+# LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
+#            -pthread\
+#            -lgrpc++_reflection\
+# 		   -ltensorflow\
+#            -ldl
+# else
+# LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
+#            -pthread\
+#            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
+# 		   -ltensorflow\
+#            -ldl
+# endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -43,7 +49,7 @@ yolo_server: yolo.pb.o yolo.grpc.pb.o yolo_server.o
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
+	rm -f *.o *.pb.cc *.pb.h yolo_server
 
 
 # The following is to test your system and ensure a smoother experience.

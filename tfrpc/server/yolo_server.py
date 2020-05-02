@@ -1,6 +1,9 @@
 #!/usr/bin/python
 import os
 
+# todo: remove this after debugging
+os.environ['YOLO_SERVER'] = '1'
+
 from concurrent import futures
 import logging
 import grpc
@@ -42,6 +45,7 @@ sys.path.insert(0, os.path.abspath('yolov3_tf2'))
 from batch_norm import BatchNormalization
 from utils import broadcast_iou
 import threading
+from enum import Enum
 # os.chdir(cwd)
 # from collections.abc import Iterable
 # import inspect
@@ -69,12 +73,17 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 
 ## global variables
+Model_Create_Lock = threading.Lock()
+Weights_Load_Lock = threading.Lock()
+Graph_Build_In_Progress = False
+Connection_Id = "";
+
 Global_Tensor_Dict = {}
 Object_Ownership = {}
 Connection_Set = set()
-Global_Graph_Dict = {}
-Global_Sess_Dict = {}
-
+# Global_Graph_Dict = {}
+# Global_Sess_Dict = {}
+Global_Model_Dict = {}
 
 conv2d_count = 0
 batch_norm_count = 0
@@ -83,23 +92,102 @@ zero_padding2d_count=0
 add_count = 0
 lambda_count = 0
 
+class ModelInfo:
+    class State(Enum):
+        BUILD_IN_PROGRESS = 1
+        BUILD_DONE = 2
+        LOAD_WEIGHT_DONE = 3
 
-def utils_byte_chunk(data: bytes, chunk_size: int):
-    start = 0
-    end = chunk_size
-    byte_list = []
+    def __init__(self, name, connection_id):
+        self.name = name
+        self.connection_id = connection_id
+        self.state = ModelInfo.State.BUILD_IN_PROGRESS
+        self.obj_id = -1
+        self.is_weight_loaded = False
+        self.weight_checkpoint = None
 
-    while True:
-        if chunk_size > len(data[start:]): #last iteration
-            byte_list.append(data[start:end])
-            start += len(data[start:])
-            end = start
-            break
+    def set_done(self, obj_id):
+        global Graph_Build_In_Progress, Connection_Id
+
+        self.state = ModelInfo.State.BUILD_DONE
+        Graph_Build_In_Progress = False
+        Connection_Id = ""
+        self.obj_id = obj_id
+
+    def is_done(self):
+        return self.state
+
+    def load_weight(self, model, weights_path):
+        if self.is_weight_loaded:
+            return self.weight_checkpoint
         else:
-            byte_list.append(data[start:end])
-            start += chunk_size
-            end += chunk_size
-    return byte_list
+            with Weights_Load_Lock:
+                self.weight_checkpoint = model.load_weights(weights_path)
+                self.state = ModelInfo.State.LOAD_WEIGHT_DONE
+                self.is_weight_loaded = True
+            return self.weight_checkpoint
+
+    def is_weight_loaded(self, model):
+        return self.is_weight_loaded
+
+class IllegalModelBuildException(Exception):
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return 'IllegalModelBuildException'
+
+class Color:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
+class ModelBuildingAPI:
+    def __init__(self, func):
+        self.func = func
+    
+    def __call__(self, *args, **kwargs):
+        request = args[0]
+        # print('misun: length=', len(args))
+        # for arg in args:
+        #     print('misun: arg=', arg)
+        #     print('misun: type=', type(arg))
+        # print('misun: length=', len(kwargs))
+
+        # for k,v in kwargs:
+        #     print('misun: kwarg=',  k,v )
+        #     print('misun: type=',  type(k), type(v) )
+        if request.connection_id != Connection_Id:
+            print(Color.RED + 'ERROR: Connection ID mismatch!' + Color.END)
+            print(f'request.connection_id={request.connection_id}, Connection_Id={Connection_Id}')
+            raise IllegalModelBuildException
+        else: 
+            return self.func(*args, **kwargs)
+
+
+# def utils_byte_chunk(data: bytes, chunk_size: int):
+#     start = 0
+#     end = chunk_size
+#     byte_list = []
+
+#     while True:
+#         if chunk_size > len(data[start:]): #last iteration
+#             byte_list.append(data[start:end])
+#             start += len(data[start:])
+#             end = start
+#             break
+#         else:
+#             byte_list.append(data[start:end])
+#             start += chunk_size
+#             end += chunk_size
+#     return byte_list
 
 def utils_get_obj(obj_id: int):
     return Global_Tensor_Dict[obj_id]
@@ -123,15 +211,7 @@ def utils_is_iterable(obj):
         return True
     except TypeError:
         #  my_object, 'is not iterable'
-        return False      
-
-def utils_flatten_container(container):
-    for i in container:
-        if isinstance(i, (list,tuple)):
-            for j in flatten(i):
-                yield j
-        else:
-            yield i
+        return False
 
 def utils_convert_elem_into_array(source: list, destination: list):
     destination[0] = [None for _ in range(len(source))]
@@ -205,6 +285,26 @@ def yolo_nms(outputs, anchors, masks, classes):
 
 
 class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
+    def ModelBuildingAPI(decoratee_func):
+        def decorator_func(self, *args, **kwargs):
+            request = args[0]
+            # print('misun: length=', len(args))
+            # for arg in args:
+            #     print('misun: arg=', arg)
+            #     print('misun: type=', type(arg))
+            # print('misun: length=', len(kwargs))
+
+            # for k,v in kwargs:
+            #     print('misun: kwarg=',  k,v )
+            #     print('misun: type=',  type(k), type(v) )
+            if request.connection_id != Connection_Id:
+                print(Color.RED + 'ERROR: Connection ID mismatch!' + Color.END)
+                print(f'request.connection_id={request.connection_id}, Connection_Id={Connection_Id}')
+                raise IllegalModelBuildException
+            else: 
+                return self.decoratee_func(*args, **kwargs)
+        return decoratee_func
+
     def Connect(self, request, context):
         print(f'\nConnect: {request.id}')
         response = yolo_pb2.ConnectResponse()
@@ -214,8 +314,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            Global_Graph_Dict[request.id] = tf.Graph()
-            Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
+            # Global_Graph_Dict[request.id] = tf.Graph()
+            # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
           
         return response
 
@@ -224,12 +324,38 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response = yolo_pb2.DisconnectResponse()
 
         Connection_Set.remove(request.id)
-        Global_Sess_Dict[request.id].close()
-        del Global_Graph_Dict[request.id]
-        del Global_Sess_Dict[request.id]
+        # Global_Sess_Dict[request.id].close()
+        # del Global_Graph_Dict[request.id]
+        # del Global_Sess_Dict[request.id]
+        ## todo: global model dict
         threading.Thread(target = utils_collect_garbage, args=[request.id]).start()
 
         return response
+
+    def CheckIfModelExist(self, request, context):
+        global Graph_Build_In_Progress, Connection_Id
+
+        print(f'\CheckIfModelExist')
+        response = yolo_pb2.CheckModelExistResponse()
+
+        if request.name in Global_Model_Dict:
+            if Global_Model_Dict[request.name].state is ModelInfo.State.BUILD_IN_PROGRESS:
+                response.exist = True
+                response.model_obj_id = 0
+            else:
+                response.exist = True
+                response.model_obj_id = Global_Model_Dict[request.name].obj_id
+        else: # no model, give this connection the lock
+            if request.plan_to_make:
+                with Model_Create_Lock:
+                    Graph_Build_In_Progress = True
+                    Connection_Id = request.connection_id
+                    Global_Model_Dict[request.name] = ModelInfo(request.name, request.connection_id)
+            response.exist = False
+            response.model_obj_id = 0
+    
+        return response
+
     
     def SayHello(self, request, context):
         return yolo_pb2.HelloReply(message=f'Hello, {request.name}')
@@ -237,177 +363,186 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def callable_emulator(self, request, context):
         print(f'\ncallable_emulator')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
         # with tf.variable_scope(request.connection_id, reuse=True):
-            response = yolo_pb2.CallResponse()
-            
-            callable_obj_id = request.callable_obj_id
-            temp_args = []
-            del_list = []
+        response = yolo_pb2.CallResponse()
+        
+        callable_obj_id = request.callable_obj_id
+        temp_args = []
+        del_list = []
 
-            ret_val = []
-            ret_val1: int
-            ret_val2: int
-            ret_val3: int
-            ret_val4: int
+        ret_val = []
+        ret_val1: int
+        ret_val2: int
+        ret_val3: int
+        ret_val4: int
 
-            if request.args_pickled:
-                for arg in request.pickled_args:
-                    temp_args.append(pickle.loads(arg))
-            else:
-                for arg in request.obj_ids:
-                    obj = utils_get_obj(arg.obj_id)
-                    temp_args.append(obj)
-                    if arg.release:
-                        del_list.append(arg.obj_id)
+        if request.args_pickled:
+            for arg in request.pickled_args:
+                temp_args.append(pickle.loads(arg))
+        else:
+            for arg in request.obj_ids:
+                obj = utils_get_obj(arg.obj_id)
+                temp_args.append(obj)
+                if arg.release:
+                    del_list.append(arg.obj_id)
 
-            if len(temp_args) > 1:
-                args = temp_args
-            else:
-                args = temp_args[0]
-            
-            callable_obj = utils_get_obj(callable_obj_id)
-            print(f'callable={type(callable_obj)}\nname={callable_obj.name}\narg_type={type(args)}')
+        if len(temp_args) > 1:
+            args = temp_args
+        else:
+            args = temp_args[0]
+        
+        callable_obj = utils_get_obj(callable_obj_id)
+        print(f'callable={type(callable_obj)}\nname={callable_obj.name}\narg_type={type(args)}')
 
-            if request.num_of_returns == 1:
-                ret_val1 = callable_obj(args)
-                try:
-                    print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
-                    print(f'misun: type={type(ret_val1[0])}, length={len(ret_val1[0])}')
-                except:
-                    pass
-                ret_val.append(ret_val1)
-            elif request.num_of_returns == 2:
-                ret_val1, ret_val2 = callable_obj(args)
-                ret_val.append(ret_val1)
-                ret_val.append(ret_val2)
-            elif request.num_of_returns == 3:
-                ret_val1, ret_val2, ret_val3 = callable_obj(args)
-                ret_val.append(ret_val1)
-                ret_val.append(ret_val2)
-                ret_val.append(ret_val3)
-            elif request.num_of_returns == 4:
-                ret_val1, ret_val2, ret_val3, ret_val4 = callable_obj(args)
-                ret_val.append(ret_val1)
-                ret_val.append(ret_val2)
-                ret_val.append(ret_val3)
-                ret_val.append(ret_val4)
-            else:
-                print('error!, request.num_of_returns=',request.num_of_returns)
-                return None
-
+        if request.num_of_returns == 1:
+            ret_val1 = callable_obj(args)
             try:
-                # print('try')
-                # pickled_result = pickle.dumps(ret_val)
-                response.pickled = True
-                for elem in ret_val:
-                    pickled = pickle.dumps(elem)
-                    response.pickled_result.append(pickled)
-            except TypeError:
-                # print('except TypeError')
-                response.pickled = False
-                for val in ret_val:
-                    response.obj_ids.append(utils_set_obj(val, request.connection_id))
-            finally:
-                return response
+                print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
+                print(f'misun: type={type(ret_val1[0])}, length={len(ret_val1[0])}')
+            except:
+                pass
+            ret_val.append(ret_val1)
+        elif request.num_of_returns == 2:
+            ret_val1, ret_val2 = callable_obj(args)
+            ret_val.append(ret_val1)
+            ret_val.append(ret_val2)
+        elif request.num_of_returns == 3:
+            ret_val1, ret_val2, ret_val3 = callable_obj(args)
+            ret_val.append(ret_val1)
+            ret_val.append(ret_val2)
+            ret_val.append(ret_val3)
+        elif request.num_of_returns == 4:
+            ret_val1, ret_val2, ret_val3, ret_val4 = callable_obj(args)
+            ret_val.append(ret_val1)
+            ret_val.append(ret_val2)
+            ret_val.append(ret_val3)
+            ret_val.append(ret_val4)
+        else:
+            print('error!, request.num_of_returns=',request.num_of_returns)
+            return None
+
+        try:
+            # print('try')
+            # pickled_result = pickle.dumps(ret_val)
+            response.pickled = True
+            for elem in ret_val:
+                pickled = pickle.dumps(elem)
+                response.pickled_result.append(pickled)
+        except TypeError:
+            # print('except TypeError')
+            response.pickled = False
+            for val in ret_val:
+                response.obj_ids.append(utils_set_obj(val, request.connection_id))
+        finally:
+            return response
 
     def get_iterable_slicing(self, request, context):
         print('\nget_iterable_slcing')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.SlicingResponse()
+        response = yolo_pb2.SlicingResponse()
 
-            obj = utils_get_obj(request.iterable_id)
-            sliced_obj = obj[request.start:request.end]
-            response.obj_id = utils_set_obj(sliced_obj, request.connection_id)
+        obj = utils_get_obj(request.iterable_id)
+        sliced_obj = obj[request.start:request.end]
+        response.obj_id = utils_set_obj(sliced_obj, request.connection_id)
 
-            return response
+        return response
 
     def config_experimental_list__physical__devices(self, request, context):
         print('\nconfig_experimental_list__physical__devices')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response=yolo_pb2.PhysicalDevices()
-            
-            tf_physical_devices = tf.config.experimental.list_physical_devices(request.device_type)
-            for tf_physical_device in tf_physical_devices:
-                physical_device = yolo_pb2.PhysicalDevices.PhysicalDevice()
-                physical_device.name = tf_physical_device.name
-                physical_device.device_type = tf_physical_device.device_type
-                response.devices.append(physical_device)
+        response=yolo_pb2.PhysicalDevices()
+        
+        tf_physical_devices = tf.config.experimental.list_physical_devices(request.device_type)
+        for tf_physical_device in tf_physical_devices:
+            physical_device = yolo_pb2.PhysicalDevices.PhysicalDevice()
+            physical_device.name = tf_physical_device.name
+            physical_device.device_type = tf_physical_device.device_type
+            response.devices.append(physical_device)
 
-            return response
+        return response
 
     def image_decode__image(self, request, context):
         print('\nimage_decode__image')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response=yolo_pb2.DecodeImageResponse()
-            # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
-            image_raw = tf.image.decode_image(request.byte_image, channels=request.channels, expand_animations=False)
-            obj_id = utils_set_obj(image_raw, request.connection_id)
-            print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
+        response=yolo_pb2.DecodeImageResponse()
+        # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
+        image_raw = tf.image.decode_image(request.byte_image, channels=request.channels, expand_animations=False)
+        obj_id = utils_set_obj(image_raw, request.connection_id)
+        print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
 
-            response.obj_id=obj_id
-            return response
+        response.obj_id=obj_id
+        return response
 
     def expand__dims(self, request, context):
         print('\nexpand__dims')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response=yolo_pb2.ExpandDemensionResponse()
-            image_obj_id = request.obj_id
-            image_obj = utils_get_obj(image_obj_id)
-            tensor = tf.expand_dims(image_obj, request.axis)
-            tensor_obj_id = utils_set_obj(tensor, request.connection_id)
-            response.obj_id=tensor_obj_id
+        response=yolo_pb2.ExpandDemensionResponse()
+        image_obj_id = request.obj_id
+        image_obj = utils_get_obj(image_obj_id)
+        tensor = tf.expand_dims(image_obj, request.axis)
+        tensor_obj_id = utils_set_obj(tensor, request.connection_id)
+        response.obj_id=tensor_obj_id
 
-            return response
+        return response
 
+    @ModelBuildingAPI
     def keras_Model(self, request, context):
         print('\nkeras_Model')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+    # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.ModelResponse()
+        response = yolo_pb2.ModelResponse()
 
-            inputs = []
-            for id in request.input_ids:
-                inputs.append(utils_get_obj(id))
-            outputs = []
-            for id in request.output_ids:
-                outputs.append(utils_get_obj(id))
-            name = request.name
+        inputs = []
+        for id in request.input_ids:
+            inputs.append(utils_get_obj(id))
+        outputs = []
+        for id in request.output_ids:
+            outputs.append(utils_get_obj(id))
+        name = request.name
 
-            result = Model(inputs, outputs, name=name)
-            response.obj_id = utils_set_obj(result, request.connection_id)
-            return response
+        result = Model(inputs, outputs, name=name)
+        response.obj_id = utils_set_obj(result, request.connection_id)
 
+        if request.fixed:
+            if request.name not in Global_Model_Dict:
+                raise IllegalModelBuildException
+            else:
+                Global_Model_Dict[request.name].set_done(response.obj_id)
 
+        return response
+
+    @ModelBuildingAPI
     def keras_layers_Input(self, request, context):
         print('\nkeras_layers_Input')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.InputResponse()
-            shape=[]
-            for i in request.shape:
-                if i is 0:
-                    shape.append(None)
-                else:
-                    shape.append(i)
+        response = yolo_pb2.InputResponse()
+        shape=[]
+        for i in request.shape:
+            if i is 0:
+                shape.append(None)
+            else:
+                shape.append(i)
 
-            print(shape)
-            inputs = Input(shape, name=request.name)
+        print(shape)
+        inputs = Input(shape, name=request.name)
 
-            ## because keras input is not picklable
-            response.obj_id = utils_set_obj(inputs, request.connection_id)
-            return response
+        ## because keras input is not picklable
+        response.obj_id = utils_set_obj(inputs, request.connection_id)
+        return response
 
+    @ModelBuildingAPI
     def keras_layers_ZeroPadding2D(self, request, context):
         global zero_padding2d_count
         zero_padding2d_count += 1
@@ -416,21 +551,21 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_ZeroPadding2D')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.ZeroPadding2DResponse()
-            
-            padding = pickle.loads(request.padding)
-            data_format = None
-            if len(request.data_format) > 0:
-                data_format = request.data_format
+        response = yolo_pb2.ZeroPadding2DResponse()
+        
+        padding = pickle.loads(request.padding)
+        data_format = None
+        if len(request.data_format) > 0:
+            data_format = request.data_format
 
-            zero_padding_2d = ZeroPadding2D(padding, data_format, name=request.name)
-            response.obj_id = utils_set_obj(zero_padding_2d, request.connection_id)
+        zero_padding_2d = ZeroPadding2D(padding, data_format, name=request.name)
+        response.obj_id = utils_set_obj(zero_padding_2d, request.connection_id)
 
-            return response
+        return response
 
-    
+    @ModelBuildingAPI
     def keras_layers_Conv2D(self, request, context):
         global conv2d_count
         conv2d_count += 1
@@ -439,26 +574,27 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Conv2D')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.Conv2DResponse()
+        response = yolo_pb2.Conv2DResponse()
 
-            filters = request.filters
-            kernel_size = pickle.loads(request.pickled_kernel_size)
-            strides = pickle.loads(request.pickled_strides)
-            padding = request.padding
-            use_bias = request.use_bias
-            if request.pickled_kernel_regularizer is not None:
-                kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
-            else:
-                kernel_regularizer = None
-            print('type', type(kernel_regularizer))
+        filters = request.filters
+        kernel_size = pickle.loads(request.pickled_kernel_size)
+        strides = pickle.loads(request.pickled_strides)
+        padding = request.padding
+        use_bias = request.use_bias
+        if request.pickled_kernel_regularizer is not None:
+            kernel_regularizer = pickle.loads(request.pickled_kernel_regularizer)
+        else:
+            kernel_regularizer = None
+        print('type', type(kernel_regularizer))
 
-            conv_2d = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=use_bias, kernel_regularizer=kernel_regularizer, name=request.name)
+        conv_2d = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides, padding=padding, use_bias=use_bias, kernel_regularizer=kernel_regularizer, name=request.name)
 
-            response.obj_id = utils_set_obj(conv_2d, request.connection_id)
-            return response
+        response.obj_id = utils_set_obj(conv_2d, request.connection_id)
+        return response
 
+    @ModelBuildingAPI
     def batch_normalization(self, request, context):
         global batch_norm_count
         batch_norm_count += 1
@@ -467,14 +603,15 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nbatch_normalization')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.BatchNormResponse()
-            callable_obj = BatchNormalization(name=request.name)
+        response = yolo_pb2.BatchNormResponse()
+        callable_obj = BatchNormalization(name=request.name)
 
-            response.obj_id = utils_set_obj(callable_obj, request.connection_id)
-            return response
+        response.obj_id = utils_set_obj(callable_obj, request.connection_id)
+        return response
 
+    @ModelBuildingAPI
     def keras_layers_LeakyReLU(self, request, context):
         global leaky_re_lu_count
         leaky_re_lu_count += 1
@@ -483,16 +620,17 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_LeakyReLU')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
-            response = yolo_pb2.LeakyReluResponse()
-            alpha = request.alpha
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        response = yolo_pb2.LeakyReluResponse()
+        alpha = request.alpha
 
-            callable_obj = LeakyReLU(alpha = alpha, name=request.name)
-            print(f'leakyreluname={callable_obj.name}')
-            response.obj_id = utils_set_obj(callable_obj, request.connection_id)
+        callable_obj = LeakyReLU(alpha = alpha, name=request.name)
+        print(f'leakyreluname={callable_obj.name}')
+        response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
-            return response
+        return response
 
+    @ModelBuildingAPI
     def keras_layers_Add(self, request, context):
         global add_count
         add_count += 1
@@ -501,63 +639,64 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Add')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.AddResponse()
-            callable_obj = Add(name = request.name)
-            response.obj_id = utils_set_obj(callable_obj, request.connection_id)
+        response = yolo_pb2.AddResponse()
+        callable_obj = Add(name = request.name)
+        response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
-            return response
+        return response
 
     def attribute_tensor_shape(self, request, context):
         print('\nattribute_tensor_shape')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.TensorShapeResponse()
-            obj = utils_get_obj(request.obj_id)
-            start = end = 0
+        response = yolo_pb2.TensorShapeResponse()
+        obj = utils_get_obj(request.obj_id)
+        start = end = 0
 
-            if request.start == 0:
-                start = 0
+        if request.start == 0:
+            start = 0
 
-            if request.end == 0:
-                end = len(obj.shape)
+        if request.end == 0:
+            end = len(obj.shape)
 
-            shape = obj.shape[start:end]
-            print(shape)
-            # response.pickled_shape=pickle.dumps(shape)
-            # response.obj_id = utils_set_obj(shape)
-            for elem in shape:
-                if elem is None:
-                    response.shape.append(-1)
-                else:
-                    response.shape.append(elem)
+        shape = obj.shape[start:end]
+        print(shape)
+        # response.pickled_shape=pickle.dumps(shape)
+        # response.obj_id = utils_set_obj(shape)
+        for elem in shape:
+            if elem is None:
+                response.shape.append(-1)
+            else:
+                response.shape.append(elem)
 
-            return response
+        return response
 
     def attribute_model_load__weight(self, request, context):
         print('\attribute_model_load__weight')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.LoadWeightsResponse()
-            model = utils_get_obj(request.model_obj_id)
-            checkpoint = model.load_weights(request.weights_path)
-            response.obj_id = utils_set_obj(checkpoint, request.connection_id)
+        response = yolo_pb2.LoadWeightsResponse()
+        model = utils_get_obj(request.model_obj_id)
+        checkpoint = model.load_weights(request.weights_path) # check if already weighted
+        response.obj_id = utils_set_obj(checkpoint, request.connection_id)
 
-            return response
+        return response
 
     def attribute_checkpoint_expect__partial(self, request, context):
         print('\attribute_checkpoint_expect__partial')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.ExpectPartialResponse()
-            checkpoint = utils_get_obj(request.obj_id)
-            checkpoint.expect_partial()
-            return response
-    
+        response = yolo_pb2.ExpectPartialResponse()
+        checkpoint = utils_get_obj(request.obj_id)
+        checkpoint.expect_partial()
+        return response
+
+    @ModelBuildingAPI    
     def keras_layers_Lambda(self, request, context):
         global lambda_count
         lambda_count += 1
@@ -566,125 +705,128 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         print('\nkeras_layers_Lambda')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.LambdaResponse()
-            lambda_func = lambda x: eval(request.expr)
-            lambda_obj = Lambda(lambda_func, name=request.name)
-            response.obj_id = utils_set_obj(lambda_obj, request.connection_id)
+        response = yolo_pb2.LambdaResponse()
+        lambda_func = lambda x: eval(request.expr)
+        lambda_obj = Lambda(lambda_func, name=request.name)
+        response.obj_id = utils_set_obj(lambda_obj, request.connection_id)
 
-            return response
+        return response
 
+    @ModelBuildingAPI
     def keras_layers_UpSampling2D(self, request, context):
         print('\keras_layers_UpSampling2D')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.UpSampling2DResponse()
-            callable_obj = UpSampling2D(request.size)
-            response.obj_id = utils_set_obj(callable_obj, request.connection_id)
+        response = yolo_pb2.UpSampling2DResponse()
+        callable_obj = UpSampling2D(request.size)
+        response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
-            return response
+        return response
 
+    @ModelBuildingAPI
     def keras_layers_Concatenate(self, request, context):
         print('\keras_layers_UpSampling2D')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.ContcatenateResponse()
-            callable_obj = Concatenate()
-            response.obj_id = utils_set_obj(callable_obj, request.connection_id)
+        response = yolo_pb2.ContcatenateResponse()
+        callable_obj = Concatenate()
+        response.obj_id = utils_set_obj(callable_obj, request.connection_id)
 
-            return response
+        return response
 
+    @ModelBuildingAPI
     def keras_regularizers_l2(self, request, context):
         print('\nkeras_regularizers_l2')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.l2Response()
-            l2_value = l2(request.l)
-            picked_l2 = pickle.dumps(l2_value)
-            response.pickled_l2 = picked_l2
+        response = yolo_pb2.l2Response()
+        l2_value = l2(request.l)
+        picked_l2 = pickle.dumps(l2_value)
+        response.pickled_l2 = picked_l2
 
-            return response
+        return response
 
     def image_resize(self, request, context):
         print('\nimage_resize')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
-            response = yolo_pb2.ImageResizeResponse()
-            image_id = request.obj_id
-            image = utils_get_obj(image_id)
-            size = []
-            for elem in request.size:
-                size.append(elem)
-            
-            tensor = tf.image.resize(image, size)
-            response.obj_id = utils_set_obj(tensor, request.connection_id)
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        response = yolo_pb2.ImageResizeResponse()
+        image_id = request.obj_id
+        image = utils_get_obj(image_id)
+        size = []
+        for elem in request.size:
+            size.append(elem)
+        
+        tensor = tf.image.resize(image, size)
+        response.obj_id = utils_set_obj(tensor, request.connection_id)
 
         return response
 
     def tensor_op_divide(self, request, context):
         print('\ntensor_op_divide')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.DivideResponse()
-            tensor_obj = utils_get_obj(request.obj_id)
-            divisor = request.divisor
+        response = yolo_pb2.DivideResponse()
+        tensor_obj = utils_get_obj(request.obj_id)
+        divisor = request.divisor
 
-            result = tensor_obj / divisor
-            response.obj_id = utils_set_obj(result, request.connection_id)
-            return response
+        result = tensor_obj / divisor
+        response.obj_id = utils_set_obj(result, request.connection_id)
+        return response
 
     def iterable_indexing(self, request, context):
         print('\niterable_indexing')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.IndexingResponse()
-            iterable = utils_get_obj(request.obj_id)
-            indices = []
+        response = yolo_pb2.IndexingResponse()
+        iterable = utils_get_obj(request.obj_id)
+        indices = []
 
-            ref_val = iterable[request.indices[0]]
-            for index in request.indices[1:]:
-                ref_val = ref_val[index]
+        ref_val = iterable[request.indices[0]]
+        for index in request.indices[1:]:
+            ref_val = ref_val[index]
 
-            try:
-                if len(ref_val) > 0:
-                    new_ref_val = [[]]
-                    utils_convert_elem_into_array(ref_val, new_ref_val)
-                    response.pickled_result = pickle.dumps(new_ref_val[0])
-            except TypeError:
-                response.pickled_result = pickle.dumps(ref_val.eval())
+        try:
+            if len(ref_val) > 0:
+                new_ref_val = [[]]
+                utils_convert_elem_into_array(ref_val, new_ref_val)
+                response.pickled_result = pickle.dumps(new_ref_val[0])
+        except TypeError:
+            response.pickled_result = pickle.dumps(ref_val.eval())
 
-            return response
+        return response
 
     def byte_tensor_to_numpy(self, request, context):
         print('\nbyte_tensor_to_numpy')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.TensorToNumPyResponse()
+        response = yolo_pb2.TensorToNumPyResponse()
 
-            tensor = utils_get_obj(request.obj_id)
-            array = tensor.eval()
-            response.pickled_array = pickle.dumps(array)
+        tensor = utils_get_obj(request.obj_id)
+        array = tensor.eval()
+        response.pickled_array = pickle.dumps(array)
 
-            return response
+        return response
 
     def get_object_by_id(self, request, context):
         print('\nget_object_by_id')
         _id = request.connection_id
-        with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
+        # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
 
-            response = yolo_pb2.GetObjectResponse()
+        response = yolo_pb2.GetObjectResponse()
 
-            _object = utils_get_obj(request.obj_id)
-            response.object = pickle.dumps(_object)
+        _object = utils_get_obj(request.obj_id)
+        response.object = pickle.dumps(_object)
 
-            return response
+        return response
 
 
 def serve():

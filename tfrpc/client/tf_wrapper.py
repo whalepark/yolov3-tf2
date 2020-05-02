@@ -48,17 +48,9 @@ class ControlProcedure:
 
         request.name = name
         response = stub.SayHello(request)
-        print(response.name)
+        print(response.message)
 
-    @staticmethod
-    def CheckIfModelExist(stub, name):
-        request = yolo_pb2.CheckModelExistResponse()
-        response: yolo_pb2.HelloReply
 
-        request.connection_id = ControlProcedure.client_id
-        request.name = name
-        response = stub.CheckIfModelExist(request)
-        return response.exist, response.model_obj_id
 
 class TFWrapper:
     @staticmethod
@@ -202,7 +194,7 @@ class TFWrapper:
         return input_id
 
     @staticmethod
-    def tf_keras_Model(stub, inputs, outputs, name: str):
+    def tf_keras_Model(stub, inputs, outputs, name: str, fixed=False):
         # tf.keras.Model(inputs, (output_0, output_1, output_2), name='yolov3')
         request = yolo_pb2.ModelRequest()
         response: yolo_pb2.ModelResponse()
@@ -214,6 +206,7 @@ class TFWrapper:
             request.output_ids.append(elem)
         request.name = name
         request.connection_id = ControlProcedure.client_id
+        request.fixed = fixed
 
         response = stub.keras_Model(request)
 
@@ -475,6 +468,18 @@ class TFWrapper:
 
 
 class YoloWrapper:
+    @staticmethod
+    def CheckIfModelExist(stub, name, plan_to_make=False):
+        request = yolo_pb2.CheckModelExistRequest()
+        response: yolo_pb2.CheckModelExistResponse
+
+        request.connection_id = ControlProcedure.client_id
+        request.name = name
+        request.plan_to_make=plan_to_make
+
+        response = stub.CheckIfModelExist(request)
+        return response.exist, response.model_obj_id
+
     @staticmethod
     def BatchNormalization(stub):
         # global batch_norm_count

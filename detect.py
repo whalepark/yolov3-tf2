@@ -48,6 +48,7 @@ def finalize():
     ControlProcedure.Disconnect(g_stub)
     
 def main(_argv):
+    os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
     server_addr = os.environ.get('SERVER_ADDR')
     channel = grpc.insecure_channel(f'{server_addr}:1990', \
         options=[('grpc.max_send_message_length', 50 * 1024 * 1024), \
@@ -56,8 +57,7 @@ def main(_argv):
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)
 
-    ControlProcedure.SayHello(stub, 'misun')
-    exit()
+    # ControlProcedure.SayHello(stub, 'misun')
 
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
@@ -73,7 +73,7 @@ def main(_argv):
         yolo = YoloV3(stub=stub, classes=FLAGS.num_classes)
 
     # yolo.load_weights(FLAGS.weights).expect_partial()
-    status_obj_id = TFWrapper.attribute_model_load__weight(stub, yolo, FLAGS.weights)
+    status_obj_id = TFWrapper.attribute_model_load__weight(stub, yolo, FLAGS.weights) ## todo check if already weighted
     TFWrapper.attribute_checkpoint_expect__partial(stub, status_obj_id)
     logging.info('weights loaded')
 

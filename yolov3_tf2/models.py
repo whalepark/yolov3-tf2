@@ -22,7 +22,7 @@ import numpy as np
 # from .batch_norm import BatchNormalization ### need to be removed
 from .utils import broadcast_iou
 
-import sys, os
+import sys, os, time
 cwd = os.getcwd()
 os.chdir(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath('../tfrpc/client'))
@@ -30,7 +30,7 @@ from tf_wrapper import TFWrapper, YoloWrapper
 os.chdir(cwd)
 from yolo_pb2 import CallRequest
 
-import pickle
+import random
 
 flags.DEFINE_integer('yolo_max_boxes', 100,
                      'maximum number of boxes per image')
@@ -435,9 +435,16 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
 def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
            masks=yolo_anchor_masks, classes=80, training=False):
     # x = inputs = Input([size, size, channels], name='input')
-    is_exist, keras_model_id = ControlProcedure.CheckIfModelExist(stub, name='yolov3')
+    is_exist, keras_model_id = YoloWrapper.CheckIfModelExist(stub, name='yolov3', plan_to_make=True)
     if is_exist:
-        return keras_model_id
+        if keras_model_id is 0:
+            while True:
+                time.sleep(random.uniform(1, 3))
+                _, keras_model_id = YoloWrapper.CheckIfModelExist(stub, name='yolov3', plan_to_make=True)
+                if keras_model_id is not 0:
+                    return keras_model_id
+        else:
+            return keras_model_id
 
 
     x = inputs = TFWrapper.tf_keras_layers_Input(stub, [size, size, channels], name='input')
@@ -517,7 +524,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     outputs = TFWrapper.callable_emulator(stub, lambda_callable_id, False, 1, *arg_outputs)
 
     # return tf.keras.Model(inputs, outputs, name='yolov3')
-    keras_model_id = TFWrapper.tf_keras_Model(stub, [inputs], [outputs], name='yolov3')
+    keras_model_id = TFWrapper.tf_keras_Model(stub, [inputs], [outputs], name='yolov3', fixed=True)
     return keras_model_id
 
 

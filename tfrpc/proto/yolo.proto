@@ -6,7 +6,6 @@ service YoloTensorflowWrapper {
     rpc SayHello (HelloRequest) returns (HelloReply) {}
     rpc Connect (ConnectRequest) returns (ConnectResponse) {}
     rpc Disconnect (DisconnectRequest) returns (DisconnectResponse) {}
-    rpc CheckIfModelExist (CheckModelExistRequest) returns (CheckModelExistResponse) {}
 
     // TF Wrappers
     rpc callable_emulator (CallRequest) returns (CallResponse) {}
@@ -41,6 +40,7 @@ service YoloTensorflowWrapper {
     rpc get_object_by_id(GetObjectRequest) returns (GetObjectResponse) {}
 
     // YoloWrappers
+    rpc CheckIfModelExist (CheckModelExistRequest) returns (CheckModelExistResponse) {}
     rpc batch_normalization (BatchNormRequest) returns (BatchNormResponse) {}
 
 }
@@ -72,20 +72,6 @@ message HelloRequest {
 message HelloReply {
     string message = 1;
 }
-
-
-/// CheckIfModelExist
-
-message CheckModelExistRequest {
-    string connection_id = 1;
-    string name = 2;
-}
-
-message CheckModelExistResponse {
-    bool exist = 1;
-    uint64 model_obj_id = 2;
-}
-
 
 /// callable_emulator
 message CallRequest {
@@ -184,6 +170,7 @@ message ModelRequest {
     repeated uint64 output_ids = 2;
     string name = 3;
     string connection_id = 4;
+    bool fixed = 5;
 }
 
 message ModelResponse {
@@ -391,6 +378,17 @@ message GetObjectResponse {
 /////////////////////////////////
 
 /// Yolo Wrappers
+
+/// CheckIfModelExist
+message CheckModelExistRequest {
+    string connection_id = 1;
+    string name = 2;
+    bool plan_to_make = 3;
+}
+message CheckModelExistResponse {
+    bool exist = 1;
+    uint64 model_obj_id = 2;
+}
 
 /// batch_normalization
 message BatchNormRequest {
