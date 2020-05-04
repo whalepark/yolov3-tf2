@@ -317,6 +317,8 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
         # x = Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2],
                                             # anchors, classes + 5)))(x)
         lambda_x_str = f'tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2], {anchors}, {classes} + 5))'
+        # lambda_x_str = f'tf.keras.layers.Reshape((-1, tf.shape(x)[1], tf.shape(x)[2], {anchors}, {classes} + 5))(x)'
+        # lambda_x_str = f'lambda x: tf.keras.layers.Reshape((-1, tf.shape(x)[1], tf.shape(x)[2], {anchors}, {classes} + 5))(x)'
         callable_layer_object = TFWrapper.tf_keras_layers_Lambda(stub, lambda_x_str)
         # callable_layer_object = Lambda(lambda_obj_id) ### Todo
 
@@ -472,6 +474,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     # boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
     #                  name='yolo_boxes_0')(output_0)
     lambda_str = f'yolo_boxes(x, yolo_anchors[yolo_anchor_masks[0]], 80)'
+    # lambda_str = f'lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[0]], 80)'
     lambda_callable_id = TFWrapper.tf_keras_layers_Lambda(stub, lambda_str, name='yolo_boxes_0')
     arg_boxes_0 = CallRequest.ObjId()
     arg_boxes_0.obj_id = output_0
@@ -481,8 +484,9 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     boxes_0_0_to_3 = TFWrapper.get_iterable_slicing(stub, boxes_0, 0, 3)
 
     # boxes_1 = Lambda(lambda x: yolo_boxes(x, anchors[masks[1]], classes),
-    #                  name='yolo_boxes_1')(output_1)
+                    #  name='yolo_boxes_1')(output_1)
     lambda_str = f'yolo_boxes(x, yolo_anchors[yolo_anchor_masks[1]], 80)'
+    # lambda_str = f'lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[1]], 80)'
     lambda_callable_id = TFWrapper.tf_keras_layers_Lambda(stub, lambda_str, name='yolo_boxes_1')
     arg_boxes_1 = CallRequest.ObjId()
     arg_boxes_1.obj_id = output_1
@@ -494,6 +498,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     # boxes_2 = Lambda(lambda x: yolo_boxes(x, anchors[masks[2]], classes),
     #                  name='yolo_boxes_2')(output_2)
     lambda_str = f'yolo_boxes(x, yolo_anchors[yolo_anchor_masks[2]], 80)'
+    # lambda_str = f'lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[2]], 80)'
     lambda_callable_id = TFWrapper.tf_keras_layers_Lambda(stub, lambda_str, name='yolo_boxes_2')
     arg_boxes_2 = CallRequest.ObjId()
     arg_boxes_2.obj_id = output_2
@@ -504,6 +509,7 @@ def YoloV3(stub, size=None, channels=3, anchors=yolo_anchors,
     # outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
     #                  name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
     lambda_str = f'yolo_nms(x, yolo_anchors, yolo_anchor_masks, 80)'
+    # lambda_str = f'lambda x: yolo_nms(x, yolo_anchors, yolo_anchor_masks, 80)'
     lambda_callable_id = TFWrapper.tf_keras_layers_Lambda(stub, lambda_str, name='yolo_nms')
     
     arg_boxes_0_0_to_3 = CallRequest.ObjId()

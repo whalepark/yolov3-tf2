@@ -1,8 +1,24 @@
 #!/usr/bin/python
 import os
 
-# todo: remove this after debugging
+# todo: remove these after debugging
 os.environ['YOLO_SERVER'] = '1'
+from multiprocessing import Process, Pipe, Manager
+# import time
+# import contexttimer
+def child_process(func):
+    """Makes the function run as a separate process."""
+    def wrapper(*args, **kwargs):
+        def worker(conn, func, args, kwargs):
+            conn.send(func(*args, **kwargs))
+            conn.close()
+        parent_conn, child_conn = Pipe()
+        p = Process(target=worker, args=(child_conn, func, args, kwargs))
+        p.start()
+        ret = parent_conn.recv()
+        p.join()
+        return ret
+    return wrapper
 
 from concurrent import futures
 import logging
@@ -83,6 +99,7 @@ Object_Ownership = {}
 Connection_Set = set()
 # Global_Graph_Dict = {}
 # Global_Sess_Dict = {}
+# Global_Model_Dict = Manager().dict()
 Global_Model_Dict = {}
 
 conv2d_count = 0
@@ -138,6 +155,20 @@ class IllegalModelBuildException(Exception):
     def __str__(self):
         return 'IllegalModelBuildException'
 
+class PocketModel(tf.keras.Model):
+    def call(self, inputs, training=False, sendpipe=None):
+        # # print(type(self))
+        # # print(inputs)
+        # ret_val = super(tf.keras.Model, self).__call__(inputs, training)
+        # # print('there')
+        # return ret_val
+
+        ret_val = super().call(inputs, training)
+        if sendpipe != None:
+            sendpipe.send(ret_val)
+            sendpipe.close()
+        return ret_val
+
 class Color:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -149,23 +180,6 @@ class Color:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
-
-# def utils_byte_chunk(data: bytes, chunk_size: int):
-#     start = 0
-#     end = chunk_size
-#     byte_list = []
-
-#     while True:
-#         if chunk_size > len(data[start:]): #last iteration
-#             byte_list.append(data[start:end])
-#             start += len(data[start:])
-#             end = start
-#             break
-#         else:
-#             byte_list.append(data[start:end])
-#             start += chunk_size
-#             end += chunk_size
-#     return byte_list
 
 def utils_get_obj(obj_id: int):
     return Global_Tensor_Dict[obj_id]
@@ -209,6 +223,29 @@ def utils_collect_garbage(connection_id: str):
     items_to_remove = Object_Ownership[connection_id]
     for item in items_to_remove:
         del Global_Tensor_Dict[item]
+
+def utils_inference_wrapper(sndpipe, model, args):
+    print(f'misun: 0')
+    print('misun:', model, type(args), args)
+    ret_val = model(args)
+    print(f'misun: 1')
+    sndpipe.send(ret_val)
+    print(f'misun: 2')
+    sndpipe.close()
+    print(f'misun: 3')
+
+def utils_infer_target(snd, callable_obj, args):
+    obj_name = Global_Model_Dict[callable_obj].model
+    ret_val = obj_name(args)
+    # ret_val = callable_obj(args)
+    snd.send(ret_val)
+    return 0
+
+# @jit(nopython=True, nogil=True, parallel=True)
+# @ray.remote
+@child_process
+def utils_infer(callable_obj, args):
+    return callable_obj(args)
 
 def yolo_boxes(pred, anchors, classes):
     # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
@@ -260,7 +297,6 @@ def yolo_nms(outputs, anchors, masks, classes):
     )
 
     return boxes, scores, classes, valid_detections
-
 
 class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
     def ModelBuildingAPI(decoratee_func):
@@ -347,10 +383,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         ret_val3: int
         ret_val4: int
 
-        # if request.args_pickled:
-        #     for arg in request.pickled_args:
-        #         temp_args.append(pickle.loads(arg))
-        # else:
         for arg in request.obj_ids:
             obj = utils_get_obj(arg.obj_id)
             temp_args.append(obj)
@@ -369,12 +401,114 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'callable={type(callable_obj)}\nname={callable_obj.name}\narg_type={type(args)}')
 
         if request.num_of_returns == 1:
-            ret_val1 = callable_obj(args)
-            try:
-                print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
-                print(f'misun: type={type(ret_val1[0])}, length={len(ret_val1[0])}')
-            except:
-                pass
+            # ret_val1 = callable_obj(args)
+            if request.inference:
+                # utils_infer(callable_obj, args)
+                # with contexttimer.Timer(time.perf_counter) as pure_wall:
+                #     with contexttimer.Timer(time.process_time) as pure_cpu:
+                ret_val1 = callable_obj(args)
+                # print(f'misun: wall_time={pure_wall.elapsed}, cpu_time={pure_cpu.elapsed}')
+                # ray.get(utils_infer.remote(callable_obj, args))
+                # snd, rcv = Pipe()
+                # listed_args = [snd, request.callable_model_name, args]
+                # worker = Process(target=utils_infer_target, args=listed_args)
+                # worker.start()
+                # ret_val1 = rcv.recv()
+                # worker.join()
+
+                ### 1
+                # # worker = Process(target=callable_obj, args=args)
+                # # print(args)
+                # snd, rcv = Pipe()
+                # listed_args = [snd]
+                # listed_args.append(callable_obj)
+                # listed_args.append(args)
+                # # for elem in args:
+                # #     print(f'misun: elem={type(elem)}')
+                # #     listed_args.append(elem)
+                # # listed_args = [snd, callable_obj] + args
+                # worker = Process(target=utils_inference_wrapper, args=listed_args)
+                # worker.start()
+                # worker.join()
+                # print('misun: here?')
+                # ret_val1 = rcv.recv()
+
+
+                ### 2: kinda okay
+                # worker = Process(target=callable_obj, args=args)
+                # worker.start()
+                # worker.join()
+
+
+                ### 2-1
+                # worker = Process(target=callable_obj, args=[args])
+                # worker.start()
+                # worker.join()
+
+                ### 3: ok
+                # ret_val1 = callable_obj([args])
+                
+                ### 4:ok
+                # ret_val1 = callable_obj(args)
+
+                ### 5: ok
+                # import threading
+                # worker = threading.Thread(target=callable_obj, args=args)
+                # worker.start()
+                # worker.join()
+
+                ### 5-1: ok (thread)
+                # import threading, multiprocessing
+                # snd, rcv = Pipe()
+                # listed_args = [snd]
+                # listed_args.append(callable_obj)
+                # listed_args.append(args)
+                # worker = threading.Thread(target=utils_inference_wrapper, args=listed_args)
+                # multiprocessing.set_start_method('spawn')
+                # # worker = Process(target=utils_inference_wrapper, args=listed_args)
+                # worker.start()
+                # ret_val1 = rcv.recv()
+                # worker.join()
+                # print('misun: here?')
+
+
+                ### 6
+                # # import threading, multiprocessing
+                # snd, rcv = Pipe()
+                # listed_args = [args]
+                # # listed_args.append(callable_obj)
+                # listed_args.append(snd)
+                # callable_obj(listed_args)
+                # # worker = threading.Thread(target=utils_inference_wrapper, args=listed_args)
+                # # worker = Process(target=callable_obj, args=listed_args)
+                # # worker.start()
+                # # ret_val1 = rcv.recv()
+                # # worker.join()
+                # print('misun: here?')
+
+                # snd, rcv = Pipe()
+                # listed_args=[]
+                # listed_args.append(args)
+                # listed_args.append(False)
+                # listed_args.append(snd)
+
+                # # callable_obj(*listed_args)
+                # # worker = threading.Thread(target=callable_obj, args=listed_args)
+                # worker = Process(target=callable_obj, args=listed_args)
+                # worker.start()
+                # ret_val1 = rcv.recv()
+
+                # worker.join()
+                # # print('intermediate success, exit!')
+                # # exit(0)
+
+            else:
+                ret_val1 = callable_obj(args)
+            # try:
+            #     print(f'misun: type={type(ret_val1)}, length={len(ret_val1)}')
+            #     print(f'misun: type={type(ret_val1[0])}, length={len(ret_val1[0])}')
+            # except:
+            #     pass
             ret_val.append(ret_val1)
         elif request.num_of_returns == 2:
             ret_val1, ret_val2 = callable_obj(args)
@@ -394,21 +528,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             print('error!, request.num_of_returns=',request.num_of_returns)
             return None
-
-        # try:
-        #     # print('try')
-        #     # pickled_result = pickle.dumps(ret_val)
-        #     response.pickled = True
-        #     for elem in ret_val:
-        #         pickled = pickle.dumps(elem)
-        #         response.pickled_result.append(pickled)
-        # except TypeError:
-        #     # print('except TypeError')
-        #     response.pickled = False
-        #     for val in ret_val:
-        #         response.obj_ids.append(utils_set_obj(val, request.connection_id))
-        # finally:
-        #     return response
 
         response.pickled = False
         for val in ret_val:
@@ -495,6 +614,22 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             if request.name not in Global_Model_Dict:
                 raise IllegalModelBuildException
             else:
+                # try:
+                #     os.makedirs('tmp')
+                # except:
+                #     pass
+                # # todo remove
+                # tf.saved_model.save(result, 'tmp/model')
+                # import json
+                # json.dumps(result)
+                # result.save('tmp/model.h5')
+                # exit()
+                # # imported = tf.saved_model.load('tmp/model', request.name)
+                # imported = tf.keras.models.load_model('tmp/model.h5')
+                # Global_Model_Dict[request.name].set_done(imported)
+                # import json
+                # json.dumps(ret_val)
+                # exit()
                 Global_Model_Dict[request.name].set_done(result)
         else:
             response.obj_id = utils_set_obj(result, request.connection_id)
@@ -690,7 +825,13 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         response = yolo_pb2.LambdaResponse()
         lambda_func = lambda x: eval(request.expr)
+        # lambda_func = exec(request.expr)
+        # print(callable(lambda_func), lambda_func.__name__) ## todo: remove
+        # print(type(eval('1+2')), eval('1+2'))
+        # import json
+        # json_str = json.dumps(exec('1+2'))
         lambda_obj = Lambda(lambda_func, name=request.name)
+        # print(callable(lambda_obj), hasattr(lambda_obj,'get_config')) ## todo: remove
         response.obj_id = utils_set_obj(lambda_obj, request.connection_id)
 
         return response
@@ -812,10 +953,13 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=os.cpu_count() - 1), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=47), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
     yolo_pb2_grpc.add_YoloTensorflowWrapperServicer_to_server(YoloFunctionWrapper(), server)
     server.add_insecure_port('[::]:1990')
     print('Hello TF!')
+    physical_devices = tf.config.experimental.get_visible_devices('CPU')
+    tf.config.threading.set_inter_op_parallelism_threads(48)
+    tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
     server.wait_for_termination()
 
