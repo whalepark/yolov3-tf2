@@ -2,7 +2,7 @@
 import os
 
 # todo: remove these after debugging
-os.environ['YOLO_SERVER'] = '1'
+# os.environ['YOLO_SERVER'] = '1'
 from multiprocessing import Process, Pipe, Manager
 # import time
 # import contexttimer
