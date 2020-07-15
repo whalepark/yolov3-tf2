@@ -2,6 +2,7 @@ import yolo_pb2
 import yolo_pb2_grpc
 import pickle
 import string, random
+import subprocess
 
 # Status:
 #     - Done: detect.py
@@ -20,7 +21,8 @@ def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digit
 
 class ControlProcedure:
     client_id: str = ''
-
+    container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
+    print(f'container_id={container_id}')
     @staticmethod
     def Connect(stub):
         request = yolo_pb2.ConnectRequest()
@@ -28,6 +30,7 @@ class ControlProcedure:
 
         while True:
             request.id = utils_random_string()
+            request.container_id = ControlProcedure.container_id
             response = stub.Connect(request)
             if response.accept:
                 ControlProcedure.client_id = request.id
@@ -144,14 +147,13 @@ class TFWrapper:
         return None
     
     @staticmethod
-    def tf_image_decode__image(stub, image_byte, channels: int):
+    def tf_image_decode__image(stub, image_path, channels: int):
         # img_raw = tf.image.decode_image(open(FLAGS.image, 'rb').read(), channels=3)
         request = yolo_pb2.DecodeImageRequest()
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        request.size=len(image_byte)
-        request.byte_image = image_byte
+        request.image_path = image_path
         request.connection_id = ControlProcedure.client_id
 
         response = stub.image_decode__image(request)

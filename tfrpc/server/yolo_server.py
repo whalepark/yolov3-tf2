@@ -319,6 +319,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
+            utils_add_to_subdir(request.id)
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
           
@@ -571,7 +572,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         response=yolo_pb2.DecodeImageResponse()
         # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
-        image_raw = tf.image.decode_image(request.byte_image, channels=request.channels, expand_animations=False)
+        image_bin = open(request.image_path, 'rb').read()
+        image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)
         # print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
 

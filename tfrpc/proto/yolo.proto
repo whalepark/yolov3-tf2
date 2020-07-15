@@ -48,6 +48,7 @@ service YoloTensorflowWrapper {
 /// Connect
 message ConnectRequest {
     string id = 1;
+    string container_id=2;
 }
 
 message ConnectResponse {
@@ -56,6 +57,7 @@ message ConnectResponse {
 /// Disconnect
 message DisconnectRequest {
     string id = 1;
+    string container_id = 2;
 }
 
 message DisconnectResponse {
@@ -132,10 +134,9 @@ message PhysicalDevices {
 
 /// image_decode__image
 message DecodeImageRequest {
-    bytes byte_image = 1;
-    int32 size = 2;
-    int32 channels = 3;
-    string connection_id = 4;
+    string image_path = 1;
+    int32 channels = 2;
+    string connection_id = 3;
 }
 
 message DecodeImageResponse {
