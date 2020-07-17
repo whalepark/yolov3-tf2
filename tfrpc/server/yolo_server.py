@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import subprocess
 
 # todo: remove these after debugging
 # os.environ['YOLO_SERVER'] = '1'
@@ -101,6 +102,9 @@ Connection_Set = set()
 # Global_Sess_Dict = {}
 # Global_Model_Dict = Manager().dict()
 Global_Model_Dict = {}
+Container_Id_Dict = {}
+Subdir_Dict = {}
+subdir_root = '/hostroot/var/lib/docker/overlay2'
 
 conv2d_count = 0
 batch_norm_count = 0
@@ -223,6 +227,7 @@ def utils_collect_garbage(connection_id: str):
     items_to_remove = Object_Ownership[connection_id]
     for item in items_to_remove:
         del Global_Tensor_Dict[item]
+    del Subdir_Dict[connection_id]
 
 def utils_inference_wrapper(sndpipe, model, args):
     print(f'misun: 0')
@@ -240,6 +245,17 @@ def utils_infer_target(snd, callable_obj, args):
     # ret_val = callable_obj(args)
     snd.send(ret_val)
     return 0
+
+def _get_client_root(container):
+    lower_list = _get_all_subdir(container)
+    subdir_merged = _merge_subdir(lower_list)
+    subdir_root += _subdir_merged
+
+def utils_add_to_subdir(container_id, connection_id):
+    subdir = _get_client_root(container_id)
+    output = subprocess.check_output('ls /')
+    Subdir_Dict[connection_id] = subdir
+
 
 # @jit(nopython=True, nogil=True, parallel=True)
 # @ray.remote
@@ -319,7 +335,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            utils_add_to_subdir(request.id)
+            utils_add_to_subdir(request.container_id)
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
           
@@ -968,4 +984,5 @@ def serve():
 if __name__ == '__main__':
     logging.basicConfig()
     FLAGS(sys.argv)
+    subprocess.check_call(f'mkdir -p {subdir_root}')
     serve()
