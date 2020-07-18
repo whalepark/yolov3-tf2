@@ -103,6 +103,7 @@ Connection_Set = set()
 # Global_Model_Dict = Manager().dict()
 Global_Model_Dict = {}
 Container_Id_Dict = {}
+Subdir_Dict = {}
 hostroot = '/hostroot'
 subdir_root = hostroot + '/var/lib/docker/overlay2'
 
@@ -987,5 +988,6 @@ def serve():
 if __name__ == '__main__':
     logging.basicConfig()
     FLAGS(sys.argv)
+    print(f'hostroot={hostroot}')
     subprocess.check_call(f'mkdir -p {hostroot}')
     serve()
