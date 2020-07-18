@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import os
-import subprocess
+import subprocess, time
 
 # todo: remove these after debugging
 # os.environ['YOLO_SERVER'] = '1'
@@ -990,4 +990,5 @@ if __name__ == '__main__':
     FLAGS(sys.argv)
     print(f'hostroot={hostroot}')
     subprocess.check_call(f'mkdir -p {hostroot}')
+    time.sleep(3)
     serve()
