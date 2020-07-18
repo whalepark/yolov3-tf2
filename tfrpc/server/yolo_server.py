@@ -103,8 +103,8 @@ Connection_Set = set()
 # Global_Model_Dict = Manager().dict()
 Global_Model_Dict = {}
 Container_Id_Dict = {}
-Subdir_Dict = {}
-subdir_root = '/hostroot/var/lib/docker/overlay2'
+hostroot = '/hostroot'
+subdir_root = hostroot + '/var/lib/docker/overlay2'
 
 conv2d_count = 0
 batch_norm_count = 0
@@ -250,7 +250,7 @@ def _get_client_root(container):
     # lower_list = _get_all_subdir(container)
     # subdir_merged = _merge_subdir(lower_list)
     # subdir_root += _subdir_merged
-    output = subprocess.check_output('docker info', shell=True).encode('utf-8')
+    output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
     exit()
     return '1'
 
@@ -987,5 +987,5 @@ def serve():
 if __name__ == '__main__':
     logging.basicConfig()
     FLAGS(sys.argv)
-    subprocess.check_call(f'mkdir -p {subdir_root}')
+    subprocess.check_call(f'mkdir -p {hostroot}')
     serve()
