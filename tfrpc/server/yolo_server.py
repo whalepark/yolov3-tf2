@@ -251,7 +251,10 @@ def _get_client_root(container):
     # lower_list = _get_all_subdir(container)
     # subdir_merged = _merge_subdir(lower_list)
     # subdir_root += _subdir_merged
-    output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
+    try:
+        output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
+    except subprocess.CalledProcessError as e:
+        print(e.output)
     exit()
     return '1'
 
