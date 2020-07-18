@@ -989,6 +989,6 @@ if __name__ == '__main__':
     logging.basicConfig()
     FLAGS(sys.argv)
     print(f'hostroot={hostroot}')
-    subprocess.check_call(f'mkdir -p {hostroot}')
+    subprocess.check_call(f'mkdir -p {hostroot}', shell=True)
     time.sleep(3)
     serve()
