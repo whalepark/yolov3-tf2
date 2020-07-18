@@ -339,7 +339,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            utils_add_to_subdir(request.container_id)
+            utils_add_to_subdir(request.container_id, request.id)
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
           
