@@ -252,6 +252,7 @@ def _get_client_root(container):
     # subdir_root += _subdir_merged
     output = subprocess.check_output('docker info', shell=True).encode('utf-8')
     exit()
+    return '1'
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
