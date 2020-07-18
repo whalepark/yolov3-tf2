@@ -247,9 +247,11 @@ def utils_infer_target(snd, callable_obj, args):
     return 0
 
 def _get_client_root(container):
-    lower_list = _get_all_subdir(container)
-    subdir_merged = _merge_subdir(lower_list)
-    subdir_root += _subdir_merged
+    # lower_list = _get_all_subdir(container)
+    # subdir_merged = _merge_subdir(lower_list)
+    # subdir_root += _subdir_merged
+    output = subprocess.check_output('docker info', shell=True).encode('utf-8')
+    exit()
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
