@@ -261,7 +261,9 @@ def _get_client_root(container):
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
-    output = subprocess.check_output('ls /')
+    print(f'subdir={subdir}')
+    output = subprocess.check_output('ls /', shell=True).decode('utf-8').strip()
+    print(f'output={output}')
     Subdir_Dict[connection_id] = subdir
 
 
