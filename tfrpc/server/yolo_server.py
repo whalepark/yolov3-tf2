@@ -251,12 +251,13 @@ def _get_client_root(container):
     # lower_list = _get_all_subdir(container)
     # subdir_merged = _merge_subdir(lower_list)
     # subdir_root += _subdir_merged
-    try:
-        output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
-    except subprocess.CalledProcessError as e:
-        print(e.output)
-    exit()
-    return '1'
+    # try:
+    #     output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
+    # except subprocess.CalledProcessError as e:
+    #     print(e.output)
+    merged_dir = subprocess.check_output('docker inspect -f {{.GraphDriver.Data.MergedDir}} ' + container).encode('utf-8').strip()
+    print(f'merged_dir={merged_dir}')
+    return hostroot + merged_dir
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
