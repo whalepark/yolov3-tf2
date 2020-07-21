@@ -20,6 +20,33 @@ flags.DEFINE_string('tfrecord', None, 'tfrecord instead of image')
 flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
+from threading import Event
+import signal
+import socket
+def sigusr1_handler(signal_num, frame):
+    print('sigusr1')
+    exit.set()
+
+def sigusr2_handler(signal_num, frame):
+    print('rsrc measure done')
+    quit.set()
+signal.signal(signal.SIGUSR1, sigusr1_handler)
+signal.signal(signal.SIGUSR2, sigusr2_handler)
+
+def notify_host_ready():
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+        message=bytes('done', 'utf-8')
+        print('[client] host about to be notified')
+        sock.sendto(message, '/comm/socket.sock')
+        print('[client] host notified: message sent')
+
+exit = Event() # checkpoint ready
+notify_host_ready()
+
+quit = Event() # resource measure done
+
+exit.wait()
+
 
 def main(_argv):
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -71,3 +98,4 @@ if __name__ == '__main__':
         app.run(main)
     except SystemExit:
         pass
+    quit.wait()
