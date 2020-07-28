@@ -35,6 +35,9 @@ flags.DEFINE_string('tfrecord', None, 'tfrecord instead of image')
 flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
+# Misun defined
+flags.DEFINE_boolean('hello', False, 'hello or health check')
+
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 
 def initialize(stub):
@@ -56,6 +59,11 @@ def main(_argv):
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)
+
+    if FLAGS.hello:
+        health = ControlProcedure.SayHello()
+        print(f'healthy? {health}')
+        exit(0)
 
     # ControlProcedure.SayHello(stub, 'misun')
 

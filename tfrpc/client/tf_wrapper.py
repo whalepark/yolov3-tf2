@@ -52,7 +52,7 @@ class ControlProcedure:
         request.name = name
         response = stub.SayHello(request)
         print(response.message)
-
+        return True
 
 
 class TFWrapper:
