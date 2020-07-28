@@ -61,7 +61,7 @@ def main(_argv):
     initialize(stub)
 
     if FLAGS.hello:
-        health = ControlProcedure.SayHello()
+        health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
         exit(0)
 

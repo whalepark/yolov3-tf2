@@ -33,14 +33,16 @@ function _run_client() {
     local network=$4
     local command=$5
     docker rm -f ${container_name} > /dev/null 2>&1
-    docker run \
+
+    local docker_cmd="docker run \
         --volume=$(pwd)/data:/data \
         --network=${network} \
         --name=${container_name} \
         --workdir='/root/yolov3-tf2' \
         --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $server_container) \
         ${image_name} \
-        ${command}
+        ${command}"
+    eval $docker_cmd
     
     #python3.6 detect.py --image data/meme.jpg # default command
 }
