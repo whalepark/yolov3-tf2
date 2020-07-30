@@ -21,7 +21,7 @@ import yolo_pb2_grpc
 from tf_wrapper import TFWrapper, ControlProcedure
 import signal
 
-import pickle ###
+# import pickle ###
 
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
@@ -37,6 +37,16 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 # Misun defined
 flags.DEFINE_boolean('hello', False, 'hello or health check')
+flags.DEFINE_string('echo', 'Hello Misun', 'hello or health check')
+flags.DEFINE_integer('integer', 1234567, 'hello or health check')
+
+flags.DEFINE_boolean('rtt', False, 'hello or health check')
+flags.DEFINE_boolean('cpu', False, 'hello or health check')
+flags.DEFINE_boolean('pfault', False, 'hello or health check')
+flags.DEFINE_boolean('llc', False, 'hello or health check')
+flags.DEFINE_boolean('tlb', False, 'hello or health check')
+
+
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 
@@ -63,7 +73,21 @@ def main(_argv):
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
+        pid=os.getpid() # -o /data/hello.log
+        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encode='utf-8').strip()
+        time.sleep(5)
+        print(output)
         exit(0)
+    elif FLAGS.rtt:
+        pass
+    elif FLAGS.cpu:
+        pass
+    elif FLAGS.pfault:
+        pass
+    elif FLAGS.llc:
+        pass
+    elif FLAGS.tlb:
+        pass
 
     # ControlProcedure.SayHello(stub, 'misun')
 

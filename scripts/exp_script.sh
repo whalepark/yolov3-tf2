@@ -35,10 +35,65 @@ function build_image() {
     docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
 }
 
+function compare_rtt() {
+    init
+    local grpc_rtt=$(_measure_rtt_grpc)
+
+    init
+    local grpc_rtt_path=$(_measure_rtt_grpc_w_path)
+
+    echo grpc_rtt=${grpc_rtt}
+    echo grpc_rtt_path=${grpc_rtt_path}
+}
+
+function compare_cpu_cycles() {
+    init
+    local grpc_rtt=$(_measure_cpu_cycles)
+
+    init
+    local grpc_rtt_path=$(_measure_cpu_cycles_w_path)
+
+    echo grpc_rtt=${grpc_rtt}
+    echo grpc_rtt_path=${grpc_rtt_path}
+}
+
+function compare_page_faults() {
+    init
+    local grpc_rtt=$(_measure_page_faults)
+
+    init
+    local grpc_rtt_path=$(_measure_page_faults_w_path)
+
+    echo grpc_rtt=${grpc_rtt}
+    echo grpc_rtt_path=${grpc_rtt_path}
+}
+
+function compare_cache_misses() {
+    init
+    local grpc_rtt=$(_measure_cache_misses)
+
+    init
+    local grpc_rtt_path=$(_measure_cache_misses_grpc_w_path)
+
+    echo grpc_rtt=${grpc_rtt}
+    echo grpc_rtt_path=${grpc_rtt_path}
+}
+
+function compare_tlb_misses() {
+    init
+    local grpc_rtt=$(_measure_tlb_misses_grpc)
+
+    init
+    local grpc_rtt_path=$(_measure_tlb_misses_grpc_w_path)
+
+    echo grpc_rtt=${grpc_rtt}
+    echo grpc_rtt_path=${grpc_rtt_path}
+}
+
 function help() {
     echo Usage: ./exp_script.sh COMMAND [OPTIONS]
     echo Supported Commands:
-    echo -e '\thealth, help, build'
+    echo -e '\thealth, help, build, rtt, cpu, pfault, cache, tlb, ...'
 }
 
 COMMAND=$([[ $# == 0 ]] && echo help || echo $1)
@@ -48,6 +103,21 @@ case $COMMAND in
         ;;
     health|hello)
         health_check
+        ;;
+    rtt)
+        compare_rtt
+        ;;
+    cpu)
+        compare_cpu_cycles
+        ;;
+    pfault)
+        compare_page_faults
+        ;;
+    cache|llc)
+        compare_cache_misses
+        ;;
+    tlb)
+        compare_tlb_misses
         ;;
     *|help)
         help

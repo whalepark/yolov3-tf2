@@ -54,6 +54,21 @@ class ControlProcedure:
         print(response.message)
         return True
 
+class gRPCTest:
+    @staticmethod
+    def SendImageViaPath(stub, path: str):
+        pass
+
+    @staticmethod
+    def SendImageBinary(stub, image: bytes):
+        pass
+
+    @staticmethod
+    def SendInteger(stub, num: int):
+        pass
+
+    @staticmethod
+
 
 class TFWrapper:
     @staticmethod

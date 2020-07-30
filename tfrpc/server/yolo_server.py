@@ -989,6 +989,11 @@ def serve():
     tf.config.threading.set_inter_op_parallelism_threads(48)
     tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
+    if True:
+        pid=os.getpid() # -o /data/server.log
+        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encode='utf-8').strip()
+        time.sleep(5)
+        print(output)
     server.wait_for_termination()
 
 if __name__ == '__main__':
