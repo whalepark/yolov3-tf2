@@ -991,7 +991,7 @@ def serve():
     server.start()
     if True:
         pid=os.getpid() # -o /data/server.log
-        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, decode='utf-8').strip()
+        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
         time.sleep(5)
         print(output)
     server.wait_for_termination()
