@@ -59,6 +59,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # sys.path.insert(0, os.path.abspath('../../yolov3_tf2'))
 os.chdir('../..')
 sys.path.insert(0, os.path.abspath('yolov3_tf2'))
+print(os.getcwd()) ##
 from batch_norm import BatchNormalization
 from utils import broadcast_iou
 import threading
