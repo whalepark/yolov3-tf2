@@ -29,7 +29,7 @@ function health_check() {
 }
 
 function build_image() {
-    docker rmi -f grpc_exp_server grpc_exp_client
+    docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
     docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
@@ -39,8 +39,8 @@ function compare_rtt() {
     init
     local grpc_rtt=$(_measure_rtt_grpc)
 
-    init
-    local grpc_rtt_path=$(_measure_rtt_grpc_w_path)
+    # init
+    # local grpc_rtt_path=$(_measure_rtt_grpc_w_path)
 
     echo grpc_rtt=${grpc_rtt}
     echo grpc_rtt_path=${grpc_rtt_path}
@@ -50,8 +50,8 @@ function compare_cpu_cycles() {
     init
     local grpc_rtt=$(_measure_cpu_cycles)
 
-    init
-    local grpc_rtt_path=$(_measure_cpu_cycles_w_path)
+    # init
+    # local grpc_rtt_path=$(_measure_cpu_cycles_w_path)
 
     echo grpc_rtt=${grpc_rtt}
     echo grpc_rtt_path=${grpc_rtt_path}

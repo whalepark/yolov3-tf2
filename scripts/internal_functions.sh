@@ -20,7 +20,7 @@ function _run_d_server() {
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume $(pwd)/data:/data \
         $image \
-        bash -c "git pull && perf stat -B -r 1 -e cycles,cache-misses -o /data/grpc_server_id_only.log --append python tfrpc/server/yolo_server.py"
+        bash -c "git pull && echo misun && python tfrpc/server/yolo_server.py"
     utils_attach_root $container
     sleep $pause
     echo 'Server bootup!'
@@ -41,6 +41,8 @@ function _run_client() {
         --name=${container_name} \
         --workdir='/root/yolov3-tf2' \
         --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $server_container) \
+        --cap-add SYS_ADMIN \
+        --cap-add IPC_LOCK \
         ${image_name} \
         ${command}"
     eval $docker_cmd
@@ -51,7 +53,8 @@ function _run_client() {
 function _measure_rtt_grpc() {
     local rtt=''
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
-
+    docker ps
+exit
     _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --hello\""
 
     # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo misun\""

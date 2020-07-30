@@ -997,6 +997,7 @@ def serve():
     server.wait_for_termination()
 
 if __name__ == '__main__':
+    print('here')
     logging.basicConfig()
     FLAGS(sys.argv)
     print(f'hostroot={hostroot}')
