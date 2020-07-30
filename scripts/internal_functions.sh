@@ -51,7 +51,10 @@ function _run_client() {
 function _measure_rtt_grpc() {
     local rtt=''
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo\""
+
+    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --hello\""
+
+    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo misun\""
 
     # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --integer\""
 
