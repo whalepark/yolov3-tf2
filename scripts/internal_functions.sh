@@ -53,11 +53,11 @@ function _measure_rtt_grpc() {
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
     _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo\""
 
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --integer\""
+    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --integer\""
 
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image data/meme.jpg\""
+    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image data/meme.jpg\""
 
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image images/photographer.jpg\""
+    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image images/photographer.jpg\""
 
     echo $rtt
 }

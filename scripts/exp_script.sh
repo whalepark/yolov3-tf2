@@ -94,6 +94,8 @@ function help() {
     echo Usage: ./exp_script.sh COMMAND [OPTIONS]
     echo Supported Commands:
     echo -e '\thealth, help, build, rtt, cpu, pfault, cache, tlb, ...'
+    echo example: bash ./exp_script.sh health
+    echo example: bash ./exp_script.sh rtt
 }
 
 COMMAND=$([[ $# == 0 ]] && echo help || echo $1)

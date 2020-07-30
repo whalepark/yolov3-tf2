@@ -67,8 +67,6 @@ class gRPCTest:
     def SendInteger(stub, num: int):
         pass
 
-    @staticmethod
-
 
 class TFWrapper:
     @staticmethod
