@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
-import subprocess, time
+import subprocess, time # todo: subprocess: remove?
+from multiprocessing import Process # todo: remove?
 
 # todo: remove these after debugging
 # os.environ['YOLO_SERVER'] = '1'
@@ -980,6 +981,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
+def perf_this(pid: int):
+    # -o /data/server.log
+    output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
+    time.sleep(5)
+    print(output)
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=47), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
@@ -991,10 +997,9 @@ def serve():
     tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
     if True:
-        pid=os.getpid() # -o /data/server.log
-        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
-        time.sleep(5)
-        print(output)
+        process = Process(target=perf_this, args=(os.getpid(),))
+        process.start()
+
     server.wait_for_termination()
 
 if __name__ == '__main__':
