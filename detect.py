@@ -74,7 +74,7 @@ def main(_argv):
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
         pid=os.getpid() # -o /data/hello.log
-        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encode='utf-8').strip()
+        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
         time.sleep(5)
         print(output)
         exit(0)
