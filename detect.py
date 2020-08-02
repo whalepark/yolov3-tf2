@@ -50,21 +50,22 @@ flags.DEFINE_boolean('tlb', False, 'hello or health check')
 
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
+CONTAINER_ID: str
 
 def initialize(stub):
-    global g_stub
+    global g_stub, CONTAINER_ID
 
     ControlProcedure.Connect(stub)
     g_stub = stub
     signal.signal(signal.SIGINT, finalize)
+    CONTAINER_ID=os.environ['CONTAINER_ID']
 
 def finalize():
     ControlProcedure.Disconnect(g_stub)
 
 def perf_self(pid: int):
     # -o /data/server.log
-    output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
-    print(output)
+    output = subprocess.check_call(f'perf stat -p {pid} -e cycles,page-faults -o /data/{CONTAINER_ID}.log', shell=True, encoding='utf-8').strip()
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
@@ -79,7 +80,7 @@ def main(_argv):
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
-        process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))# -o /data/hello.log
+        process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
         process.start()
         time.sleep(5)
         exit(0)

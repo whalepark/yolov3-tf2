@@ -982,9 +982,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return response
 
 def perf_self(pid: int):
-    # -o /data/server.log
-    output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
-    print(output)
+    output = subprocess.check_call(f'perf stat -p {pid} -e cycles,page-faults -o /data/server.log', shell=True, encoding='utf-8').strip()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=47), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])

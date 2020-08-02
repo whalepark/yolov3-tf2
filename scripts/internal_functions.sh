@@ -41,6 +41,7 @@ function _run_client() {
         --name=${container_name} \
         --workdir='/root/yolov3-tf2' \
         --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $server_container) \
+        --env CONTAINER_ID=${container_name} \
         --cap-add SYS_ADMIN \
         --cap-add IPC_LOCK \
         ${image_name} \
