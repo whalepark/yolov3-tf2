@@ -996,7 +996,7 @@ def serve():
     # tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
     if True:
-        process = Process(target=perf_this, daemon=False, args=(os.getpid(),))
+        process = Process(target=perf_self, daemon=False, args=(os.getpid(),))
         process.start()
 
     server.wait_for_termination()
