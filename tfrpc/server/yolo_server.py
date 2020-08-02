@@ -993,11 +993,12 @@ def serve():
     server.add_insecure_port('[::]:1990')
     print('Hello TF!')
     physical_devices = tf.config.experimental.get_visible_devices('CPU')
-    tf.config.threading.set_inter_op_parallelism_threads(48)
-    tf.config.threading.set_intra_op_parallelism_threads(96)
+    # tf.config.threading.set_inter_op_parallelism_threads(48)
+    # tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
     if True:
-        process = Process(target=perf_this, args=(os.getpid(),))
+        print('misun')
+        process = Process(target=perf_this, daemon=False, args=(os.getpid(),))
         process.start()
 
     server.wait_for_termination()
