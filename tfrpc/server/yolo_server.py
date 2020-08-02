@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import os
-import subprocess, time # todo: subprocess: remove?
+import subprocess, time
 from multiprocessing import Process # todo: remove?
 
 # todo: remove these after debugging
@@ -981,10 +981,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
-def perf_this(pid: int):
+def perf_self(pid: int):
     # -o /data/server.log
     output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
-    time.sleep(5)
     print(output)
 
 def serve():
@@ -997,7 +996,6 @@ def serve():
     # tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
     if True:
-        print('misun')
         process = Process(target=perf_this, daemon=False, args=(os.getpid(),))
         process.start()
 

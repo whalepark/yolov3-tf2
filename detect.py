@@ -59,6 +59,11 @@ def initialize(stub):
 
 def finalize():
     ControlProcedure.Disconnect(g_stub)
+
+def perf_self(pid: int):
+    # -o /data/server.log
+    output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
+    print(output)
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
@@ -73,10 +78,9 @@ def main(_argv):
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
-        pid=os.getpid() # -o /data/hello.log
-        output = subprocess.check_output(f'perf stat -p {pid} -e cycles,page-faults', shell=True, encoding='utf-8').strip()
+        process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))# -o /data/hello.log
+        process.start()
         time.sleep(5)
-        print(output)
         exit(0)
     elif FLAGS.rtt:
         pass
