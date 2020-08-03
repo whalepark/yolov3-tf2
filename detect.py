@@ -81,6 +81,7 @@ def main(_argv):
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
         process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
+        print('here000')
         process.start()
         time.sleep(5)
         print('here?')
