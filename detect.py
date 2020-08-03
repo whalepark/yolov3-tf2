@@ -87,6 +87,8 @@ def main(_argv):
         perf_self(os.getpid())
         print('here000')
         time.sleep(5)
+        output = subprocess.check_output(f'ls -al /data', shell=True, encoding='utf-8').strip()
+        print(output)
         print('here?')
         sys.exit()
     elif FLAGS.rtt:
