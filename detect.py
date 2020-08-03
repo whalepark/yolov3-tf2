@@ -85,7 +85,7 @@ def main(_argv):
         process.start()
         time.sleep(5)
         print('here?')
-        exit(0)
+        quit()
     elif FLAGS.rtt:
         pass
     elif FLAGS.cpu:
