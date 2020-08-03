@@ -1,4 +1,5 @@
 import time, subprocess
+import shlex # for subprocess popen
 from multiprocessing import Process
 from absl import app, flags, logging
 from absl.flags import FLAGS
@@ -65,7 +66,9 @@ def finalize():
 
 def perf_self(pid: int):
     # -o /data/server.log
-    output = subprocess.check_call(f'perf stat -p {pid} -e cycles,page-faults -o /data/{CONTAINER_ID}.log', shell=True, encoding='utf-8').strip()
+    # raw_command
+    p = subprocess.Popen(f'perf stat -p {pid} -e cycles,page-faults -o /data/{CONTAINER_ID}.log', shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    # o, e = p.communicate()
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
@@ -80,7 +83,8 @@ def main(_argv):
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         print(f'healthy? {health}')
-        process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
+        # process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
+        perf_self(os.getpid())
         print('here000')
         process.start()
         time.sleep(5)
