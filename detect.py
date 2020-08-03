@@ -86,7 +86,6 @@ def main(_argv):
         # process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
         perf_self(os.getpid())
         print('here000')
-        process.start()
         time.sleep(5)
         print('here?')
         sys.exit()
