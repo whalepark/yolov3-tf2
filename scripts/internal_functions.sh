@@ -56,7 +56,7 @@ function _measure_rtt_grpc() {
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
     docker ps
 exit
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --hello\""
+    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --hello\ && perf stat -p \$! -e cycles,page-faults -o /data/grpc_exp_app_00.log""
 
     # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo misun\""
 
