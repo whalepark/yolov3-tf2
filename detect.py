@@ -90,7 +90,10 @@ def main(_argv):
         output = subprocess.check_output(f'ls -al /data', shell=True, encoding='utf-8').strip()
         print(output)
         print('here?')
-        sys.exit()
+        os.kill(os.getpid(), signal.SIGINT)
+        time.sleep(3)
+        exit()
+        # sys.exit()
     elif FLAGS.rtt:
         pass
     elif FLAGS.cpu:
