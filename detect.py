@@ -83,6 +83,7 @@ def main(_argv):
         process = Process(target=perf_self, daemon=False, args=(os.getpid(), ))
         process.start()
         time.sleep(5)
+        print('here?')
         exit(0)
     elif FLAGS.rtt:
         pass
