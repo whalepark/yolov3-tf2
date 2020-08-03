@@ -25,7 +25,7 @@ function health_check() {
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
 
     # Run a client with hello
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello\""
+    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello && perf stat -p \$! -e cycles,page-faults\""
 }
 
 function build_image() {
