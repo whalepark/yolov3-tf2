@@ -59,6 +59,27 @@ def initialize(stub):
 def finalize():
     ControlProcedure.Disconnect(g_stub)
     
+def make_json(container_id):
+    import json
+    args_dict = {}
+
+    args_dict['type']='closed-proc-ns'
+    args_dict['cid']=container_id
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+
+    args_json = json.dumps(args_dict)
+
+    return args_json
+
+def connect_to_perf_server(container_id: str):
+    my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    my_socket.connect(PERF_SERVER_SOCKET)
+    json_data_to_send = make_json(container_id)
+    my_socket.sendall(json_data_to_send.encode('utf-8'))
+    data_received = my_socket.recv(1024)
+    print(data_received)
+    my_socket.close()
+    
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
     server_addr = os.environ.get('SERVER_ADDR')
@@ -69,8 +90,20 @@ def main(_argv):
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)
 
-    # ControlProcedure.SayHello(stub, 'misun')
+    if FLAGS.hello:
+        health = ControlProcedure.SayHello(stub, 'misun')
+        exit()
+    elif FLAGS.rtt:
+        pass
+    elif FLAGS.echo:
+        pass
+    elif FLAGS.integer:
+        pass
+    elif FLAGS.testimage:
+        pass
 
+    connect_to_perf_server(socket.gethostname())
+    
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
     if len(physical_devices) > 0: # in my settings, this if statement always returns false
