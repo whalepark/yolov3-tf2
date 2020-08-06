@@ -39,15 +39,16 @@ function health_check_dev() {
 }
 
 function build_image() {
-    docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
+    docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
+    # docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
-    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
+    # docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
 }
 
 function perf() {
-    local $numinstances=$1
-    local $events=$2
+    local numinstances=$1
+    local events=$2
     local pid_list=()
     local container_list=()
 

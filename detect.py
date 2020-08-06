@@ -39,6 +39,7 @@ flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 # Misun defined
+PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
 flags.DEFINE_boolean('hello', False, 'hello or health check')
 flags.DEFINE_boolean('perf', False, '')
 flags.DEFINE_boolean('rtt', False, 'measure RTT')
