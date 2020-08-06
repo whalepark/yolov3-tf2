@@ -48,6 +48,7 @@ service YoloTensorflowWrapper {
 /// Connect
 message ConnectRequest {
     string id = 1;
+    string container_id=2;
 }
 
 message ConnectResponse {
@@ -56,7 +57,9 @@ message ConnectResponse {
 /// Disconnect
 message DisconnectRequest {
     string id = 1;
+    string container_id = 2;
 }
+
 
 message DisconnectResponse {
 
