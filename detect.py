@@ -1,4 +1,7 @@
-import time
+import time, subprocess
+import socket # to notify perf server
+import shlex # for subprocess popen
+from multiprocessing import Process
 from absl import app, flags, logging
 from absl.flags import FLAGS
 import cv2 ###
@@ -34,6 +37,15 @@ flags.DEFINE_string('image', './data/girl.png', 'path to input image')
 flags.DEFINE_string('tfrecord', None, 'tfrecord instead of image')
 flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
+
+# Misun defined
+PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
+flags.DEFINE_boolean('hello', False, 'hello or health check')
+flags.DEFINE_boolean('perf', False, '')
+flags.DEFINE_boolean('rtt', False, 'measure RTT')
+flags.DEFINE_string('echo', 'Hello Misun', 'hello or health check')
+flags.DEFINE_integer('integer', 1234567, 'hello or health check')
+flags.DEFINE_string('testimage', None, '')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 
