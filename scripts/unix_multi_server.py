@@ -1,16 +1,16 @@
 import os
 import sys
 import socket
-import logging
+import errno
 import signal
 import multiprocessing
+import subprocess
+import json
 
-SERVER_SOCKET_PATH = './sockets/server.sock'
 
+SERVER_SOCKET_PATH = './sockets/perf_server.sock'
 SERVER_SOCKET: socket.socket
-
 CONCURRENT_CONNECTIONS = 1
-
 MULTIPROC = True
 
 def remove_remaining_sockets():
@@ -28,34 +28,68 @@ def create_and_bind_sockets():
     SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     SERVER_SOCKET.bind(SERVER_SOCKET_PATH)
 
+def is_target_done(pid: int):
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH: # process does not exist, errno==3
+            return True
+    return False
+
+def wait_until_process_terminates(pid: int):
+    while True:
+        if is_target_done(pid):
+            break
+
 def run_server():
     SERVER_SOCKET.listen(CONCURRENT_CONNECTIONS)
     while True:
+        print('waiting clients...')
         conn, _addr = SERVER_SOCKET.accept()
         if MULTIPROC: 
             process = multiprocessing.Process(target=handle_client, args=(conn, _addr))
             process.daemon = True
             process.start()
         else:
-            data_received = conn.recv(1024)
-            do_something(data_received)
-            data_to_send = data_received
-            conn.send(data_to_send)
-            conn.close()
+            handle_client(conn, _addr)
 
-def do_something(data_received):
-    print(data_received)
-    pid = int(data_received)
-    import subprocess
-    output = subprocess.check_output(f'sudo perf stat -e cycles -p {pid}', shell=True, encoding='utf-8')
-    print(output)
+def do_something(pid: int, events: list, container_name: str):
+    # print(f'exec perf stat -e {",".join(events)} -p {pid} -o ./data/perf_stat_{container_name}.log')
+    p = subprocess.Popen(f'exec perf stat -e {",".join(events)} -p {pid} -o ./data/perf_stat_{container_name}.log', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    wait_until_process_terminates(pid)
+
+    try:
+        stdout, stderr = p.communicate(timeout=1)
+    except:
+        p.send_signal(signal.SIGINT)
+        stdout, stderr = p.communicate(timeout=1)
+    
+    with open(f'./data/perf_stat_{container_name}.log') as f:
+        while True:
+            line = f.readline()
+            print(line, end='')
+            if line == '':
+                break
+
+def parse_arguments(string: str):
+    args_dict = json.loads(string)
+    print(args_dict)
+    if args_dict['type'] == 'open-proc-ns':
+        pass
+    elif args_dict['type'] == 'closed-proc-ns':
+        container_id = args_dict['cid']
+        args_dict['pid'] = subprocess.check_output(f'docker inspect --format=\'\{{{{.State.Pid}}}}\' {container_id}', encoding='utf-8').strip()
+        args_dict['container_name'] = subprocess.check_output(f'docker inspect --format=\'\{{{{.Name}}}}\' {container_id}', encoding='utf-8').replace('/','').strip()
+    return int(args_dict['pid']), args_dict['events'], args_dict['container_name'] 
+
 
 def handle_client(conn, addr):
     while True:
         data_received = conn.recv(1024)
-        do_something(data_received)
-        data_to_send = data_received
+        pid, events, container_name = parse_arguments(data_received.decode('utf-8'))
+        data_to_send = 'done'.encode('utf-8')
         conn.send(data_to_send)
+        do_something(pid, events, container_name)
         break
     conn.close()
 
@@ -68,6 +102,9 @@ def finalize(signum, frame):
     sys.exit()
 
 if __name__ == '__main__':
+    if os.geteuid() != 0:
+        exit("You need to have root privileges to run this script.\nPlease try again, this time using 'sudo'. Exiting.")
+
     signal.signal(signal.SIGINT, finalize)
 
     remove_remaining_sockets()

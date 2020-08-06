@@ -1,4 +1,5 @@
 import time, subprocess
+import socket # to notify perf server
 import shlex # for subprocess popen
 from multiprocessing import Process
 from absl import app, flags, logging
@@ -39,16 +40,11 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 # Misun defined
 flags.DEFINE_boolean('hello', False, 'hello or health check')
+flags.DEFINE_boolean('perf', False, '')
+flags.DEFINE_boolean('rtt', False, 'measure RTT')
 flags.DEFINE_string('echo', 'Hello Misun', 'hello or health check')
 flags.DEFINE_integer('integer', 1234567, 'hello or health check')
-
-flags.DEFINE_boolean('rtt', False, 'hello or health check')
-flags.DEFINE_boolean('cpu', False, 'hello or health check')
-flags.DEFINE_boolean('pfault', False, 'hello or health check')
-flags.DEFINE_boolean('llc', False, 'hello or health check')
-flags.DEFINE_boolean('tlb', False, 'hello or health check')
-
-
+flags.DEFINE_string('testimage', None, '')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 CONTAINER_ID: str
@@ -64,11 +60,27 @@ def initialize(stub):
 def finalize():
     ControlProcedure.Disconnect(g_stub)
 
-def perf_self(pid: int):
-    # -o /data/server.log
-    # raw_command
-    p = subprocess.Popen(f'perf stat -p {pid} -e cycles,page-faults -o /data/{CONTAINER_ID}.log', shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-    # o, e = p.communicate()
+def make_json(container_id):
+    import json
+    args_dict = {}
+
+    args_dict['type']='closed-proc-ns'
+    args_dict['cid']=container_id
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+
+    args_json = json.dumps(args_dict)
+
+    return args_json
+
+def connect_to_perf_server(container_id: str):
+    my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    my_socket.connect(PERF_SERVER_SOCKET)
+    json_data_to_send = make_json(container_id)
+    my_socket.sendall(json_data_to_send.encode('utf-8'))
+    data_received = my_socket.recv(1024)
+    print(data_received)
+    my_socket.close()
+
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
@@ -82,29 +94,17 @@ def main(_argv):
 
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
-        print(f'healthy? {health}')
-        # perf_self(os.getpid())
-        print('here000')
-        time.sleep(5)
-        output = subprocess.check_output(f'ls -al /data', shell=True, encoding='utf-8').strip()
-        print(output)
-        print('here?')
-        # os.kill(os.getpid(), signal.SIGINT)
-        time.sleep(3)
         exit()
-        # sys.exit()
     elif FLAGS.rtt:
         pass
-    elif FLAGS.cpu:
+    elif FLAGS.echo:
         pass
-    elif FLAGS.pfault:
+    elif FLAGS.integer:
         pass
-    elif FLAGS.llc:
-        pass
-    elif FLAGS.tlb:
+    elif FLAGS.testimage:
         pass
 
-    # ControlProcedure.SayHello(stub, 'misun')
+    connect_to_perf_server(socket.gethostname())
 
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')

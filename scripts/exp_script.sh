@@ -8,9 +8,6 @@ NETWORK=tf-grpc-exp
 
 EXP_ROOT="${HOME}/settings/tf-slim/lightweight/pjt/grpc"
 
-
-
-
 source internal_functions.sh
 
 function init() {
@@ -19,13 +16,26 @@ function init() {
     docker network create --driver=bridge $NETWORK
 }
 
+function finalize() {
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+}
+
 function health_check() {
     init
     # Run a server
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
 
     # Run a client with hello
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello && perf stat -p $! -e cycles,page-faults\""
+    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK python3.6 detect.py --hello
+}
+
+function health_check_dev() {
+    init
+    # Run a server
+    _run_d_server_dev grpc_exp_server grpc_exp_server_00 $NETWORK 5
+
+    # Run a client with hello
+    _run_client_dev grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello && perf stat -p $! -e cycles,page-faults\""
 }
 
 function build_image() {
@@ -33,6 +43,31 @@ function build_image() {
 
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
     docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
+}
+
+function perf() {
+    local $numinstances=$1
+    local $events=$2
+    local pid_list=()
+    local container_list=()
+
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(print "%04d" $i)
+        local container_name=grpc_exp_app_${index}
+
+        _run_client grpc_exp_client ${container_name} grpc_exp_server_00 $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_client grpc_exp_client ${container_name} grpc_exp_server_00 $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 }
 
 function compare_rtt() {
@@ -98,6 +133,7 @@ function help() {
     echo example: bash ./exp_script.sh rtt
 }
 
+trap finalize SIGINT
 COMMAND=$([[ $# == 0 ]] && echo help || echo $1)
 case $COMMAND in
     build)
@@ -105,6 +141,9 @@ case $COMMAND in
         ;;
     health|hello)
         health_check
+        ;;
+    perf)
+        perf $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
         ;;
     rtt)
         compare_rtt
