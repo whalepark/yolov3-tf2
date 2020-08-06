@@ -61,7 +61,7 @@ function perf() {
     _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
 
     for i in $(seq 1 $numinstances); do
-        local index=$(print "%04d" $i)
+        local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_${index}
 
         _run_client grpc_exp_client ${container_name} grpc_exp_server_00 $NETWORK "python3.6 detect.py --image data/meme.jpg"
