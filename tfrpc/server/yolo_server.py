@@ -952,6 +952,28 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
+    
+def make_json(container_id):
+    import json
+    args_dict = {}
+
+    args_dict['type']='closed-proc-ns'
+    args_dict['cid']=container_id
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+
+    args_json = json.dumps(args_dict)
+
+    return args_json
+
+def connect_to_perf_server(container_id: str):
+    my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    my_socket.connect(PERF_SERVER_SOCKET)
+    json_data_to_send = make_json(container_id)
+    my_socket.sendall(json_data_to_send.encode('utf-8'))
+    data_received = my_socket.recv(1024)
+    print(data_received)
+    my_socket.close()    
+    
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=47), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
@@ -959,9 +981,11 @@ def serve():
     server.add_insecure_port('[::]:1990')
     print('Hello TF!')
     physical_devices = tf.config.experimental.get_visible_devices('CPU')
-    tf.config.threading.set_inter_op_parallelism_threads(48)
-    tf.config.threading.set_intra_op_parallelism_threads(96)
+#    tf.config.threading.set_inter_op_parallelism_threads(48)
+#    tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
+    connect_to_perf_server(socket.gethostname())
+
     server.wait_for_termination()
 
 if __name__ == '__main__':
