@@ -1,26 +1,27 @@
 #!/usr/bin/python
 import os
 import subprocess, time
-from multiprocessing import Process # todo: remove?
+import socket
+# from multiprocessing import Process # todo: remove?
 
 # todo: remove these after debugging
 # os.environ['YOLO_SERVER'] = '1'
-from multiprocessing import Process, Pipe, Manager
+# from multiprocessing import Process, Pipe, Manager
 # import time
 # import contexttimer
-def child_process(func):
-    """Makes the function run as a separate process."""
-    def wrapper(*args, **kwargs):
-        def worker(conn, func, args, kwargs):
-            conn.send(func(*args, **kwargs))
-            conn.close()
-        parent_conn, child_conn = Pipe()
-        p = Process(target=worker, args=(child_conn, func, args, kwargs))
-        p.start()
-        ret = parent_conn.recv()
-        p.join()
-        return ret
-    return wrapper
+# def child_process(func):
+#     """Makes the function run as a separate process."""
+#     def wrapper(*args, **kwargs):
+#         def worker(conn, func, args, kwargs):
+#             conn.send(func(*args, **kwargs))
+#             conn.close()
+#         parent_conn, child_conn = Pipe()
+#         p = Process(target=worker, args=(child_conn, func, args, kwargs))
+#         p.start()
+#         ret = parent_conn.recv()
+#         p.join()
+#         return ret
+#     return wrapper
 
 from concurrent import futures
 import logging
@@ -271,9 +272,9 @@ def utils_add_to_subdir(container_id, connection_id):
 
 # @jit(nopython=True, nogil=True, parallel=True)
 # @ray.remote
-@child_process
-def utils_infer(callable_obj, args):
-    return callable_obj(args)
+# @child_process
+# def utils_infer(callable_obj, args):
+#     return callable_obj(args)
 
 def yolo_boxes(pred, anchors, classes):
     # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
@@ -981,8 +982,26 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         return response
 
-def perf_self(pid: int):
-    output = subprocess.check_call(f'perf stat -p {pid} -e cycles,page-faults -o /data/server.log', shell=True, encoding='utf-8').strip()
+def make_json(container_id):
+    import json
+    args_dict = {}
+
+    args_dict['type']='closed-proc-ns'
+    args_dict['cid']=container_id
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+
+    args_json = json.dumps(args_dict)
+
+    return args_json
+
+def connect_to_perf_server(container_id: str):
+    my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    my_socket.connect(PERF_SERVER_SOCKET)
+    json_data_to_send = make_json(container_id)
+    my_socket.sendall(json_data_to_send.encode('utf-8'))
+    data_received = my_socket.recv(1024)
+    print(data_received)
+    my_socket.close()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=47), options=[('grpc.so_reuseport', 1), ('grpc.max_send_message_length', -1), ('grpc.max_receive_message_length', -1)])
@@ -993,9 +1012,7 @@ def serve():
     # tf.config.threading.set_inter_op_parallelism_threads(48)
     # tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
-    if True:
-        process = Process(target=perf_self, daemon=False, args=(os.getpid(),))
-        process.start()
+    connect_to_perf_server(socket.gethostname())
 
     server.wait_for_termination()
 

@@ -78,8 +78,8 @@ def parse_arguments(string: str):
         pass
     elif args_dict['type'] == 'closed-proc-ns':
         container_id = args_dict['cid']
-        args_dict['pid'] = subprocess.check_output(f'docker inspect --format=\'\{{{{.State.Pid}}}}\' {container_id}', encoding='utf-8').strip()
-        args_dict['container_name'] = subprocess.check_output(f'docker inspect --format=\'\{{{{.Name}}}}\' {container_id}', encoding='utf-8').replace('/','').strip()
+        args_dict['pid'] = subprocess.check_output(f'docker inspect --format=\'{{{{.State.Pid}}}}\' {container_id}', shell=True, encoding='utf-8').strip()
+        args_dict['container_name'] = subprocess.check_output(f'docker inspect --format=\'{{{{.Name}}}}\' {container_id}', shell=True, encoding='utf-8').replace('/','').strip()
     return int(args_dict['pid']), args_dict['events'], args_dict['container_name'] 
 
 
