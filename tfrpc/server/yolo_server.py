@@ -1,24 +1,25 @@
 #!/usr/bin/python
 import os
+import socket
 
 # todo: remove these after debugging
 # os.environ['YOLO_SERVER'] = '1'
-from multiprocessing import Process, Pipe, Manager
+# from multiprocessing import Process, Pipe, Manager
 # import time
 # import contexttimer
-def child_process(func):
-    """Makes the function run as a separate process."""
-    def wrapper(*args, **kwargs):
-        def worker(conn, func, args, kwargs):
-            conn.send(func(*args, **kwargs))
-            conn.close()
-        parent_conn, child_conn = Pipe()
-        p = Process(target=worker, args=(child_conn, func, args, kwargs))
-        p.start()
-        ret = parent_conn.recv()
-        p.join()
-        return ret
-    return wrapper
+# def child_process(func):
+#    """Makes the function run as a separate process."""
+#    def wrapper(*args, **kwargs):
+#        def worker(conn, func, args, kwargs):
+#            conn.send(func(*args, **kwargs))
+#            conn.close()
+#        parent_conn, child_conn = Pipe()
+#        p = Process(target=worker, args=(child_conn, func, args, kwargs))
+#        p.start()
+#        ret = parent_conn.recv()
+#        p.join()
+#        return ret
+#    return wrapper
 
 from concurrent import futures
 import logging
@@ -243,9 +244,9 @@ def utils_infer_target(snd, callable_obj, args):
 
 # @jit(nopython=True, nogil=True, parallel=True)
 # @ray.remote
-@child_process
-def utils_infer(callable_obj, args):
-    return callable_obj(args)
+# @child_process
+# def utils_infer(callable_obj, args):
+#    return callable_obj(args)
 
 def yolo_boxes(pred, anchors, classes):
     # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
