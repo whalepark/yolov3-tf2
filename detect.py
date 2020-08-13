@@ -87,8 +87,9 @@ def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
     server_addr = os.environ.get('SERVER_ADDR')
     channel = grpc.insecure_channel(f'{server_addr}:1990', \
-        options=[('grpc.max_send_message_length', 50 * 1024 * 1024), \
-        ('grpc.max_receive_message_length', 50 * 1024 * 1024)] \
+        options=[('grpc.max_send_message_length', 100 * 1024 * 1024), \
+        ('grpc.max_receive_message_length', 100 * 1024 * 1024), \
+        ('grpc.max_message_length', 100 * 1024 * 1024)] \
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)

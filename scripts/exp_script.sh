@@ -10,6 +10,22 @@ EXP_ROOT="${HOME}/settings/tf-slim/lightweight/pjt/grpc"
 
 source internal_functions.sh
 
+function parse_arg() {
+    for arg in $@; do
+        case $arg in
+            -n=*|--num=*)
+                NUMINSTANCES="${arg#*=}"
+                ;;
+            -s=*|--server=*)
+                SERVER="${arg#*=}"
+                ;;
+            -ri=*|--random-interval=*)
+                INTERVAL="${arg#*=}"
+                ;;
+        esac
+    done
+}
+
 function init() {
     docker rm -f $(docker ps -a | grep "grpc_server\|grpc_app_\|grpc_exp_server\|grpc_exp_app_\|" | awk '{print $1}') > /dev/null 2>&1
     docker network rm $NETWORK
@@ -39,11 +55,11 @@ function health_check_dev() {
 }
 
 function build_image() {
-    docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
-    # docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
+    # docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
+    docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
-    # docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
+    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
 }
 
 function perf() {
@@ -66,13 +82,22 @@ function perf() {
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
 
-        _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+        _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 
-    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        docker wait "${container_name}"
+    done
+
+    # # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     # server_container_name=grpc_exp_server_bin_00
     # server_image=grpc_server
 
@@ -87,11 +112,22 @@ function perf() {
     #     local index=$(printf "%04d" $i)
     #     local container_name=grpc_exp_app_bin_${index}
 
-    #     _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+    #     # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+    #     # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
     #     # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    #     _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     # done
 
     # sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    # for i in $(seq 1 $numinstances); do
+    #     local index=$(printf "%04d" $i)
+    #     local container_name=grpc_exp_app_bin_${index}
+
+    #     docker wait "${container_name}"
+    # done
+
+    # init
 }
 
 function compare_rtt() {
@@ -159,6 +195,8 @@ function help() {
 
 trap finalize SIGINT
 COMMAND=$([[ $# == 0 ]] && echo help || echo $1)
+parse_arg ${@:2}
+
 case $COMMAND in
     build)
         build_image

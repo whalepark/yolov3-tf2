@@ -59,6 +59,35 @@ function _run_client() {
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
+function _run_d_client() {
+    local index=$(($1 % $NUMCPU))
+    local image_name=$2
+    local container_name=$3
+    local server_container=$4
+    local network=$5
+    local command=$6
+    docker rm -f ${container_name} > /dev/null 2>&1
+
+    local docker_cmd="docker run \
+        -d \
+        --volume=$(pwd)/data:/data \
+        --volume=$(pwd)/sockets:/sockets \
+        --volume=$(pwd)/../images:/img \
+        --network=${network} \
+        --name=${container_name} \
+        --workdir='/root/yolov3-tf2' \
+        --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $server_container) \
+        --env CONTAINER_ID=${container_name} \
+        --cap-add SYS_ADMIN \
+        --cap-add IPC_LOCK \
+        --cpuset-cpus=${index} \
+        ${image_name} \
+        ${command}"
+    eval $docker_cmd
+    
+    #python3.6 detect.py --image data/meme.jpg # default command
+}
+
 function _run_d_server_dev() {
     local image=$1
     local container=$2
