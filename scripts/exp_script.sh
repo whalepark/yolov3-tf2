@@ -61,7 +61,7 @@ function perf() {
 
     sudo python unix_multi_server.py &
     _run_d_server ${server_image} ${server_container_name} $NETWORK 5
-    exit
+
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
