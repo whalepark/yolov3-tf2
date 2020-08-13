@@ -92,6 +92,9 @@ flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
 
+##### Misun Defined
+PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
+
 ## global variables
 Model_Create_Lock = threading.Lock()
 Weights_Load_Lock = threading.Lock()
@@ -1017,7 +1020,6 @@ def serve():
     server.wait_for_termination()
 
 if __name__ == '__main__':
-    print('here')
     logging.basicConfig()
     FLAGS(sys.argv)
     print(f'hostroot={hostroot}')

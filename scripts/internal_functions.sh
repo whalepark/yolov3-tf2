@@ -23,6 +23,7 @@ function _run_d_server() {
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
+        --cpuset-cpus=0 \
         $image \
         python tfrpc/server/yolo_server.py
     utils_attach_root $container
@@ -31,11 +32,12 @@ function _run_d_server() {
 }
 
 function _run_client() {
-    local image_name=$1
-    local container_name=$2
-    local server_container=$3
-    local network=$4
-    local command=$5
+    local index=$(($1 % $NUMCPU))
+    local image_name=$2
+    local container_name=$3
+    local server_container=$4
+    local network=$5
+    local command=$6
     docker rm -f ${container_name} > /dev/null 2>&1
 
     local docker_cmd="docker run \
@@ -49,6 +51,7 @@ function _run_client() {
         --env CONTAINER_ID=${container_name} \
         --cap-add SYS_ADMIN \
         --cap-add IPC_LOCK \
+        --cpuset-cpus=${index} \
         ${image_name} \
         ${command}"
     eval $docker_cmd

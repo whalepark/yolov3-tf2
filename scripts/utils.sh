@@ -6,6 +6,7 @@ GET_CONTAINER_CREATED='{{.Created}}'
 GET_CONTAINER_STARTED='{{.State.StartedAt}}'
 GET_CONTAINER_FINISHED='{{.State.FinishedAt}}'
 GET_CONTAINER_IPADDRESS='{{.NetworkSettings.IPAddress}}'
+NUMCPU=$(nproc)
 
 function utils_get_container_id() {
     local name=$1

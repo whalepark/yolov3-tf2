@@ -55,6 +55,27 @@ function perf() {
     local server_container_name=grpc_exp_server_id_00
     local server_image=grpc_exp_server
 
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
+    exit
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
+    # server_container_name=grpc_exp_server_bin_00
+    # server_image=grpc_server
+
     # init
     # sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
     # sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
@@ -64,34 +85,13 @@ function perf() {
 
     # for i in $(seq 1 $numinstances); do
     #     local index=$(printf "%04d" $i)
-    #     local container_name=grpc_exp_app_id_${index}
+    #     local container_name=grpc_exp_app_bin_${index}
 
-    #     _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-    #     # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    #     _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+    #     # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     # done
 
     # sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
-
-    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
-    server_container_name=grpc_exp_server_bin_00
-    server_image=grpc_server
-
-    init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-
-    sudo python unix_multi_server.py &
-    _run_d_server grpc_exp_server ${server_container_name} $NETWORK 5
-
-    for i in $(seq 1 $numinstances); do
-        local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_bin_${index}
-
-        _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
-    done
-
-    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 }
 
 function compare_rtt() {

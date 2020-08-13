@@ -46,6 +46,7 @@ def run_server():
     while True:
         print('waiting clients...')
         conn, _addr = SERVER_SOCKET.accept()
+        print('here?')
         if MULTIPROC: 
             process = multiprocessing.Process(target=handle_client, args=(conn, _addr))
             process.daemon = True
@@ -84,9 +85,11 @@ def parse_arguments(string: str):
 
 
 def handle_client(conn, addr):
+    print('handle client!')
     while True:
         data_received = conn.recv(1024)
         pid, events, container_name = parse_arguments(data_received.decode('utf-8'))
+        print(f'pid={pid}, events={events}, container_name={container_name}')
         data_to_send = 'done'.encode('utf-8')
         conn.send(data_to_send)
         do_something(pid, events, container_name)
