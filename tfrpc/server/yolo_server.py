@@ -998,6 +998,7 @@ def make_json(container_id):
     return args_json
 
 def connect_to_perf_server(container_id: str):
+    print('connec_to_perf_server')
     my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     my_socket.connect(PERF_SERVER_SOCKET)
     json_data_to_send = make_json(container_id)
