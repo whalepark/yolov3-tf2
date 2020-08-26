@@ -6,6 +6,7 @@ import signal
 import multiprocessing
 import subprocess
 import json
+import time
 
 
 SERVER_SOCKET_PATH = './sockets/perf_server.sock'
@@ -37,6 +38,7 @@ def is_target_done(pid: int):
     return False
 
 def wait_until_process_terminates(pid: int):
+    time.sleep(0.05)
     while True:
         if is_target_done(pid):
             break
