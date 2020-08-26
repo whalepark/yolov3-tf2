@@ -607,7 +607,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         prefix = Subdir_Dict[request.connection_id]
         output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
         print(output)
-        exit()
+        while True:
+            print('input')
+            input()
         image_bin = open(prefix + request.image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)

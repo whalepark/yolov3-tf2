@@ -38,7 +38,7 @@ def is_target_done(pid: int):
     return False
 
 def wait_until_process_terminates(pid: int):
-    time.sleep(0.05)
+    time.sleep(0.1)
     while True:
         if is_target_done(pid):
             break
