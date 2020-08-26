@@ -97,25 +97,115 @@ function perf() {
         docker wait "${container_name}"
     done
 
-    # # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
-    # server_container_name=grpc_exp_server_bin_00
-    # server_image=grpc_server
+    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
+    server_container_name=grpc_exp_server_bin_00
+    server_image=grpc_server
 
-    # init
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
+
+        # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+        _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
+
+        docker wait "${container_name}"
+    done
+
+    init
+}
+
+function init_ramfs() {
+    local dir="$(pwd)/ramfs/"
+    echo "${dir}"
+
+    sudo umount "${dir}"
+    sudo rm -rf "${dir}"
+
+    if [[ ! -d "${dir}" ]]; then
+        sudo mkdir -p "${dir}"
+        sudo mount -t tmpfs -o size=100M tmpfs "${dir}"
+        sudo cp ../images/* "${dir}"
+        # sudo cp -r ! (yolov3.weights|../data/*) "${dir}"
+        sudo find ../data/ ! -name yolov3.weights -exec cp -t "${dir}" {} +
+    fi
+}
+
+function perf_ramfs() {
+    local numinstances=$1
+    local events=$2
+    local pid_list=()
+    local container_list=()
+
+    local server_container_name=grpc_exp_server_id_00
+    local server_image=grpc_exp_server
+
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server_w_ramfs ${server_image} ${server_container_name} $NETWORK 5
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/meme.jpg"
+        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "ls -al /ramfs"
+        # docker logs --follow grpc_exp_app_id_0001
+        # exit
+        # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/photographer.jpg"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        docker wait "${container_name}"
+    done
+
+    docker logs grpc_exp_app_id_0001
+    docker logs grpc_exp_app_id_0004
+
+    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
+    server_container_name=grpc_exp_server_bin_00
+    server_image=grpc_server
+
+    init
     # sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
     # sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     # sudo python unix_multi_server.py &
-    # _run_d_server ${server_image} ${server_container_name} $NETWORK 5
+    # _run_d_server_w_ramfs ${server_image} ${server_container_name} $NETWORK 5
 
     # for i in $(seq 1 $numinstances); do
     #     local index=$(printf "%04d" $i)
     #     local container_name=grpc_exp_app_bin_${index}
 
-    #     # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-    #     # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-    #     # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
-    #     _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    #     # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/meme.jpg"
+    #     _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+    #     # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/photographer.jpg"
+    #     # _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
     # done
 
     # sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -207,6 +297,10 @@ case $COMMAND in
     perf)
         perf $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
         ;;
+    'perf-ramfs')
+        init_ramfs
+        perf_ramfs $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
+        ;;
     rtt)
         compare_rtt
         ;;
@@ -221,6 +315,10 @@ case $COMMAND in
         ;;
     tlb)
         compare_tlb_misses
+        ;;
+    debug)
+        init_ramfs
+        ls ramfs
         ;;
     *|help)
         help
