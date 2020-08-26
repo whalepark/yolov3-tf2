@@ -606,6 +606,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
         prefix = Subdir_Dict[request.connection_id]
         output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
+        print(prefix)
         print(output)
         while True:
             print('input')
