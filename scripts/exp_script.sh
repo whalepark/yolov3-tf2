@@ -56,10 +56,12 @@ function health_check_dev() {
 
 function build_image() {
     # docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
-    docker rmi -f $(docker ps -a | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
+    docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
+    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
-    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser .
+    # docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
+    docker image build -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
 }
 
 function perf() {
@@ -160,7 +162,7 @@ function perf_ramfs() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_w_ramfs ${server_image} ${server_container_name} $NETWORK 5
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
 
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
@@ -186,38 +188,39 @@ function perf_ramfs() {
 
     docker logs grpc_exp_app_id_0001
     docker logs grpc_exp_app_id_0004
+    exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
     server_image=grpc_server
 
     init
-    # sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    # sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
-    # sudo python unix_multi_server.py &
-    # _run_d_server_w_ramfs ${server_image} ${server_container_name} $NETWORK 5
+    sudo python unix_multi_server.py &
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
 
-    # for i in $(seq 1 $numinstances); do
-    #     local index=$(printf "%04d" $i)
-    #     local container_name=grpc_exp_app_bin_${index}
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
 
-    #     # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/meme.jpg"
-    #     _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-    #     # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/photographer.jpg"
-    #     # _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
-    # done
+        # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/meme.jpg"
+        _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/photographer.jpg"
+        # _run_d_client_w_ramfs $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
+    done
 
-    # sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 
-    # for i in $(seq 1 $numinstances); do
-    #     local index=$(printf "%04d" $i)
-    #     local container_name=grpc_exp_app_bin_${index}
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
 
-    #     docker wait "${container_name}"
-    # done
+        docker wait "${container_name}"
+    done
 
-    # init
+    init
 }
 
 function compare_rtt() {

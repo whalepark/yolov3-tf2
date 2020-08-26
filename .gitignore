@@ -143,3 +143,5 @@ tfrpc/client/yolo_pb2.py
 tfrpc/server/misun.txt
 tfrpc/server/yolo_pb2_grpc.py
 tfrpc/server/yolo_pb2.py
+scripts/ramfs
+temp
