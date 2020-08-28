@@ -608,6 +608,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
         print(f'prefix={prefix}')
         print(f'output={output}')
+        output = subprocess.check_output(f'ls -al {prefix}', shell=True, encoding='utf-8').strip()
+        print(f'prefix={prefix}')
+        print(f'output={output}')
         while True:
             print('input')
             input()
