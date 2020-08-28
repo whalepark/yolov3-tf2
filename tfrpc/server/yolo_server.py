@@ -237,14 +237,10 @@ def utils_collect_garbage(connection_id: str):
     del Subdir_Dict[connection_id]
 
 def utils_inference_wrapper(sndpipe, model, args):
-    print(f'misun: 0')
-    print('misun:', model, type(args), args)
+    # print('misun:', model, type(args), args)
     ret_val = model(args)
-    print(f'misun: 1')
     sndpipe.send(ret_val)
-    print(f'misun: 2')
     sndpipe.close()
-    print(f'misun: 3')
 
 def utils_infer_target(snd, callable_obj, args):
     obj_name = Global_Model_Dict[callable_obj].model
@@ -265,9 +261,13 @@ def _get_client_root(container):
     print(f'merged_dir={merged_dir}')
     return hostroot + merged_dir
 
+# def _set_client_root_visible(rootpath):
+    
+
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
     print(f'subdir={subdir}')
+    # _set_client_root_visible(subdir)
     output = subprocess.check_output(f'ls {subdir}', shell=True).decode('utf-8').strip()
     print(f'output={output}')
     Subdir_Dict[connection_id] = subdir
@@ -613,7 +613,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'output={output}')
         while True:
             print('input')
-            input()
+            # input()
+            time.sleep(30) # todo: remove
         image_bin = open(prefix + request.image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)
@@ -1025,9 +1026,7 @@ def serve():
     physical_devices = tf.config.experimental.get_visible_devices('CPU')
     # tf.config.threading.set_inter_op_parallelism_threads(48)
     # tf.config.threading.set_intra_op_parallelism_threads(96)
-    print('1')
     server.start()
-    print('2')
     connect_to_perf_server(socket.gethostname())
 
     server.wait_for_termination()
