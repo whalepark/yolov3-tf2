@@ -24,19 +24,20 @@ class ControlProcedure:
     
 
     ## Todo: remove this
-    output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset', shell=True, encoding='utf-8')
-    print(111)
-    print(output)
-    output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3', shell=True, encoding='utf-8')
-    print(222)
-    print(output)
-    output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8')
-    print(333)
-    print(output)
+    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset', shell=True, encoding='utf-8')
+    # print(111)
+    # print(output)
+    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3', shell=True, encoding='utf-8')
+    # print(222)
+    # print(output)
+    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
+    # print(333)
+    # print(output)
     ## 
 
-    container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
-    print('misun!!!')
+    # container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
+    container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
+    # print('misun!!!')
     print(f'container_id={container_id}')
     @staticmethod
     def Connect(stub):
