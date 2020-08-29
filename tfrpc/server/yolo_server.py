@@ -257,8 +257,6 @@ def _get_client_root(container):
     #     output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
     # except subprocess.CalledProcessError as e:
     #     print(e.output)
-    for i in range(1, 100):
-        print(f'container={container}')
     merged_dir = subprocess.check_output('docker inspect -f {{.GraphDriver.Data.MergedDir}} ' + container, shell=True).decode('utf-8').strip()
     print(f'merged_dir={merged_dir}')
     return hostroot + merged_dir
@@ -353,7 +351,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            print(f'request.container_id={request.container_id}')
+            for i in range(1, 100):
+                print(f'request.container_id={request.container_id}')
             utils_add_to_subdir(request.container_id, request.id)
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
