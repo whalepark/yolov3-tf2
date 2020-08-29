@@ -22,7 +22,8 @@ def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digit
 class ControlProcedure:
     client_id: str = ''
     container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
-    print(f'1)container_id={container_id}')
+    print('misun!!!')
+    print(f'container_id={container_id}')
     @staticmethod
     def Connect(stub):
         request = yolo_pb2.ConnectRequest()
