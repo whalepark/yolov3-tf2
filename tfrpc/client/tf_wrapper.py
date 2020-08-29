@@ -25,10 +25,13 @@ class ControlProcedure:
 
     ## Todo: remove this
     output = subprocess.check_output('cat /proc/self/cgroup', shell=True, encoding='utf-8')
+    print(111)
     print(output)
     output = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3', shell=True, encoding='utf-8')
+    print(222)
     print(output)
     output = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2', shell=True, encoding='utf-8')
+    print(333)
     print(output)
     ## 
 
