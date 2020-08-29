@@ -167,12 +167,13 @@ function perf_ramfs() {
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
 
-        # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/meme.jpg"
-        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "ls -al /ramfs"
         # docker logs --follow grpc_exp_app_id_0001
         # exit
-        # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image ramfs/photographer.jpg"
+        # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
     done
 

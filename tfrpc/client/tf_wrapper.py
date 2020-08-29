@@ -21,6 +21,17 @@ def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digit
 
 class ControlProcedure:
     client_id: str = ''
+    
+
+    ## Todo: remove this
+    output = subprocess.check_output('cat /proc/self/cgroup', shell=True, encoding='utf-8')
+    print(output)
+    output = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3', shell=True, encoding='utf-8')
+    print(output)
+    output = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2', shell=True, encoding='utf-8')
+    print(output)
+    ## 
+
     container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
     print('misun!!!')
     print(f'container_id={container_id}')
