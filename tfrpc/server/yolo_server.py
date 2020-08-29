@@ -614,7 +614,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         while True:
             print(f'prefix={prefix}')
             # input()
-            # time.sleep(30) # todo: remove
+            time.sleep(5) # todo: remove
         image_bin = open(prefix + request.image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)
