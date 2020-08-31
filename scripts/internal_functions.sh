@@ -24,11 +24,12 @@ function _run_d_server() {
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
         --volume=$(pwd)/ramfs:/ramfs \
+        --volume=/var/lib/docker/overlay2:/layers \
         --cpuset-cpus=0 \
         $image \
         bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
         # python tfrpc/server/yolo_server.py
-    utils_attach_root $container
+    # utils_attach_root $container # It is mount-binded through docker args.
     sleep $pause
     echo 'Server bootup!'
 }
