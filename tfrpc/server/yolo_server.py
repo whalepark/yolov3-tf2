@@ -269,7 +269,8 @@ def _get_client_root(container):
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
-    print(f'subdir={subdir}')
+    for i in range(1, 50):
+        print(f'subdir={subdir}')
     # _set_client_root_visible(subdir)
     output = subprocess.check_output(f'ls {subdir}', shell=True).decode('utf-8').strip()
     print(f'output={output}')
