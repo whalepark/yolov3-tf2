@@ -625,7 +625,9 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             print(dir_list)
         for i in range(0, 100):
             for i in range(0,len(dir_list)):
-                output = subprocess.check_output(f'ls /{slash.join(dir_list[0:i])}')
+                dir = '/' + slash.join(dir_list[0:i])
+                print(f'dir={dir}')
+                output = subprocess.check_output(f'ls {dir}')
                 print(output)
 
         image_bin = open(prefix + request.image_path, 'rb').read()
