@@ -608,16 +608,15 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response=yolo_pb2.DecodeImageResponse()
         # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
         prefix = Subdir_Dict[request.connection_id]
+
+        # Todo: remove these
         output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
-        print(f'prefix={prefix}')
+        print(f'prefix={prefix}') 
         print(f'output={output}')
         output = subprocess.check_output(f'ls -al {prefix}', shell=True, encoding='utf-8').strip()
         print(f'prefix={prefix}')
         print(f'output={output}')
-        while True:
-            print(f'prefix={prefix}')
-            # input()
-            time.sleep(5) # todo: remove
+
         image_bin = open(prefix + request.image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)

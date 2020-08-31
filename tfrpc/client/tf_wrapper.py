@@ -1,3 +1,4 @@
+import os
 import yolo_pb2
 import yolo_pb2_grpc
 import pickle
@@ -182,7 +183,7 @@ class TFWrapper:
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        request.image_path = image_path
+        request.image_path = os.path.abspath(image_path)
         request.connection_id = ControlProcedure.client_id
 
         response = stub.image_decode__image(request)
