@@ -18,7 +18,7 @@ RUN apt-get update -y --fix-missing && \
     python3 -m pip install grpcio-tools && \
     python3 -m pip install --upgrade protobuf && \
     git clone https://github.com/whalepark/yolov3-tf2.git /root/yolov3-tf2
-ADD yolov3.weights /root/yolov3-tf2/data/
+ADD ../../../yolov3.weights /root/yolov3-tf2/data/
     # wget https://pjreddie.com/media/files/yolov3.weights -P /root/yolov3-tf2/data && \
 RUN cd /root/yolov3-tf2/ && \
     python3.6 convert.py && \

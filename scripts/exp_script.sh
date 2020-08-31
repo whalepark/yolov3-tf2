@@ -55,11 +55,12 @@ function health_check_dev() {
 }
 
 function build_image() {
-    # docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
-    docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
+    docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
+    # docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
 
-    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp .
-    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
+    cp ../../yolov3.weights .
+    docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
+    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser dockerfiles
     # docker image build -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
 }
 
