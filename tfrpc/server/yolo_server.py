@@ -110,8 +110,7 @@ Connection_Set = set()
 Global_Model_Dict = {}
 Container_Id_Dict = {}
 Subdir_Dict = {}
-hostroot = '/hostroot'
-subdir_root = hostroot + '/var/lib/docker/overlay2'
+hostroot = '/layers/'
 
 conv2d_count = 0
 batch_norm_count = 0
@@ -259,10 +258,10 @@ def _get_client_root(container):
     #     print(e.output)
     merged_dir = subprocess.check_output('docker inspect -f {{.GraphDriver.Data.MergedDir}} ' + container, shell=True).decode('utf-8').strip()
     print(f'merged_dir={merged_dir}')
-    layer_id = merged_dir.split('/')[4]
+    layer_id = merged_dir.split('/')[5]
     print(f'layer_id={layer_id}') # Todo: remove
 
-    return hostroot + layer_id
+    return hostroot + layer_id + '/merged'
 
 # def _set_client_root_visible(rootpath):
     
@@ -355,8 +354,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Connection_Set.add(request.id)
-            for i in range(1, 100):
-                print(f'request.container_id={request.container_id}')
             utils_add_to_subdir(request.container_id, request.id)
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
