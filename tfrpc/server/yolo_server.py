@@ -620,7 +620,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         # Todo: Debug, remove this
         dir_list = (prefix + request.image_path).split('/')
-        print(dir_list)
+        for i in range(0, 100):
+            print(dir_list)
         for i in range(0, 100):
             for i in len(dir_list):
                 output = subprocess.check_output(f'ls /{"/".join(dir_list[0:i])}')
