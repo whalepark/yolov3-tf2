@@ -58,7 +58,7 @@ function build_image() {
     docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
     # docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
 
-    cp ../../yolov3.weights .
+    cp ../../yolov3.weights ./dockerfiles
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
     docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser dockerfiles
     # docker image build -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
