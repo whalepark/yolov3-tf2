@@ -21,23 +21,13 @@ def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digit
     return ''.join(random.choice(chars) for x in range(size))
 
 def is_ramfs(path: str):
-    return os.path.samefile(os.path.dirname(os.path.normpath(path)), '/ramfs')
+    try:
+        return os.path.samefile(os.path.dirname(os.path.normpath(path)), '/ramfs')
+    except FileNotFoundError:
+        return False
 
 class ControlProcedure:
     client_id: str = ''
-    
-
-    ## Todo: remove this
-    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset', shell=True, encoding='utf-8')
-    # print(111)
-    # print(output)
-    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3', shell=True, encoding='utf-8')
-    # print(222)
-    # print(output)
-    # output = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
-    # print(333)
-    # print(output)
-    ## 
 
     # container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
     container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()

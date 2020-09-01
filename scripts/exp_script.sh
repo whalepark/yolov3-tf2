@@ -86,8 +86,9 @@ function perf() {
 
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
         # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image images/meme.jpg'"
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
-        _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+        # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -98,6 +99,12 @@ function perf() {
 
         docker wait "${container_name}"
     done
+
+    # For debugging
+    docker logs grpc_exp_app_id_0001
+    exit
+    docker logs grpc_exp_app_id_0004
+    exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
@@ -116,8 +123,9 @@ function perf() {
 
         # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
         # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image images/meme.jpg'"
         # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
-        _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -172,9 +180,7 @@ function perf_ramfs() {
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
         _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
-        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "ls -al /ramfs"
-        # docker logs --follow grpc_exp_app_id_0001
-        # exit
+
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
     done
@@ -188,9 +194,10 @@ function perf_ramfs() {
         docker wait "${container_name}"
     done
 
-    docker logs grpc_exp_app_id_0001
-    docker logs grpc_exp_app_id_0004
-    exit
+    # for debugging
+    # docker logs grpc_exp_app_id_0001
+    # docker logs grpc_exp_app_id_0004
+    # exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
