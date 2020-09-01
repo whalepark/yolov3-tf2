@@ -23,12 +23,13 @@ function _run_d_server() {
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
-        --volume=$(pwd)/ramfs:/ramfs \
-        --volume=/var/lib/docker/overlay2:/layers \
+        --mount type=bind,source=/var/lib/docker/overlay2,target=/layers,bind-propagation=rshared \
         --cpuset-cpus=0 \
         $image \
         bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
         # python tfrpc/server/yolo_server.py
+        # --volume=/var/lib/docker/overlay2:/layers \
+        # --volume=$(pwd)/ramfs:/ramfs \ # seems to have to be removed. no need to bind-mount this.
     # utils_attach_root $container # It is mount-binded through docker args.
     sleep $pause
     echo 'Server bootup!'

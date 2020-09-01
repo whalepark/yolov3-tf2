@@ -141,7 +141,8 @@ function init_ramfs() {
 
     if [[ ! -d "${dir}" ]]; then
         sudo mkdir -p "${dir}"
-        sudo mount -t tmpfs -o size=100M tmpfs "${dir}"
+        sudo mount --make-shared "${dir}"
+        sudo mount --make-shared -t tmpfs -o size=100M tmpfs "${dir}"
         sudo cp ../images/* "${dir}"
         # sudo cp -r ! (yolov3.weights|../data/*) "${dir}"
         sudo find ../data/ ! -name yolov3.weights -exec cp -t "${dir}" {} +
