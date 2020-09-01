@@ -186,7 +186,7 @@ class TFWrapper:
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        if is_ramfs():
+        if is_ramfs(image_path):
             request.ramfs = True
             request.image_path = image_path
         else:
