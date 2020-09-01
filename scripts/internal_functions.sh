@@ -27,8 +27,8 @@ function _run_d_server() {
         --volume=$(pwd)/ramfs:/ramfs \
         --cpuset-cpus=0 \
         $image \
-        python tfrpc/server/yolo_server.py
-        # bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
+        bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
+        # python tfrpc/server/yolo_server.py
         # --mount type=bind,source=/var/lib/docker/overlay2,target=/layers,bind-propagation=rshared \
     # utils_attach_root $container # It is mount-binded through docker args.
     sleep $pause
