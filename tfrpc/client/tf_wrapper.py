@@ -20,6 +20,9 @@ import subprocess
 def utils_random_string(size = 12, chars = string.ascii_lowercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
+def is_ramfs(path: str):
+    return os.path.samefile(os.path.dirname(os.path.normpath(path)), '/ramfs')
+
 class ControlProcedure:
     client_id: str = ''
     
@@ -183,7 +186,12 @@ class TFWrapper:
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        request.image_path = os.path.abspath(image_path)
+        if is_ramfs():
+            request.ramfs = True
+            request.image_path = image_path
+        else:
+            request.ramfs = False
+            request.image_path = os.path.abspath(image_path)
         request.connection_id = ControlProcedure.client_id
 
         response = stub.image_decode__image(request)

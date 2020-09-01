@@ -604,33 +604,37 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print('\nimage_decode__image')
         _id = request.connection_id
         # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
-
         response=yolo_pb2.DecodeImageResponse()
-        # image_raw = tf.image.decode_image(request.byte_image, channels=request.channels)
-        prefix = Subdir_Dict[request.connection_id]
 
-        # Todo: remove thesed
-        output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
-        print(f'prefix={prefix}') 
-        print(f'output={output}')
-        output = subprocess.check_output(f'ls -al {prefix}', shell=True, encoding='utf-8').strip()
-        print(f'prefix={prefix}')
-        print(f'output={output}')
+        image_path = ''
+        if request.ramfs:
+            image_path = request.image_path
+        else:
+            prefix = Subdir_Dict[request.connection_id]
+            image_path = prefix + request.image_path
+
+        # # Todo: remove thesed
+        # output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
+        # print(f'prefix={prefix}') 
+        # print(f'output={output}')
+        # output = subprocess.check_output(f'ls -al {prefix}', shell=True, encoding='utf-8').strip()
+        # print(f'prefix={prefix}')
+        # print(f'output={output}')
 
 
-        # Todo: Debug, remove this
-        dir_list = (prefix[1:] + request.image_path).split('/')
-        slash = '/'
-        for i in range(0, 10):
-            print(dir_list)
-        for i in range(0, 10):
-            for i in range(0,len(dir_list)):
-                dir = '/' + slash.join(dir_list[0:i])
-                print(f'dir={dir}')
-                output = subprocess.check_output(f'ls -al {dir}', shell=True, encoding='utf-8').strip()
-                print(output)
+        # # Todo: Debug, remove this
+        # dir_list = (prefix[1:] + request.image_path).split('/')
+        # slash = '/'
+        # for i in range(0, 10):
+        #     print(dir_list)
+        # for i in range(0, 10):
+        #     for i in range(0,len(dir_list)):
+        #         dir = '/' + slash.join(dir_list[0:i])
+        #         print(f'dir={dir}')
+        #         output = subprocess.check_output(f'ls -al {dir}', shell=True, encoding='utf-8').strip()
+        #         print(output)
 
-        image_bin = open(prefix + request.image_path, 'rb').read()
+        image_bin = open(image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.connection_id)
         # print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')

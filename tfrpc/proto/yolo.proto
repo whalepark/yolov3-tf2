@@ -134,9 +134,10 @@ message PhysicalDevices {
 
 /// image_decode__image
 message DecodeImageRequest {
-    string image_path = 1;
-    int32 channels = 2;
-    string connection_id = 3;
+    bool ramfs = 1;
+    string image_path = 2;
+    int32 channels = 3;
+    string connection_id = 4;
 }
 
 message DecodeImageResponse {
