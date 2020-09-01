@@ -249,30 +249,15 @@ def utils_infer_target(snd, callable_obj, args):
     return 0
 
 def _get_client_root(container):
-    # lower_list = _get_all_subdir(container)
-    # subdir_merged = _merge_subdir(lower_list)
-    # subdir_root += _subdir_merged
-    # try:
-    #     output = subprocess.check_output('docker info', shell=True).decode('utf-8').strip()
-    # except subprocess.CalledProcessError as e:
-    #     print(e.output)
     merged_dir = subprocess.check_output('docker inspect -f {{.GraphDriver.Data.MergedDir}} ' + container, shell=True).decode('utf-8').strip()
     print(f'merged_dir={merged_dir}')
     layer_id = merged_dir.split('/')[5]
-    print(f'layer_id={layer_id}') # Todo: remove
 
     return hostroot + layer_id + '/merged'
-
-# def _set_client_root_visible(rootpath):
     
 
 def utils_add_to_subdir(container_id, connection_id):
     subdir = _get_client_root(container_id)
-    for i in range(1, 50):
-        print(f'subdir={subdir}')
-    # _set_client_root_visible(subdir)
-    output = subprocess.check_output(f'ls {subdir}', shell=True).decode('utf-8').strip()
-    print(f'output={output}')
     Subdir_Dict[connection_id] = subdir
 
 
@@ -612,27 +597,6 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             prefix = Subdir_Dict[request.connection_id]
             image_path = prefix + request.image_path
-
-        # # Todo: remove thesed
-        # output = subprocess.check_output(f'ls -al {os.path.dirname(prefix)}', shell=True, encoding='utf-8').strip()
-        # print(f'prefix={prefix}') 
-        # print(f'output={output}')
-        # output = subprocess.check_output(f'ls -al {prefix}', shell=True, encoding='utf-8').strip()
-        # print(f'prefix={prefix}')
-        # print(f'output={output}')
-
-
-        # # Todo: Debug, remove this
-        # dir_list = (prefix[1:] + request.image_path).split('/')
-        # slash = '/'
-        # for i in range(0, 10):
-        #     print(dir_list)
-        # for i in range(0, 10):
-        #     for i in range(0,len(dir_list)):
-        #         dir = '/' + slash.join(dir_list[0:i])
-        #         print(f'dir={dir}')
-        #         output = subprocess.check_output(f'ls -al {dir}', shell=True, encoding='utf-8').strip()
-        #         print(output)
 
         image_bin = open(image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)

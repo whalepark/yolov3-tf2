@@ -99,6 +99,11 @@ function perf() {
         docker wait "${container_name}"
     done
 
+    # For debugging
+    docker logs grpc_exp_app_id_0001
+    docker logs grpc_exp_app_id_0004
+    exit
+
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
     server_image=grpc_server
@@ -170,11 +175,8 @@ function perf_ramfs() {
         local container_name=grpc_exp_app_id_${index}
 
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
-        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "ls -al /ramfs"
-        # docker logs --follow grpc_exp_app_id_0001
-        # exit
+        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
     done
@@ -188,9 +190,10 @@ function perf_ramfs() {
         docker wait "${container_name}"
     done
 
-    docker logs grpc_exp_app_id_0001
-    docker logs grpc_exp_app_id_0004
-    exit
+    # for debugging
+    # docker logs grpc_exp_app_id_0001
+    # docker logs grpc_exp_app_id_0004
+    # exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
