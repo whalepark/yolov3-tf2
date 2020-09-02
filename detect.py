@@ -162,7 +162,7 @@ def main(_argv):
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
         start = time.time()
-        read_img = open(FLAGS.image, 'rb).read()
+        read_img = open(FLAGS.image, 'rb').read()
         img_raw = TFWrapper.tf_image_decode__image(stub, read_img, channels=3)
         end = time.time()
         print(f'time={end-start}')
