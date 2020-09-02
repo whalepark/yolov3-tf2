@@ -87,7 +87,7 @@ function _run_client() {
     eval $docker_cmd
     
     local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
-    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log
+    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log &
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
@@ -118,7 +118,7 @@ function _run_d_client() {
     eval $docker_cmd
     
     local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
-    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log
+    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log &
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
@@ -148,7 +148,9 @@ function _run_d_client_w_ramfs() {
         ${image_name} \
         ${command}"
     eval $docker_cmd
-    
+
+    local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
+    sudo perf stat -e cpu-cycle,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_"${container_name}".log &
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
