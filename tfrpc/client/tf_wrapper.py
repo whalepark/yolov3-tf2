@@ -183,8 +183,12 @@ class TFWrapper:
             request.ramfs = False
             request.image_path = os.path.abspath(image_path)
         request.connection_id = ControlProcedure.client_id
-
+        
+        import time, logging
+        start=time.time()
         response = stub.image_decode__image(request)
+        end=time.time()
+        logging.info(f'time={end-time}')
         # unpickled_tensor = pickle.loads(response.tensor)
 
         # return unpickled_tensor
