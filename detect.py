@@ -103,7 +103,7 @@ def main(_argv):
     elif FLAGS.testimage:
         pass
 
-    connect_to_perf_server(socket.gethostname())
+    # connect_to_perf_server(socket.gethostname())
     
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
