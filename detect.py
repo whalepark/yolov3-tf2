@@ -13,6 +13,7 @@ def make_json(container_id):
 
 def connect_to_perf_server():
     import socket
+    PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
     container_id = socket.gethostname()
     my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     my_socket.connect(PERF_SERVER_SOCKET)
