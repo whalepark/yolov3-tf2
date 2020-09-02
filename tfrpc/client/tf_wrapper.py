@@ -188,7 +188,7 @@ class TFWrapper:
         start=time.time()
         response = stub.image_decode__image(request)
         end=time.time()
-        logging.info(f'time={end-time}')
+        logging.info(f'time={end-start}')
         # unpickled_tensor = pickle.loads(response.tensor)
 
         # return unpickled_tensor
