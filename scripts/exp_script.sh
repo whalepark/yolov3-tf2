@@ -179,6 +179,7 @@ function perf_ramfs() {
     _run_d_server ${server_image} ${server_container_name} $NETWORK 5
 
     for i in $(seq 1 $numinstances); do
+    # for((i=0; i < numinstances; ++i)); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
 
@@ -192,17 +193,18 @@ function perf_ramfs() {
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 
+
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
-
+        echo here
         docker wait "${container_name}"
+        echo there
     done
 
     # for debugging
-    # docker logs grpc_exp_app_id_0001
-    # docker logs grpc_exp_app_id_0004
-    # exit
+    docker logs grpc_exp_app_id_0001
+    docker logs grpc_exp_app_id_0004
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
@@ -240,7 +242,7 @@ function perf_ramfs() {
     # exit
 
     init
-    init
+    # sudo kill -9 $(ps aux | grep 'perf stat' | awk '{print $2}')
 }
 
 function compare_rtt() {
