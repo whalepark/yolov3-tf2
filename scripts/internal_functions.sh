@@ -27,8 +27,8 @@ function _run_d_server() {
         --volume=$(pwd)/ramfs:/ramfs \
         --cpuset-cpus=0 \
         $image \
-        bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
-        # python tfrpc/server/yolo_server.py
+        python tfrpc/server/yolo_server.py
+        # bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
         # --mount type=bind,source=/var/lib/docker/overlay2,target=/layers,bind-propagation=rshared \
     # utils_attach_root $container # It is mount-binded through docker args.
     sleep $pause
@@ -86,6 +86,8 @@ function _run_client() {
         ${command}"
     eval $docker_cmd
     
+    local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
+    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
@@ -115,6 +117,8 @@ function _run_d_client() {
         ${command}"
     eval $docker_cmd
     
+    local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
+    sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 

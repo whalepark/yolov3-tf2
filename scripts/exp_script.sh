@@ -55,13 +55,14 @@ function health_check_dev() {
 }
 
 function build_image() {
-    docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
-    # docker rmi -f $(docker ps -a | grep "grpc_exp_client" | awk '{print $1}')
+    # docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
-    cp ../../yolov3.weights ./dockerfiles
+    # cp ../../yolov3.weights ./dockerfiles
+    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
+    # docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser dockerfiles
+
+    docker rmf -f grpc_exp_client
     docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
-    docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser dockerfiles
-    # docker image build -t grpc_exp_server -f dockerfiles/Dockerfile.idser ${HOME}
 }
 
 function perf() {
@@ -85,8 +86,8 @@ function perf() {
         local container_name=grpc_exp_app_id_${index}
 
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image images/meme.jpg'"
+        _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image data/meme.jpg'"
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
         # _run_d_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
@@ -101,10 +102,9 @@ function perf() {
     done
 
     # For debugging
-    docker logs grpc_exp_app_id_0001
-    exit
-    docker logs grpc_exp_app_id_0004
-    exit
+    # docker logs grpc_exp_app_id_0001
+    # docker logs grpc_exp_app_id_0004
+    # exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
@@ -122,8 +122,8 @@ function perf() {
         local container_name=grpc_exp_app_bin_${index}
 
         # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image images/meme.jpg'"
+        _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image data/meme.jpg'"
         # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
         # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
@@ -136,6 +136,11 @@ function perf() {
 
         docker wait "${container_name}"
     done
+
+    # For debugging
+    # docker logs grpc_exp_app_bin_0001
+    # docker logs grpc_exp_app_bin_0004
+    # exit
 
     init
 }
@@ -178,8 +183,8 @@ function perf_ramfs() {
         local container_name=grpc_exp_app_id_${index}
 
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
+        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
 
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
@@ -229,6 +234,12 @@ function perf_ramfs() {
         docker wait "${container_name}"
     done
 
+    # For debugging
+    # docker logs grpc_exp_app_bin_0001
+    # docker logs grpc_exp_app_bin_0004
+    # exit
+
+    init
     init
 }
 
