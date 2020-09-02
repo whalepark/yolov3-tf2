@@ -102,7 +102,7 @@ function perf() {
     done
 
     # For debugging
-    # docker logs grpc_exp_app_id_0001
+    docker logs grpc_exp_app_id_0001
     # docker logs grpc_exp_app_id_0004
     # exit
 
@@ -138,7 +138,7 @@ function perf() {
     done
 
     # For debugging
-    # docker logs grpc_exp_app_bin_0001
+    docker logs grpc_exp_app_bin_0001
     # docker logs grpc_exp_app_bin_0004
     # exit
 
@@ -184,8 +184,8 @@ function perf_ramfs() {
         local container_name=grpc_exp_app_id_${index}
 
         # _run_client $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
-        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
+        # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/meme.jpg"
+        _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image /ramfs/meme.jpg'"
 
         # _run_client grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
         # _run_d_client_w_ramfs $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image /ramfs/photographer.jpg"
@@ -197,14 +197,13 @@ function perf_ramfs() {
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
-        echo here
         docker wait "${container_name}"
-        echo there
     done
 
     # for debugging
     docker logs grpc_exp_app_id_0001
-    docker logs grpc_exp_app_id_0004
+    # docker logs grpc_exp_app_id_0004
+    exit
 
     # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
     server_container_name=grpc_exp_server_bin_00
@@ -238,7 +237,7 @@ function perf_ramfs() {
 
     # For debugging
     docker logs grpc_exp_app_bin_0001
-    docker logs grpc_exp_app_bin_0004
+    # docker logs grpc_exp_app_bin_0004
     # exit
 
     init

@@ -142,7 +142,7 @@ def main(_argv):
         start=time.time()
         img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
         end=time.time()
-        print(f'time={end-start}')
+        logging.info(f'time={end-start}')
 
     # img = tf.expand_dims(img_raw, 0)
     img = TFWrapper.tf_expand__dims(stub, img_raw, 0)
