@@ -211,7 +211,6 @@ function perf_ramfs() {
     server_image=grpc_server
 
     init
-    exit
     sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
@@ -238,8 +237,8 @@ function perf_ramfs() {
     done
 
     # For debugging
-    # docker logs grpc_exp_app_bin_0001
-    # docker logs grpc_exp_app_bin_0004
+    docker logs grpc_exp_app_bin_0001
+    docker logs grpc_exp_app_bin_0004
     # exit
 
     init
