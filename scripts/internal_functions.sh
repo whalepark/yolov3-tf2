@@ -161,10 +161,10 @@ function _run_d_client_w_redis() {
     local server_container=$4
     local network=$5
     local server_ip=$6
-    local command=$7
+
     docker rm -f ${container_name} > /dev/null 2>&1
 
-    local docker_cmd="docker run \
+    docker run \
         -d \
         --volume=$(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
@@ -180,8 +180,8 @@ function _run_d_client_w_redis() {
         --cap-add IPC_LOCK \
         --cpuset-cpus=${index} \
         ${image_name} \
-        ${command}"
-    eval $docker_cmd
+        python3.6 detect.py --image /images/meme.jpg --object redis
+        # python3.6 detect.py --image /images/meme.jpg --object path
 
     # local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
     # sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p ${pid} -o ./data/perf_stat_"${container_name}".log &

@@ -268,7 +268,7 @@ function perf_redis() {
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
 
-        _run_d_client_w_redis $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK $SERVER_IP "python3.6 detect.py --image /images/meme.jpg --object path"
+        _run_d_client_w_redis $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK $SERVER_IP
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"

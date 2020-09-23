@@ -50,7 +50,7 @@ import yolo_pb2_grpc
 from tf_wrapper import TFWrapper, ControlProcedure
 import signal
 
-# import pickle ###
+import redis
 
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
@@ -70,21 +70,31 @@ flags.DEFINE_boolean('hello', False, 'hello or health check')
 flags.DEFINE_string('object', 'path', 'specify how to pass over objects')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
+g_redis: redis.Redis
 CONTAINER_ID: str
 
-def initialize(stub):
-    global g_stub, CONTAINER_ID
+def initialize(stub, server_addr):
+    global g_stub, g_redis, CONTAINER_ID
 
     ControlProcedure.Connect(stub, FLAGS.object) # path, bin, redis
     g_stub = stub
     signal.signal(signal.SIGINT, finalize)
     CONTAINER_ID=os.environ['CONTAINER_ID']
 
+    try:
+        g_redis = redis.Redis(host=server_addr, port=6379)
+        g_redis.set('test:string', 'Hello Misun!')
+        test = g_redis.get('test:string')
+        print(test)
+    except Exception as e:
+        print(e)
+
 def finalize():
     ControlProcedure.Disconnect(g_stub)
 
-def put_in_redis(image_bin):
-    return redis_key
+def put_in_redis(image_path):
+    with open(image_path, 'rb') as f:
+        image_bin = f.read()
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
@@ -95,7 +105,7 @@ def main(_argv):
         ('grpc.max_message_length', 10 * 1024 * 100)] \
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
-    initialize(stub)
+    initialize(stub, server_addr)
 
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
@@ -106,7 +116,7 @@ def main(_argv):
     elif FLAGS.object == 'bin':
         pass
     elif FLAGS.object == 'redis':
-        redis_key = put_in_redis(FLAGS.image)
+        put_in_redis(FLAGS.image)
 
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
@@ -139,9 +149,12 @@ def main(_argv):
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
         start=time.time()
-        if FLAGS.object == 'path':
+        ## Todo: branch..
+        if FLAGS.object == 'bin':
             img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
-        if FLAGS.object == 'redis':
+        elif FLAGS.object == 'path':
+            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
+        elif FLAGS.object == 'redis':
             img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
         end=time.time()
         logging.info(f'time={end-start}')

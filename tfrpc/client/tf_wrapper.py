@@ -49,7 +49,7 @@ class ControlProcedure:
         elif obj_pass == 'path':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.PATH
         elif obj_pass == 'redis':
-            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID
 
         # while True:
         #     request.id = utils_random_string()
