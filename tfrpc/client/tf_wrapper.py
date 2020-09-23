@@ -33,8 +33,6 @@ def is_img_storage(path: str):
         return False
 
 class ControlProcedure:
-    client_id: str = ''
-
     # container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
     container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
     # print('misun!!!')
@@ -53,19 +51,19 @@ class ControlProcedure:
         elif obj_pass == 'redis':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS
 
-        while True:
-            request.id = utils_random_string()
-            response = stub.Connect(request)
-            if response.accept:
-                ControlProcedure.client_id = request.id
-                break
+        # while True:
+        #     request.id = utils_random_string()
+        #     response = stub.Connect(request)
+        #     if response.accept:
+        #         ControlProcedure.client_id = request.id
+        #         break
 
     @staticmethod
     def Disconnect(stub):
         request = yolo_pb2.DisconnectRequest()
         response: yolo_pb2.DisconnectResponse
 
-        request.id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         response = stub.Disconnect(request)
 
     @staticmethod
@@ -100,7 +98,7 @@ class TFWrapper:
 
         request.callable_obj_id = callable_obj_id
         request.num_of_returns = ret_num
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.inference=inference
         request.callable_model_name = model_name
 
@@ -146,7 +144,7 @@ class TFWrapper:
         request.iterable_id = iterable
         request.start = start
         request.end = end
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.get_iterable_slicing(request)
         return response.obj_id
@@ -157,7 +155,7 @@ class TFWrapper:
         response: yolo_pb2.ConstantResponse
 
         request.value = pickle.dumps(value)
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.constant(request)
 
@@ -172,7 +170,7 @@ class TFWrapper:
         response: yolo_pb2.PhysicalDevices
 
         request.device_type = device_type
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.config_experimental_list__physical__devices(request)
 
@@ -199,7 +197,7 @@ class TFWrapper:
         else:
             request.ramfs = False
             request.image_path = os.path.abspath(image_path)
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.image_decode__image(request)
         # unpickled_tensor = pickle.loads(response.tensor)
@@ -215,7 +213,7 @@ class TFWrapper:
 
         request.obj_id=input
         request.axis=axis
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.expand__dims(request) 
         # unpickled_tensor = pickle.loads(response.tensor)
@@ -236,7 +234,7 @@ class TFWrapper:
         
         if name is not None:
             request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Input(request)
         input_id = response.obj_id
@@ -254,7 +252,7 @@ class TFWrapper:
         for elem in outputs:
             request.output_ids.append(elem)
         request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.fixed = fixed
 
         response = stub.keras_Model(request)
@@ -270,7 +268,7 @@ class TFWrapper:
         request = yolo_pb2.ZeroPadding2DRequest()
         response: yolo_pb2.ZeroPadding2DResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.padding = pickle.dumps(padding)
         # request.name = name
         if data_format is not None:
@@ -297,7 +295,7 @@ class TFWrapper:
         request.use_bias = use_bias
 
         request.pickled_kernel_regularizer=kernel_regularizer
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Conv2D(request)
 
@@ -315,7 +313,7 @@ class TFWrapper:
 
         # request.name = name
         request.alpha = alpha
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_LeakyReLU(request)
 
@@ -331,7 +329,7 @@ class TFWrapper:
         response: yolo_pb2.AddResponse
 
         # request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Add(request)
 
@@ -346,7 +344,7 @@ class TFWrapper:
         request.obj_id = target[0]
         request.start = start
         request.end = end
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_tensor_shape(request)
         # unpickled_result = pickle.loads(response.pickled_shape)
@@ -366,7 +364,7 @@ class TFWrapper:
 
         request.weights_path = weights_path
         request.model_name = model_name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_model_load__weights(request)
         return response.obj_id
@@ -377,7 +375,7 @@ class TFWrapper:
         response: yolo_pb2.ExpectPartialResponse
 
         request.obj_id = checkpoint_obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_checkpoint_expect__partial(request)
         return 
@@ -390,7 +388,7 @@ class TFWrapper:
 
         request.obj_id = tensor_obj_id
         request.divisor = divisor
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.tensor_op_divide(request)
         return response.obj_id
@@ -409,7 +407,7 @@ class TFWrapper:
         response: yolo_pb2.LambdaResponse
 
         request.expr = lambda_str
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         # if name is not None:
         #     request.name = name
@@ -429,7 +427,7 @@ class TFWrapper:
         response: yolo_pb2.UpSampling2DResponse
         
         request.size = size
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_UpSampling2D(request)
         return response.obj_id
@@ -439,7 +437,7 @@ class TFWrapper:
         request = yolo_pb2.ConcatenateRequest()
         response: yolo_pb2.ContcatenateResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         
         response = stub.keras_layers_Concatenate(request)
         return response.obj_id
@@ -450,7 +448,7 @@ class TFWrapper:
         response: yolo_pb2.ImageResizeResponse
 
         request.obj_id = image_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         for elem in size:
             request.size.append(elem)
@@ -464,7 +462,7 @@ class TFWrapper:
         response: yolo_pb2.l2Response
 
         request.l=l
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_regularizers_l2(request)
         # unpickled_l2 = pickle.loads(response.pickled_l2)
@@ -479,7 +477,7 @@ class TFWrapper:
         request.obj_id = iterable
         for index in args:
             request.indices.append(index)
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.iterable_indexing(request)
         result = pickle.loads(response.pickled_result)
@@ -496,7 +494,7 @@ class TFWrapper:
         response: yolo_pb2.TensorToNumPyResponse
 
         request.obj_id = image_obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.byte_tensor_to_numpy(request)
 
@@ -508,7 +506,7 @@ class TFWrapper:
         response: yolo_pb2.GetObjectResponse
 
         request.obj_id = obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.get_object_by_id(request)
 
@@ -522,7 +520,7 @@ class YoloWrapper:
         request = yolo_pb2.CheckModelExistRequest()
         response: yolo_pb2.CheckModelExistResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.name = name
         request.plan_to_make=plan_to_make
 
@@ -539,7 +537,7 @@ class YoloWrapper:
         response: yolo_pb2.BatchNormResponse
 
         # request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.batch_normalization(request)
         return response.obj_id

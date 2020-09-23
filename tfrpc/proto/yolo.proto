@@ -93,7 +93,7 @@ message CallRequest {
     repeated bytes pickled_args = 4;
     repeated ObjId obj_ids = 5;
     int32 num_of_returns = 6;
-    string connection_id = 7;
+    string container_id = 7;
 }
 
 message CallResponse {
@@ -107,7 +107,7 @@ message SlicingRequest {
     uint64 iterable_id = 1;
     uint32 start = 2;
     uint32 end = 3;
-    string connection_id = 4;
+    string container_id = 4;
 }
 message SlicingResponse {
     uint64 obj_id = 1;
@@ -117,7 +117,7 @@ message SlicingResponse {
 /// constant 
 message ConstantRequest {
     bytes value = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message ConstantResponse {
@@ -127,7 +127,7 @@ message ConstantResponse {
 ///config_experimental_list__physical__devices
 message DeviceType {
     string device_type = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message PhysicalDevices {
@@ -143,7 +143,7 @@ message DecodeImageRequest {
     bool is_ramfs = 1;
     string image_path = 2;
     int32 channels = 3;
-    string connection_id = 4;
+    string container_id = 4;
     bool is_image_storage = 5;
 }
 
@@ -155,7 +155,7 @@ message DecodeImageResponse {
 message ExpandDemensionRequest {
     uint64 obj_id = 1;
     int32 axis = 2;
-    string connection_id = 3;
+    string container_id = 3;
 }
 
 message ExpandDemensionResponse {
@@ -167,7 +167,7 @@ message ExpandDemensionResponse {
 message InputRequest {
     repeated int32 shape = 1;
     string name = 2;
-    string connection_id = 3;
+    string container_id = 3;
 }
 
 message InputResponse {
@@ -179,7 +179,7 @@ message ModelRequest {
     repeated uint64 input_ids = 1;
     repeated uint64 output_ids = 2;
     string name = 3;
-    string connection_id = 4;
+    string container_id = 4;
     bool fixed = 5;
 }
 
@@ -192,7 +192,7 @@ message ZeroPadding2DRequest {
     bytes padding = 1;
     string data_format = 2;
     string name = 3;
-    string connection_id = 4;
+    string container_id = 4;
 }
 
 message ZeroPadding2DResponse {
@@ -208,7 +208,7 @@ message Conv2DRequest {
     bool use_bias = 5;
     bytes pickled_kernel_regularizer = 6;
     string name = 7;
-    string connection_id = 8;
+    string container_id = 8;
 }
 
 message Conv2DResponse {
@@ -219,7 +219,7 @@ message Conv2DResponse {
 message LeakyReluRequest {
     float alpha = 1;
     string name = 2;
-    string connection_id = 3;
+    string container_id = 3;
 }
 
 message LeakyReluResponse {
@@ -230,7 +230,7 @@ message LeakyReluResponse {
 
 message AddRequest {
     string name = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message AddResponse {
@@ -243,7 +243,7 @@ message AddResponse {
 message LambdaRequest {
     string expr = 1;
     string name = 2;
-    string connection_id = 3;
+    string container_id = 3;
 }
 
 message LambdaResponse {
@@ -254,7 +254,7 @@ message LambdaResponse {
 
 message UpSampling2DRequest {
     uint32 size = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message UpSampling2DResponse {
@@ -263,7 +263,7 @@ message UpSampling2DResponse {
 /// keras_layers_Concatenate
 
 message ConcatenateRequest {
-    string connection_id = 1;
+    string container_id = 1;
 } 
 
 message ContcatenateResponse {
@@ -274,7 +274,7 @@ message ContcatenateResponse {
 
 message l2Request {
     float l = 1;
-    string connection_id = 2;
+    string container_id = 2;
 } 
 
 message l2Response {
@@ -287,7 +287,7 @@ message l2Response {
 message ImageResizeRequest {
     uint64 obj_id = 1;
     repeated uint32 size = 2;
-    string connection_id = 3;
+    string container_id = 3;
 } 
 
 message ImageResizeResponse {
@@ -303,7 +303,7 @@ message TensorShapeRequest {
     uint64 obj_id = 1;
     uint32 start = 2;
     uint32 end = 3;
-    string connection_id = 4;
+    string container_id = 4;
 }
 
 message TensorShapeResponse {
@@ -317,7 +317,7 @@ message TensorShapeResponse {
 message LoadWeightsRequest {
     string model_name = 1;
     string weights_path = 2;
-    string connection_id = 3;
+    string container_id = 3;
 }
 
 message LoadWeightsResponse {
@@ -327,7 +327,7 @@ message LoadWeightsResponse {
 /// attribute_checkpoint_expect__partial
 message ExpectPartialRequest {
     uint64 obj_id = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message ExpectPartialResponse {
@@ -338,7 +338,7 @@ message ExpectPartialResponse {
 message DivideRequest {
     uint64 obj_id = 1;
     int32 divisor = 2;
-    string connection_id = 3;
+    string container_id = 3;
 
 }
 
@@ -354,7 +354,7 @@ message DivideResponse {
 message IndexingRequest {
     uint64 obj_id = 1;
     repeated uint32 indices = 2;
-    string connection_id = 3;
+    string container_id = 3;
 
 }
 
@@ -367,7 +367,7 @@ message IndexingResponse {
 
 message TensorToNumpyRequest {
     uint64 obj_id = 1;
-    string connection_id = 2;
+    string container_id = 2;
 
 }
 
@@ -379,7 +379,7 @@ message TensorToNumPyResponse {
 /// get_object_by_id
 message GetObjectRequest {
     uint64 obj_id = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 message GetObjectResponse {
     bytes object = 1;
@@ -391,7 +391,7 @@ message GetObjectResponse {
 
 /// CheckIfModelExist
 message CheckModelExistRequest {
-    string connection_id = 1;
+    string container_id = 1;
     string name = 2;
     bool plan_to_make = 3;
 }
@@ -403,7 +403,7 @@ message CheckModelExistResponse {
 /// batch_normalization
 message BatchNormRequest {
     string name = 1;
-    string connection_id = 2;
+    string container_id = 2;
 }
 
 message BatchNormResponse {

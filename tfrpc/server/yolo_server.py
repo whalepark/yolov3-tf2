@@ -261,9 +261,9 @@ def _get_client_root(container):
     return hostroot + layer_id + '/merged'
     
 
-def utils_add_to_subdir(container_id, connection_id):
+def utils_add_to_subdir(container_id):
     subdir = _get_client_root(container_id)
-    Subdir_Dict[connection_id] = subdir
+    Subdir_Dict[container_id] = subdir
 
 
 # @jit(nopython=True, nogil=True, parallel=True)
@@ -341,12 +341,12 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         print(f'\nConnect: {request.id}')
         response = yolo_pb2.ConnectResponse()
 
-        if request.id in Connection_Set:
+        if request.container_id in Connection_Set:
             response.accept = False
         else:
             response.accept = True
-            Connection_Set.add(request.id)
-            utils_add_to_subdir(request.container_id, request.id)
+            Connection_Set.add(request.container_id)
+            utils_add_to_subdir(request.container_id)
 
             if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.BINARY:
                 OBJECT_PASS = OBJECT_PASS_T.BINARY
