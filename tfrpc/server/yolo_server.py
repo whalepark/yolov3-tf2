@@ -91,9 +91,14 @@ flags.DEFINE_string('tfrecord', None, 'tfrecord instead of image')
 flags.DEFINE_string('output', './output.jpg', 'path to output image')
 flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 
+class OBJECT_PASS_T(Enum):
+    BINARY = 1;
+    PATH = 2;
+    REDIS_OBJ_ID = 3;
 
 ##### Misun Defined
 PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
+OBJECT_PASS: OBJECT_PASS_T
 
 ## global variables
 Model_Create_Lock = threading.Lock()
@@ -331,6 +336,8 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         return decoratee_func
 
     def Connect(self, request, context):
+        global OBJECT_PASS
+
         print(f'\nConnect: {request.id}')
         response = yolo_pb2.ConnectResponse()
 
@@ -340,6 +347,15 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
             response.accept = True
             Connection_Set.add(request.id)
             utils_add_to_subdir(request.container_id, request.id)
+
+            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.BINARY:
+                OBJECT_PASS = OBJECT_PASS_T.BINARY
+            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.PATH:
+                OBJECT_PASS = OBJECT_PASS_T.PATH
+            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID:
+                OBJECT_PASS = OBJECT_PASS_T.REDIS_OBJ_ID
+            
+            logging.info(f'OBJECT_PASS={OBJECT_PASS}')
             # Global_Graph_Dict[request.id] = tf.Graph()
             # Global_Sess_Dict[request.id] = tf.compat.v1.Session(graph=Global_Graph_Dict[request.id])
           
@@ -592,7 +608,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response=yolo_pb2.DecodeImageResponse()
 
         image_path = ''
-        if request.ramfs:
+        if request.is_ramfs or request.is_image_storage:
             image_path = request.image_path
         else:
             prefix = Subdir_Dict[request.connection_id]

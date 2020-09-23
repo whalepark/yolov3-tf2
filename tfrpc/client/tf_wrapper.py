@@ -26,6 +26,12 @@ def is_ramfs(path: str):
     except FileNotFoundError:
         return False
 
+def is_img_storage(path: str):
+    try:
+        return os.path.samefile(os.path.dirname(os.path.normpath(path)), '/images')
+    except FileNotFoundError:
+        return False
+
 class ControlProcedure:
     client_id: str = ''
 
@@ -34,13 +40,21 @@ class ControlProcedure:
     # print('misun!!!')
     print(f'container_id={container_id}')
     @staticmethod
-    def Connect(stub):
+    def Connect(stub, obj_pass: str): # path, bin, redis
         request = yolo_pb2.ConnectRequest()
         response: yolo_pb2.ConnectResponse
 
+        request.container_id = ControlProcedure.container_id
+
+        if obj_pass == 'bin':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.BINARY
+        elif obj_pass == 'path':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.PATH
+        elif obj_pass == 'redis':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS
+
         while True:
             request.id = utils_random_string()
-            request.container_id = ControlProcedure.container_id
             response = stub.Connect(request)
             if response.accept:
                 ControlProcedure.client_id = request.id
@@ -177,7 +191,10 @@ class TFWrapper:
 
         request.channels=channels
         if is_ramfs(image_path):
-            request.ramfs = True
+            request.is_ramfs = True
+            request.image_path = image_path
+        elif is_img_storage(image_path):
+            request.is_image_storage = True
             request.image_path = image_path
         else:
             request.ramfs = False

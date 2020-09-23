@@ -154,6 +154,40 @@ function _run_d_client_w_ramfs() {
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
+function _run_d_client_w_redis() {
+    local index=$(($1 % $NUMCPU))
+    local image_name=$2
+    local container_name=$3
+    local server_container=$4
+    local network=$5
+    local server_ip=$6
+    local command=$7
+    docker rm -f ${container_name} > /dev/null 2>&1
+
+    local docker_cmd="docker run \
+        -d \
+        --volume=$(pwd)/data:/data \
+        --volume=$(pwd)/sockets:/sockets \
+        --volume=$(pwd)/../images:/images \
+        --volume=$(pwd)/ramfs:/ramfs \
+        --volume=$HOME/yolov3-tf2:/root/yolov3-tf2 \
+        --network=${network} \
+        --name=${container_name} \
+        --workdir='/root/yolov3-tf2' \
+        --env SERVER_ADDR=${server_ip} \
+        --env CONTAINER_ID=${container_name} \
+        --cap-add SYS_ADMIN \
+        --cap-add IPC_LOCK \
+        --cpuset-cpus=${index} \
+        ${image_name} \
+        ${command}"
+    eval $docker_cmd
+
+    # local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
+    # sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p ${pid} -o ./data/perf_stat_"${container_name}".log &
+    #python3.6 detect.py --image data/meme.jpg # default command
+}
+
 function _run_d_server_dev() {
     local image=$1
     local container=$2
@@ -172,8 +206,41 @@ function _run_d_server_dev() {
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
+        --volume=$(pwd)/ramfs:/ramfs \
+        --volume=$(pwd)/../images:/images \
+        --volume=$HOME/yolov3-tf2:/root/yolov3-tf2 \
         $image \
-        bash -c "git pull && echo misun && python tfrpc/server/yolo_server.py"
+        python tfrpc/server/yolo_server.py
+    utils_attach_root $container
+    sleep $pause
+    echo 'Server bootup!'
+}
+
+function _run_d_server_redis() {
+    local image=$1
+    local container=$2
+    local network=$3
+    local server_ip=$4
+    local pause=$([[ "$#" == 5 ]] && echo $5 || echo 5)
+    docker run \
+        -d \
+        --privileged \
+        --network=$network \
+        --ip=$server_ip \
+        --pid=host \
+        --cap-add SYS_ADMIN \
+        --cap-add IPC_LOCK \
+        --name=$container \
+        --workdir='/root/yolov3-tf2' \
+        --env YOLO_SERVER=1 \
+        --volume /var/run/docker.sock:/var/run/docker.sock \
+        --volume $(pwd)/data:/data \
+        --volume=$(pwd)/sockets:/sockets \
+        --volume=$(pwd)/ramfs:/ramfs \
+        --volume=$(pwd)/../images:/images \
+        --volume=$HOME/yolov3-tf2:/root/yolov3-tf2 \
+        $image \
+        bash -c "redis-server --daemonize yes && python tfrpc/server/yolo_server.py"
     utils_attach_root $container
     sleep $pause
     echo 'Server bootup!'
@@ -203,67 +270,4 @@ function _run_client_dev() {
     eval $docker_cmd
     
     #python3.6 detect.py --image data/meme.jpg # default command
-}
-
-function _measure_rtt_grpc() {
-    local rtt=''
-    _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
-    docker ps
-exit
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --hello && perf stat -p \$! -e cycles,page-faults\""
-
-    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --echo misun\""
-
-    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --integer\""
-
-    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image data/meme.jpg\""
-
-    # _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --rtt --image images/photographer.jpg\""
-
-    echo $rtt
-}
-
-function _measure_rtt_grpc_w_path() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_cpu_cycles() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_cpu_cycles_w_path() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_page_faults() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_page_faults_w_path() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_cache_misses() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_cache_misses_grpc_w_path() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_tlb_misses_grpc() {
-    local rtt=''
-    echo $rtt
-}
-
-function _measure_tlb_misses_grpc_w_path() {
-    local rtt=''
-    echo $rtt
 }

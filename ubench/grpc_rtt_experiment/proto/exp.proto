@@ -1,0 +1,41 @@
+syntax = "proto3";
+package exp;
+
+service ExperimentService {
+    rpc Echo (EchoRequest) returns (EchoResponse) {}
+    rpc SendFilePath (SendFilePathRequest) returns (SendFilePathResponse) {}
+    rpc SendFileBinary (SendFileBinaryRequest) returns (SendFileBinaryResponse) {}
+    rpc ServerIOLatency (ServerIOLatencyRequest) returns (ServerIOLatencyResponse) {}
+}
+
+message EchoRequest {
+    string data = 1;
+}
+
+message EchoResponse {
+    string data = 1;
+}
+
+message SendFilePathRequest {
+    string container_id = 1;
+    string path = 2;
+}
+
+message SendFilePathResponse {
+
+}
+message SendFileBinaryRequest {
+    bytes bin = 1;
+}
+
+message SendFileBinaryResponse {
+}
+
+message ServerIOLatencyRequest {
+    string container_id = 1;
+    string path = 2;
+}
+
+message ServerIOLatencyResponse {
+    string log = 1;
+}

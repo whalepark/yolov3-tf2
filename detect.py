@@ -67,11 +67,7 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 # Misun defined
 PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
 flags.DEFINE_boolean('hello', False, 'hello or health check')
-flags.DEFINE_boolean('perf', False, '')
-flags.DEFINE_boolean('rtt', False, 'measure RTT')
-flags.DEFINE_string('echo', 'Hello Misun', 'hello or health check')
-flags.DEFINE_integer('integer', 1234567, 'hello or health check')
-flags.DEFINE_string('testimage', None, '')
+flags.DEFINE_string('object', 'path', 'specify how to pass over objects')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 CONTAINER_ID: str
@@ -79,21 +75,24 @@ CONTAINER_ID: str
 def initialize(stub):
     global g_stub, CONTAINER_ID
 
-    ControlProcedure.Connect(stub)
+    ControlProcedure.Connect(stub, FLAGS.object) # path, bin, redis
     g_stub = stub
     signal.signal(signal.SIGINT, finalize)
     CONTAINER_ID=os.environ['CONTAINER_ID']
 
 def finalize():
     ControlProcedure.Disconnect(g_stub)
+
+def put_in_redis(image_bin):
+    return redis_key
     
 def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
     server_addr = os.environ.get('SERVER_ADDR')
     channel = grpc.insecure_channel(f'{server_addr}:1990', \
-        options=[('grpc.max_send_message_length', 100 * 1024 * 1024), \
-        ('grpc.max_receive_message_length', 100 * 1024 * 1024), \
-        ('grpc.max_message_length', 100 * 1024 * 1024)] \
+        options=[('grpc.max_send_message_length', 10 * 1024 * 10), \
+        ('grpc.max_receive_message_length', 10 * 1024 * 100), \
+        ('grpc.max_message_length', 10 * 1024 * 100)] \
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub)
@@ -101,17 +100,17 @@ def main(_argv):
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         exit()
-    elif FLAGS.rtt:
+
+    if FLAGS.object == 'path':
+        FLAGS.image
+    elif FLAGS.object == 'bin':
         pass
-    elif FLAGS.echo:
-        pass
-    elif FLAGS.integer:
-        pass
-    elif FLAGS.testimage:
-        pass
+    elif FLAGS.object == 'redis':
+        redis_key = put_in_redis(FLAGS.image)
 
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
+
     if len(physical_devices) > 0: # in my settings, this if statement always returns false
         # tf.config.experimental.set_memory_growth(physical_devices[0], True) 
         TFWrapper.tf_config_experimental_set__memory__growth(physical_devices[0], True) 
@@ -140,7 +139,10 @@ def main(_argv):
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
         start=time.time()
-        img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
+        if FLAGS.object == 'path':
+            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
+        if FLAGS.object == 'redis':
+            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
         end=time.time()
         logging.info(f'time={end-start}')
 
