@@ -93,6 +93,12 @@ class SharedMemoryChannel:
         self.sem.release()
         return data
 
+    def view(self, size):
+        self.sem.acquire()
+        mv = memoryview(self.shmem)
+        self.sem.release()
+        return mv
+
     def finalize(self):
         self.shmem.detach()
         self.shmem.remove()

@@ -67,6 +67,17 @@ function build_image() {
     # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
 }
 
+function build_shmem() {
+    docker rmi -f $(docker image ls | grep "grpc_exp_shmem_server\|grpc_exp_shmem_client" | awk '{print $1}')
+
+    cp ../../yolov3.weights ./dockerfiles
+    docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
+    docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
+
+    # docker rmi -f grpc_exp_client
+    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
+}
+
 function perf() {
     local numinstances=$1
     local events=$2
@@ -321,6 +332,99 @@ function perf_redis() {
 }
 
 
+function perf_shmem() {
+    local numinstances=$1
+    local events=$2
+    local pid_list=()
+    local container_list=()
+
+    local server_container_name=grpc_exp_server_id_00
+    local server_image=grpc_exp_shmem_server
+
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image data/photographer.jpg'"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_id_${index}
+
+        docker wait "${container_name}"
+    done
+
+    # For debugging
+    docker logs grpc_exp_app_id_0001
+    # docker logs grpc_exp_app_id_0004
+    # exit
+
+    server_container_name=grpc_exp_server_bin_00
+    # server_image=grpc_server
+
+    init
+    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
+    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
+
+    sudo python unix_multi_server.py &
+    _run_d_server ${server_image} ${server_container_name} $NETWORK 5
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
+
+        # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
+        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image data/photographer.jpg'"
+        # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+        # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
+    done
+
+    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=grpc_exp_app_bin_${index}
+
+        docker wait "${container_name}"
+    done
+
+    # For debugging
+    docker logs grpc_exp_app_bin_0001
+    # docker logs grpc_exp_app_bin_0004
+    # exit
+
+    init
+}
+
+function cleanup_shm() {
+    while IFS=$'\n' read -r line; do
+        if [[ -z $line ]]; then
+            continue
+        fi
+        semid=$(echo $line | awk '{print $2}')
+        ipcrm -s $semid
+    done <<< $(ipcs -s | tail -n +4)
+
+    while IFS=$'\n' read -r line; do
+        if [[ -z $line ]]; then
+            continue
+        fi
+        shmid=$(echo $line | awk '{print $2}')
+        ipcrm -m $shmid
+    done <<< $(ipcs -m | tail -n +4)
+}
+
 function help() {
     echo Usage: ./exp_script.sh COMMAND [OPTIONS]
     echo Supported Commands:
@@ -353,8 +457,11 @@ case $COMMAND in
     'perf-shmem')
         perf_ramfs $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
         ;;
+    'build-shmem')
+        build_shmem
+        ;;
     'cleanup-shm')
-        perf_redis $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
+        cleanup_shm
         ;;
     debug)
         init_ramfs

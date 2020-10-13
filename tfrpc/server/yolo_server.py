@@ -106,7 +106,7 @@ class Container_Info:
         self.subdir = subdir
 
         self.sem = Semaphore(container_id)
-        self.sem = Semaphore(container_id)
+        self.shmem = SharedMemory(container_id)
 
     def write(self, content):
         if self.object_pass == OBJECT_PASS_T.SHMEM:
@@ -116,10 +116,19 @@ class Container_Info:
         else:
             raise Exception('Valid only for shmem channel!')
 
-    def read(self):
+    def read(self, size):
         if self.object_pass == OBJECT_PASS_T.SHMEM:
             self.sem.acquire()
-            data = self.shmem.read()
+            data = self.shmem.read(size)
+            self.sem.release()
+            return data
+        else:
+            raise Exception('Valid only for shmem channel!')
+
+    def view(self, size):
+        if self.object_pass == OBJECT_PASS_T.SHMEM:
+            self.sem.acquire()
+            data = memoryview(self.shmem)[:size]
             self.sem.release()
             return data
         else:
@@ -139,7 +148,6 @@ Container_Id = "";
 
 Global_Tensor_Dict = {}
 Object_Ownership = {}
-Connection_Set = set()
 # Global_Graph_Dict = {}
 # Global_Sess_Dict = {}
 # Global_Model_Dict = Manager().dict()
@@ -643,13 +651,21 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response=yolo_pb2.DecodeImageResponse()
 
         image_path = ''
-        if request.is_ramfs or request.is_image_storage:
-            image_path = request.image_path
+        container_info = Container_Id_Dict[request.container_id]
+        if request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH: 
+            if request.path_raw_dir:
+                image_path = request.image_path
+            else:
+                prefix = container_info.subdir
+                image_path = prefix + request.image_path
+            image_bin = open(image_path, 'rb').read()
+        elif request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.BIN:
+            image_bin = request.bin_image
+        elif request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.SHMEM:
+            image_bin = container_info.view(request.shmem_size)
         else:
-            prefix = Subdir_Dict[request.container_id]
-            image_path = prefix + request.image_path
+            raise Exception(f'No such data channel: {request.data_channel.}')
 
-        image_bin = open(image_path, 'rb').read()
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.container_id)
         # print(f'misun: image_raw={image_raw}, obj_id={obj_id}, shape={image_raw.shape}')
@@ -1014,7 +1030,15 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
         tensor = utils_get_obj(request.obj_id)
         array = tensor.numpy()
-        response.pickled_array = pickle.dumps(array)
+        container_info = Container_Id_Dict[_id]
+
+        pickled_array = pickle.dumps(array)
+        response.data_length = len(pickled_array)
+        
+        if container_info.object_pass == OBJECT_PASS_T.SHMEM:
+            container_info.shmem.write(pickle.dumps(pickled_array))
+        else:
+            response.pickled_array = pickled_array
 
         return response
 

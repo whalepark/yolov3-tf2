@@ -18,16 +18,12 @@ RUN apt-get update -y --fix-missing && \
     python3 -m pip install grpcio-tools && \
     python3 -m pip install --upgrade protobuf && \
     git clone https://github.com/whalepark/yolov3-tf2.git /root/yolov3-tf2 && \
-    echo now install Redis && \
-    apt-get install -y redis-server && \
-    python3 -m pip install redis && \
-    sed -i "/bind 127.0.0.1 ::1/c\bind 0.0.0.0 ::1" /etc/redis/redis.conf && \
-    redis-server --daemonize yes
+    python3 -m pip install sysv_ipc
 ADD yolov3.weights /root/yolov3-tf2/data/
     # wget https://pjreddie.com/media/files/yolov3.weights -P /root/yolov3-tf2/data && \
 RUN cd /root/yolov3-tf2/ && \
     python3.6 convert.py && \
-    git checkout experiment-redis && \
+    git checkout experiments && \
     git pull && \
     cd /root/yolov3-tf2/tfrpc/proto/ && \
     bash gen_proto.sh

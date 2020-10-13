@@ -384,6 +384,7 @@ message TensorToNumpyRequest {
 
 message TensorToNumPyResponse {
     bytes pickled_array = 1;
+    uint32 data_length = 2;
 }
 
 
