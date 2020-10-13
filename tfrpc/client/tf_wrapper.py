@@ -26,32 +26,52 @@ def is_ramfs(path: str):
     except FileNotFoundError:
         return False
 
-class ControlProcedure:
-    client_id: str = ''
+def is_img_storage(path: str):
+    try:
+        return os.path.samefile(os.path.dirname(os.path.normpath(path)), '/images')
+    except FileNotFoundError:
+        return False
 
-    # container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
-    container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
-    # print('misun!!!')
-    print(f'container_id={container_id}')
+    # todo: shmem align, global variables...
+
+class ControlProcedure:
+    # container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
+    container_id = ''
+    shmem_channel =  ''
+    data_channel = ''
+
+    # print(f'container_id={container_id}')
     @staticmethod
-    def Connect(stub):
+    def Connect(stub, obj_pass: str, container_id, shmem_channel=None): # path, bin, redis
         request = yolo_pb2.ConnectRequest()
         response: yolo_pb2.ConnectResponse
 
-        while True:
-            request.id = utils_random_string()
-            request.container_id = ControlProcedure.container_id
-            response = stub.Connect(request)
-            if response.accept:
-                ControlProcedure.client_id = request.id
-                break
+        ControlProcedure.container_id = container_id
+        request.container_id = ControlProcedure.container_id
+
+        ControlProcedure.data_channel = obj_pass
+        if obj_pass == 'bin':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.BINARY
+        elif obj_pass == 'path':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.PATH
+        elif obj_pass == 'redis':
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID
+        elif obj_pass == 'shmem':
+            request.object_transfer = yolo_pb2.ConnecRequest.ObjectTransfer.SHMEM
+            ControlProcecure.shmem_channel = shmem_channel
+        # while True:
+        #     request.id = utils_random_string()
+        #     response = stub.Connect(request)
+        #     if response.accept:
+        #         ControlProcedure.client_id = request.id
+        #         break
 
     @staticmethod
     def Disconnect(stub):
         request = yolo_pb2.DisconnectRequest()
         response: yolo_pb2.DisconnectResponse
 
-        request.id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         response = stub.Disconnect(request)
 
     @staticmethod
@@ -86,7 +106,7 @@ class TFWrapper:
 
         request.callable_obj_id = callable_obj_id
         request.num_of_returns = ret_num
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.inference=inference
         request.callable_model_name = model_name
 
@@ -132,7 +152,7 @@ class TFWrapper:
         request.iterable_id = iterable
         request.start = start
         request.end = end
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.get_iterable_slicing(request)
         return response.obj_id
@@ -143,7 +163,7 @@ class TFWrapper:
         response: yolo_pb2.ConstantResponse
 
         request.value = pickle.dumps(value)
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.constant(request)
 
@@ -158,7 +178,7 @@ class TFWrapper:
         response: yolo_pb2.PhysicalDevices
 
         request.device_type = device_type
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.config_experimental_list__physical__devices(request)
 
@@ -170,25 +190,38 @@ class TFWrapper:
         return None
     
     @staticmethod
-    def tf_image_decode__image(stub, image_path, channels: int):
+    def tf_image_decode__image(stub, channels=None, 
+                                image_path=None, 
+                                data_channel = None, data_size_in_byte = None,
+                                data_bytes = None):
         # img_raw = tf.image.decode_image(open(FLAGS.image, 'rb').read(), channels=3)
         request = yolo_pb2.DecodeImageRequest()
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        if is_ramfs(image_path):
-            request.ramfs = True
-            request.image_path = image_path
+        if data_channel == 'path':
+            if is_ramfs(image_path) or is_img_storage(image_path): # ramfs dir (shared), # regular storage dir (shared)
+                request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH
+                request.path_raw_dir = True
+                request.image_path = image_path
+            else:
+                request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH
+                request.path_raw_dir = False
+                request.image_path = os.path.abspath(image_path)
+        elif data_channel == 'shmem':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.SHMEM
+            request.data_size_in_byte = data_size_in_byte
+        elif data_channel == 'bin':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.BINARY
+        elif data_channel == 'redis':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.REDIS_OBJ_ID
+            raise Exception('Not Implemented Yet')
         else:
-            request.ramfs = False
-            request.image_path = os.path.abspath(image_path)
-        request.connection_id = ControlProcedure.client_id
-        
-        import time, logging
-        start=time.time()
+            raise Exception('Unknow data channel!')
+
+        request.container_id = ControlProcedure.container_id
+
         response = stub.image_decode__image(request)
-        end=time.time()
-        logging.info(f'time={end-start}')
         # unpickled_tensor = pickle.loads(response.tensor)
 
         # return unpickled_tensor
@@ -202,7 +235,7 @@ class TFWrapper:
 
         request.obj_id=input
         request.axis=axis
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.expand__dims(request) 
         # unpickled_tensor = pickle.loads(response.tensor)
@@ -223,7 +256,7 @@ class TFWrapper:
         
         if name is not None:
             request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Input(request)
         input_id = response.obj_id
@@ -241,7 +274,7 @@ class TFWrapper:
         for elem in outputs:
             request.output_ids.append(elem)
         request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.fixed = fixed
 
         response = stub.keras_Model(request)
@@ -257,7 +290,7 @@ class TFWrapper:
         request = yolo_pb2.ZeroPadding2DRequest()
         response: yolo_pb2.ZeroPadding2DResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.padding = pickle.dumps(padding)
         # request.name = name
         if data_format is not None:
@@ -284,7 +317,7 @@ class TFWrapper:
         request.use_bias = use_bias
 
         request.pickled_kernel_regularizer=kernel_regularizer
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Conv2D(request)
 
@@ -302,7 +335,7 @@ class TFWrapper:
 
         # request.name = name
         request.alpha = alpha
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_LeakyReLU(request)
 
@@ -318,7 +351,7 @@ class TFWrapper:
         response: yolo_pb2.AddResponse
 
         # request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_Add(request)
 
@@ -333,7 +366,7 @@ class TFWrapper:
         request.obj_id = target[0]
         request.start = start
         request.end = end
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_tensor_shape(request)
         # unpickled_result = pickle.loads(response.pickled_shape)
@@ -353,7 +386,7 @@ class TFWrapper:
 
         request.weights_path = weights_path
         request.model_name = model_name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_model_load__weights(request)
         return response.obj_id
@@ -364,7 +397,7 @@ class TFWrapper:
         response: yolo_pb2.ExpectPartialResponse
 
         request.obj_id = checkpoint_obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.attribute_checkpoint_expect__partial(request)
         return 
@@ -377,7 +410,7 @@ class TFWrapper:
 
         request.obj_id = tensor_obj_id
         request.divisor = divisor
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.tensor_op_divide(request)
         return response.obj_id
@@ -396,7 +429,7 @@ class TFWrapper:
         response: yolo_pb2.LambdaResponse
 
         request.expr = lambda_str
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         # if name is not None:
         #     request.name = name
@@ -416,7 +449,7 @@ class TFWrapper:
         response: yolo_pb2.UpSampling2DResponse
         
         request.size = size
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_layers_UpSampling2D(request)
         return response.obj_id
@@ -426,7 +459,7 @@ class TFWrapper:
         request = yolo_pb2.ConcatenateRequest()
         response: yolo_pb2.ContcatenateResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         
         response = stub.keras_layers_Concatenate(request)
         return response.obj_id
@@ -437,7 +470,7 @@ class TFWrapper:
         response: yolo_pb2.ImageResizeResponse
 
         request.obj_id = image_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         for elem in size:
             request.size.append(elem)
@@ -451,7 +484,7 @@ class TFWrapper:
         response: yolo_pb2.l2Response
 
         request.l=l
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.keras_regularizers_l2(request)
         # unpickled_l2 = pickle.loads(response.pickled_l2)
@@ -466,28 +499,27 @@ class TFWrapper:
         request.obj_id = iterable
         for index in args:
             request.indices.append(index)
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.iterable_indexing(request)
         result = pickle.loads(response.pickled_result)
-        # results = []
-        # obj_id_list = response.obj_ids
-        # for obj_id in obj_id_list:
-        #     results.append(obj_id)
 
         return result
 
     @staticmethod
+    #Todo
     def byte_tensor_to_numpy(stub, image_obj_id):
         request = yolo_pb2.TensorToNumpyRequest()
         response: yolo_pb2.TensorToNumPyResponse
 
         request.obj_id = image_obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.byte_tensor_to_numpy(request)
-
-        return pickle.loads(response.pickled_array)
+        if response.data_channel == 'shmem':
+            return ControlProcedure.shmem_channel.read(request.data_length)
+        else:
+            return pickle.loads(response.pickled_array)
 
     @staticmethod
     def get_object_by_id(stub, obj_id):
@@ -495,7 +527,7 @@ class TFWrapper:
         response: yolo_pb2.GetObjectResponse
 
         request.obj_id = obj_id
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.get_object_by_id(request)
 
@@ -509,7 +541,7 @@ class YoloWrapper:
         request = yolo_pb2.CheckModelExistRequest()
         response: yolo_pb2.CheckModelExistResponse
 
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
         request.name = name
         request.plan_to_make=plan_to_make
 
@@ -526,7 +558,7 @@ class YoloWrapper:
         response: yolo_pb2.BatchNormResponse
 
         # request.name = name
-        request.connection_id = ControlProcedure.client_id
+        request.container_id = ControlProcedure.container_id
 
         response = stub.batch_normalization(request)
         return response.obj_id
