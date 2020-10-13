@@ -45,8 +45,10 @@ class ExperimentSet(exp_pb2_grpc.ExperimentServiceServicer):
         # debug_ls('/')
         # debug_ls('/layers')
         # debug_ls(prefix)
-
-        full_path = prefix + path
+        if path.startswith('/tmpfs/'):
+            full_path = path
+        else:
+            full_path = prefix + path
         start = time.time()
         read_img = open(full_path, 'rb').read()
         end = time.time()

@@ -32,25 +32,33 @@ def is_img_storage(path: str):
     except FileNotFoundError:
         return False
 
+    # todo: shmem align, global variables...
+
 class ControlProcedure:
-    # container_id = subprocess.check_output('cat /proc/self/cgroup | cut -d/ -f3 | head -2 | tr -d \'\r\n\'', shell=True).decode('utf-8').strip()
-    container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
-    # print('misun!!!')
-    print(f'container_id={container_id}')
+    # container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
+    container_id = ''
+    shmem_channel =  ''
+    data_channel = ''
+
+    # print(f'container_id={container_id}')
     @staticmethod
-    def Connect(stub, obj_pass: str): # path, bin, redis
+    def Connect(stub, obj_pass: str, container_id, shmem_channel=None): # path, bin, redis
         request = yolo_pb2.ConnectRequest()
         response: yolo_pb2.ConnectResponse
 
+        ControlProcedure.container_id = container_id
         request.container_id = ControlProcedure.container_id
 
+        ControlProcedure.data_channel = obj_pass
         if obj_pass == 'bin':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.BINARY
         elif obj_pass == 'path':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.PATH
         elif obj_pass == 'redis':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID
-
+        elif obj_pass == 'shmem':
+            request.object_transfer = yolo_pb2.ConnecRequest.ObjectTransfer.SHMEM
+            ControlProcecure.shmem_channel = shmem_channel
         # while True:
         #     request.id = utils_random_string()
         #     response = stub.Connect(request)
@@ -182,21 +190,35 @@ class TFWrapper:
         return None
     
     @staticmethod
-    def tf_image_decode__image(stub, image_path, channels: int):
+    def tf_image_decode__image(stub, channels=None, 
+                                image_path=None, 
+                                data_channel = None, data_size_in_byte = None,
+                                data_bytes = None):
         # img_raw = tf.image.decode_image(open(FLAGS.image, 'rb').read(), channels=3)
         request = yolo_pb2.DecodeImageRequest()
         response: yolo_pb2.DecodeImageResponse
 
         request.channels=channels
-        if is_ramfs(image_path):
-            request.is_ramfs = True
-            request.image_path = image_path
-        elif is_img_storage(image_path):
-            request.is_image_storage = True
-            request.image_path = image_path
+        if data_channel == 'path':
+            if is_ramfs(image_path) or is_img_storage(image_path): # ramfs dir (shared), # regular storage dir (shared)
+                request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH
+                request.path_raw_dir = True
+                request.image_path = image_path
+            else:
+                request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH
+                request.path_raw_dir = False
+                request.image_path = os.path.abspath(image_path)
+        elif data_channel == 'shmem':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.SHMEM
+            request.data_size_in_byte = data_size_in_byte
+        elif data_channel == 'bin':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.BINARY
+        elif data_channel == 'redis':
+            request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.REDIS_OBJ_ID
+            raise Exception('Not Implemented Yet')
         else:
-            request.ramfs = False
-            request.image_path = os.path.abspath(image_path)
+            raise Exception('Unknow data channel!')
+
         request.container_id = ControlProcedure.container_id
 
         response = stub.image_decode__image(request)
@@ -481,14 +503,11 @@ class TFWrapper:
 
         response = stub.iterable_indexing(request)
         result = pickle.loads(response.pickled_result)
-        # results = []
-        # obj_id_list = response.obj_ids
-        # for obj_id in obj_id_list:
-        #     results.append(obj_id)
 
         return result
 
     @staticmethod
+    #Todo
     def byte_tensor_to_numpy(stub, image_obj_id):
         request = yolo_pb2.TensorToNumpyRequest()
         response: yolo_pb2.TensorToNumPyResponse
@@ -497,8 +516,10 @@ class TFWrapper:
         request.container_id = ControlProcedure.container_id
 
         response = stub.byte_tensor_to_numpy(request)
-
-        return pickle.loads(response.pickled_array)
+        if response.data_channel == 'shmem':
+            return ControlProcedure.shmem_channel.read(request.data_length)
+        else:
+            return pickle.loads(response.pickled_array)
 
     @staticmethod
     def get_object_by_id(stub, obj_id):

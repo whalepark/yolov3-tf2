@@ -1,0 +1,2 @@
+daemonize # inside container
+# docker # needed by host

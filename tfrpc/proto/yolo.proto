@@ -50,9 +50,11 @@ message ConnectRequest {
     string id = 1;
     string container_id=2;
     enum ObjectTransfer {
-        BINARY = 0;
-        PATH = 1;
-        REDIS_OBJ_ID = 2;
+        NONE = 0;
+        BINARY = 1;
+        PATH = 2;
+        REDIS_OBJ_ID = 3;
+        SHMEM = 4;
     }
     ObjectTransfer object_transfer=3;
 }
@@ -62,8 +64,7 @@ message ConnectResponse {
 }
 /// Disconnect
 message DisconnectRequest {
-    string id = 1;
-    string container_id = 2;
+    string container_id = 1;
 }
 
 message DisconnectResponse {
@@ -140,11 +141,21 @@ message PhysicalDevices {
 
 /// image_decode__image
 message DecodeImageRequest {
-    bool is_ramfs = 1;
+    enum ObjectTransfer {
+        NONE = 0;
+        BINARY = 1;
+        PATH = 2;
+        REDIS_OBJ_ID = 3;
+        SHMEM = 4;
+    }
+    ObjectTransfer data_channel = 1;
     string image_path = 2;
     int32 channels = 3;
     string container_id = 4;
-    bool is_image_storage = 5;
+    bool path_raw_dir = 5;
+    int32 shmem_offset = 6;
+    int32 shmem_size = 7;
+    bytes bin_image = 8;
 }
 
 message DecodeImageResponse {

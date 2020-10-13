@@ -50,7 +50,7 @@ import yolo_pb2_grpc
 from tf_wrapper import TFWrapper, ControlProcedure
 import signal
 
-import redis
+import sysv_ipc
 
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
@@ -68,29 +68,64 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
 flags.DEFINE_boolean('hello', False, 'hello or health check')
 flags.DEFINE_string('object', 'path', 'specify how to pass over objects')
+flags.DEFINE_integer('num_images', 1, 'the number of images to process')
+flags.DEFINE_integer('size_to_transfer', 4*1024*1024, 'the size of image')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
-g_redis: redis.Redis
+# g_redis: redis.Redis
 CONTAINER_ID: str
+shmem = None
 
-def initialize(stub, server_addr):
-    global g_stub, g_redis, CONTAINER_ID
+class SharedMemoryChannel:
+    def __init__(self, key, size):
+        self.shmem = sysv_ipc.SharedMemory(key, sysv_ipc.IPC_CREX, size=size)
+        self.key = key
+        self.sem = sysv_ipc.Semaphore(key, sysv_ipc.IPC_CREX)
 
-    ControlProcedure.Connect(stub, FLAGS.object) # path, bin, redis
+    def write(self, uri):
+        self.sem.acquire()
+        self.shmem.write(open(uri, 'rb').read())
+        self.sem.release()
+
+    def read(self, size):
+        self.sem.acquire()
+        data = self.shmem.read(size)
+        self.sem.release()
+        return data
+
+    def finalize(self):
+        self.shmem.detach()
+        self.shmem.remove()
+        self.sem.remove()
+
+
+
+def initialize(stub, server_addr, data_channel):
+    global g_stub, CONTAINER_ID
+
+    container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
+    config_data_channel(data_channel, int(container_id[:8], 16))
+
+    ControlProcedure.Connect(stub, FLAGS.object, container_id, shmem_channel=shmem) # path, bin, redis, shmem
     g_stub = stub
     signal.signal(signal.SIGINT, finalize)
-    CONTAINER_ID=os.environ['CONTAINER_ID']
+    CONTAINER_ID=container_id
 
-    try:
-        g_redis = redis.Redis(host=server_addr, port=6379)
-        g_redis.set('test:string', 'Hello Misun!')
-        test = g_redis.get('test:string')
-        print(test)
-    except Exception as e:
-        print(e)
+def config_data_channel(data_channel, key = None):
+    if data_channel == 'path':
+        pass
+    elif data_channel == 'bin':
+        pass
+    elif data_channel == 'redis':
+        # put_in_redis(FLAGS.image)
+        pass
+    elif data_channel == 'shmem':
+        global shmem
+        shmem = SharedMemoryChannel(key=key, size=FLAGS.num_images * FLAGS.size_to_transfer)
 
 def finalize():
     ControlProcedure.Disconnect(g_stub)
+    shmem.finalize()
 
 def put_in_redis(image_path):
     with open(image_path, 'rb') as f:
@@ -105,18 +140,11 @@ def main(_argv):
         ('grpc.max_message_length', 10 * 1024 * 100)] \
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
-    initialize(stub, server_addr)
+    initialize(stub, server_addr, FLAGS.object)
 
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         exit()
-
-    if FLAGS.object == 'path':
-        FLAGS.image
-    elif FLAGS.object == 'bin':
-        pass
-    elif FLAGS.object == 'redis':
-        put_in_redis(FLAGS.image)
 
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
@@ -149,13 +177,17 @@ def main(_argv):
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
         start=time.time()
-        ## Todo: branch..
         if FLAGS.object == 'bin':
-            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
-        elif FLAGS.object == 'path':
-            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
-        elif FLAGS.object == 'redis':
-            img_raw = TFWrapper.tf_image_decode__image(stub, FLAGS.image, channels=3)
+            img_raw = TFWrapper.tf_image_decode__image(stub, 
+                channels=3, data_channel=FLAGS.object, data_bytes=open(FLAGS.image, 'rb').read())
+        elif FLGAS.object == 'path':
+            img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
+                channels=3, data_channel=FLAGS.object)
+        elif FLAGS.object == 'shmem':
+            img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
+                channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer)
+        else:
+            raise Exception(f'Unknown data channel={FLGAS.object}')
         end=time.time()
         logging.info(f'time={end-start}')
 

@@ -350,6 +350,12 @@ case $COMMAND in
     'perf-redis')
         perf_redis $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
         ;;
+    'perf-shmem')
+        perf_ramfs $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
+        ;;
+    'cleanup-shm')
+        perf_redis $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
+        ;;
     debug)
         init_ramfs
         ls ramfs
