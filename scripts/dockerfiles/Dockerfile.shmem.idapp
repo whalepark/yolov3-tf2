@@ -4,6 +4,7 @@ FROM ubuntu:bionic
 RUN apt-get update -y && \
     apt-get install -y --fix-missing git wget && \
     apt-get install -y libgl1-mesa-dev && \
+    apt install -y python3.6 python3-pip && \
     python3 -m pip && \
     python3 -m pip install --upgrade pip setuptools wheel && \
     python3 -m pip install opencv-python==4.1.0.25  && \

@@ -186,7 +186,7 @@ def main(_argv):
         if FLAGS.object == 'bin':
             img_raw = TFWrapper.tf_image_decode__image(stub, 
                 channels=3, data_channel=FLAGS.object, data_bytes=open(FLAGS.image, 'rb').read())
-        elif FLGAS.object == 'path':
+        elif FLAGS.object == 'path':
             img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
                 channels=3, data_channel=FLAGS.object)
         elif FLAGS.object == 'shmem':
