@@ -352,7 +352,7 @@ function perf_shmem() {
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_id_${index}
 
-        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --image data/street.jpg'"
+        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --object shmem --image data/street.jpg'"
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -367,6 +367,7 @@ function perf_shmem() {
     # For debugging
     docker logs grpc_exp_app_id_0001
     # docker logs grpc_exp_app_id_0004
+    docker logs grpc_exp_server_id_00
     exit
 
     server_container_name=grpc_exp_server_bin_00
@@ -385,7 +386,7 @@ function perf_shmem() {
 
         # _run_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
         # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image data/meme.jpg"
-        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --object shmem --image data/street.jpg'"
+        _run_d_client $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK "bash -c 'git pull && python3.6 detect.py --object shmem --path /data/street.jpg'"
         # _run_client grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
         # _run_d_client $i grpc_client ${container_name} ${server_container_name} $NETWORK "python3.6 detect.py --image images/photographer.jpg"
     done
