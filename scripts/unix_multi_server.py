@@ -7,7 +7,7 @@ import multiprocessing
 import subprocess
 import json
 import time
-
+from datetime import datetime
 
 SERVER_SOCKET_PATH = './sockets/perf_server.sock'
 SERVER_SOCKET: socket.socket
@@ -58,7 +58,8 @@ def run_server():
 
 def do_something(pid: int, events: list, container_name: str):
     # print(f'exec perf stat -e {",".join(events)} -p {pid} -o ./data/perf_stat_{container_name}.log')
-    p = subprocess.Popen(f'exec perf stat -e {",".join(events)} -p {pid} -o ./data/perf_stat_{container_name}.log', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    timestamp = str(datetime.now()).replace(' ', '-')
+    p = subprocess.Popen(f'exec perf stat -e {",".join(events)} -p {pid} -o ./data/perf_stat_{container_name}_{timestamp}.log', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     wait_until_process_terminates(pid)
 
     try:
@@ -67,7 +68,7 @@ def do_something(pid: int, events: list, container_name: str):
         p.send_signal(signal.SIGINT)
         stdout, stderr = p.communicate(timeout=1)
     
-    with open(f'./data/perf_stat_{container_name}.log') as f:
+    with open(f'./data/perf_stat_{container_name}_{timestamp}.log') as f:
         while True:
             line = f.readline()
             print(line, end='')

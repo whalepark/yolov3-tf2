@@ -50,6 +50,7 @@ class ControlProcedure:
         request.container_id = ControlProcedure.container_id
 
         ControlProcedure.data_channel = obj_pass
+
         if obj_pass == 'bin':
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.BINARY
             ControlProcedure.data_channel = 'bin'
@@ -60,15 +61,15 @@ class ControlProcedure:
             request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID
             ControlProcedure.data_channel = 'redis'
         elif obj_pass == 'shmem':
-            request.object_transfer = yolo_pb2.ConnecRequest.ObjectTransfer.SHMEM
-            ControlProcecure.shmem_channel = shmem_channel
+            request.object_transfer = yolo_pb2.ConnectRequest.ObjectTransfer.SHMEM
+            ControlProcedure.shmem_channel = shmem_channel
             ControlProcedure.data_channel = 'shmem'
-        # while True:
-        #     request.id = utils_random_string()
-        #     response = stub.Connect(request)
-        #     if response.accept:
-        #         ControlProcedure.client_id = request.id
-        #         break
+        while True:
+            request.id = utils_random_string()
+            response = stub.Connect(request)
+            if response.accept:
+                ControlProcedure.client_id = request.id
+                break
 
     @staticmethod
     def Disconnect(stub):
@@ -197,7 +198,7 @@ class TFWrapper:
     def tf_image_decode__image(stub, channels=None, 
                                 image_path=None, 
                                 data_channel = None, data_size_in_byte = None,
-                                data_bytes = None):
+                                data_bytes = None, shmem = None):
         # img_raw = tf.image.decode_image(open(FLAGS.image, 'rb').read(), channels=3)
         request = yolo_pb2.DecodeImageRequest()
         response: yolo_pb2.DecodeImageResponse
@@ -215,8 +216,11 @@ class TFWrapper:
         elif data_channel == 'shmem':
             request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.SHMEM
             request.shmem_size = data_size_in_byte
+            # shmem.write(image_path)
         elif data_channel == 'bin':
             request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.BINARY
+
+            request.bin_image = data_bytes
         elif data_channel == 'redis':
             request.data_channel = yolo_pb2.DecodeImageRequest.ObjectTransfer.REDIS_OBJ_ID
             raise Exception('Not Implemented Yet')
@@ -227,7 +231,6 @@ class TFWrapper:
 
         response = stub.image_decode__image(request)
         # unpickled_tensor = pickle.loads(response.tensor)
-
         # return unpickled_tensor
         return response.obj_id
 
@@ -521,7 +524,7 @@ class TFWrapper:
 
         response = stub.byte_tensor_to_numpy(request)
         if ControlProcedure.data_channel == 'shmem':
-            return ControlProcedure.shmem_channel.view(response.data_length)[:response.data_length]
+            return pickle.loads(ControlProcedure.shmem_channel.view(response.data_length))
         else:
             return pickle.loads(response.pickled_array)
 

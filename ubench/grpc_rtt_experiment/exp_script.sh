@@ -38,6 +38,7 @@ function run() {
     # Add this to perf profiling.
         # --cap-add SYS_ADMIN \
         # --cap-add IPC_LOCK \
+    local file=$1
 
     docker rm -f $(docker ps -a | grep "server\|client" | awk '{print $1}') > /dev/null 2>&1
     docker network rm exp_net
@@ -52,22 +53,25 @@ function run() {
                --volume=/var/lib/docker/overlay2:/layers \
                --volume=/var/run/docker.sock:/var/run/docker.sock \
                --workdir='/server' \
+               --ipc=shareable \
                ubench_exp_grpc/server:latest \
                python3 server.py
-
+    
     docker run \
             --network=exp_net \
             --name=client \
             --volume=$(pwd)/client:/client \
             --workdir='/client' \
             --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' server) \
+            --ipc=container:server \
             ubench_exp_grpc/client:latest \
-            python3 client.py --file /imgs/street.jpg
+            python3 client.py --file $file #/imgs/street.jpg
 
     docker logs server
 
     docker rm -f $(docker ps -a | grep "server\|client" | awk '{print $1}') > /dev/null 2>&1
 }
+
 
 function init_tmpfs() {
     local dir="$(pwd)/tmpfs/"
@@ -132,7 +136,11 @@ case $COMMAND in
         ;;
     run)
         build_proto
-        run
+        run /imgs/street.jpg
+        ;;
+    run-large)
+        build_proto
+        run /imgs/photographer.jpg
         ;;
     run-tmpfs)
         build_proto

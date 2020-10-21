@@ -105,8 +105,18 @@ class Container_Info:
         self.object_ownership = {}
         self.subdir = subdir
 
-        self.sem = Semaphore(container_id)
-        self.shmem = SharedMemory(container_id)
+        if object_pass == OBJECT_PASS_T.SHMEM:
+            self.sem = Semaphore(int(container_id[:8], 16))
+            self.shmem = SharedMemory(int(container_id[:8], 16))
+            self.mv = memoryview(self.shmem)
+
+    def __str___(self):
+        return f'container_id={self.container_id}\n' + \
+               f'object_pass={self.object_pass}\n' + \
+               f'object_ownership={len(self.object_ownership)}\n' + \
+               f'subdir={self.subdir}\n' + \
+               f'have shmem={self.shmem is not None}\n'
+
 
     def write(self, content):
         if self.object_pass == OBJECT_PASS_T.SHMEM:
@@ -119,16 +129,25 @@ class Container_Info:
     def read(self, size):
         if self.object_pass == OBJECT_PASS_T.SHMEM:
             self.sem.acquire()
-            data = self.shmem.read(size)
+            # data = self.shmem.read(size)
+            data = bytes(self.mv[32:32+self.__data_length()])
+            # data = self.mv[32:32+self.__data_length()]
             self.sem.release()
             return data
+        else:
+            raise Exception('Valid only for shmem channel!')
+
+    def __data_length(self):
+        if self.object_pass == OBJECT_PASS_T.SHMEM:
+            length = int.from_bytes(self.mv[0:4], 'little')
+            return length
         else:
             raise Exception('Valid only for shmem channel!')
 
     def view(self, size):
         if self.object_pass == OBJECT_PASS_T.SHMEM:
             self.sem.acquire()
-            data = memoryview(self.shmem)[:size]
+            data = self.mv[32:32+self.__data_length()]
             self.sem.release()
             return data
         else:
@@ -385,18 +404,11 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         else:
             response.accept = True
             Container_Id_Dict[request.container_id] = Container_Info(request.container_id, 
-                                                    request.object_transfer, 
+                                                    OBJECT_PASS_T(request.object_transfer), 
                                                     _get_client_root(request.container_id))
-            # utils_add_to_subdir(request.container_id) # todo : remove
 
-            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.BINARY:
-                OBJECT_PASS = OBJECT_PASS_T.BINARY
-            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.PATH:
-                OBJECT_PASS = OBJECT_PASS_T.PATH
-            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.REDIS_OBJ_ID:
-                OBJECT_PASS = OBJECT_PASS_T.REDIS_OBJ_ID
-            if request.object_transfer == yolo_pb2.ConnectRequest.ObjectTransfer.SHMEM:
-                OBJECT_PASS = OBJECT_PASS_T.SHMEM
+            # utils_add_to_subdir(request.container_id) # todo : remove
+            OBJECT_PASS = OBJECT_PASS_T(request.object_transfer)
             
             logging.info(f'OBJECT_PASS={OBJECT_PASS}')
             # Global_Graph_Dict[request.id] = tf.Graph()
@@ -646,12 +658,14 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
 
     def image_decode__image(self, request, context):
         print('\nimage_decode__image')
-        _id = request.container_id
+        container_id = request.container_id
+
         # with Global_Sess_Dict[_id].as_default(), tf.name_scope(_id), Global_Graph_Dict[_id].as_default():
         response=yolo_pb2.DecodeImageResponse()
 
         image_path = ''
-        container_info = Container_Id_Dict[request.container_id]
+        container_info = Container_Id_Dict[container_id]
+
         if request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.PATH: 
             if request.path_raw_dir:
                 image_path = request.image_path
@@ -659,12 +673,12 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
                 prefix = container_info.subdir
                 image_path = prefix + request.image_path
             image_bin = open(image_path, 'rb').read()
-        elif request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.BIN:
+        elif request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.BINARY:
             image_bin = request.bin_image
         elif request.data_channel == yolo_pb2.DecodeImageRequest.ObjectTransfer.SHMEM:
-            image_bin = container_info.view(request.shmem_size)
+            image_bin = container_info.read(request.shmem_size)
         else:
-            raise Exception(f'No such data channel: {request.data_channel.}')
+            raise Exception(f'No such data channel: {request.data_channel}')
 
         image_raw = tf.image.decode_image(image_bin, channels=request.channels, expand_animations=False)
         obj_id = utils_set_obj(image_raw, request.container_id)
@@ -1036,7 +1050,7 @@ class YoloFunctionWrapper(yolo_pb2_grpc.YoloTensorflowWrapperServicer):
         response.data_length = len(pickled_array)
         
         if container_info.object_pass == OBJECT_PASS_T.SHMEM:
-            container_info.shmem.write(pickle.dumps(pickled_array))
+            container_info.shmem.write(pickled_array)
         else:
             response.pickled_array = pickled_array
 
@@ -1060,7 +1074,7 @@ def make_json(container_id):
 
     args_dict['type']='closed-proc-ns'
     args_dict['cid']=container_id
-    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses','instructions']
 
     args_json = json.dumps(args_dict)
 
@@ -1090,6 +1104,7 @@ def serve():
     server.wait_for_termination()
 
 if __name__ == '__main__':
+    print('here')
     logging.basicConfig()
     FLAGS(sys.argv)
     print(f'hostroot={hostroot}')

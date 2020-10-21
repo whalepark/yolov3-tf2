@@ -7,13 +7,47 @@ import grpc
 import exp_pb2, exp_pb2_grpc
 from concurrent import futures
 import time
+import sysv_ipc
+
+class SharedMemoryChannel:
+    def __init__(self, key):
+        self.key = key
+        self.shmem = sysv_ipc.SharedMemory(key)
+        self.sem = sysv_ipc.Semaphore(key)
+
+    def write(self, uri):
+        self.sem.acquire()
+        self.shmem.write(open(uri, 'rb').read())
+        self.sem.release()
+
+    def read(self, size):
+        self.sem.acquire()
+        data = self.shmem.read(size)
+        self.sem.release()
+        return data
+
+    def view(self, size):
+        self.sem.acquire()
+        mv = memoryview(self.shmem)
+        self.sem.release()
+        return mv[:size]
 
 def debug_ls(dir: str):
     output = subprocess.check_output(f'ls -al {dir}', shell=True, encoding='utf-8').strip()
     logging.debug(output)
 
-
+SHMEM = None
 class ExperimentSet(exp_pb2_grpc.ExperimentServiceServicer):
+    def Init(self, request, context):
+        global SHMEM
+        print(f'Init')
+        response = exp_pb2.InitResponse()
+        key = request.key
+
+        SHMEM = SharedMemoryChannel(key)
+        return response
+
+
     def Echo(self, request, context):
         print(f'Echo')
         response = exp_pb2.EchoResponse()
@@ -54,6 +88,18 @@ class ExperimentSet(exp_pb2_grpc.ExperimentServiceServicer):
         end = time.time()
         response.log = str(end-start)
 
+        return response
+
+    def SendViaShmem(self, request, context):
+        print(f'SendViaShmem')
+        response = exp_pb2.SendViaShmemResponse()
+
+        data = SHMEM.read(request.data_size)
+        return response
+
+    def SendViaShmem_ExcludeIO(self, request, context):
+        print(f'SendViaShmem_ExcludeIO')
+        response = exp_pb2.SendViaShmem_ExcludeIOResponse()
         return response
 
 def serve():

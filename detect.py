@@ -5,7 +5,7 @@ def make_json(container_id):
 
     args_dict['type']='closed-proc-ns'
     args_dict['cid']=container_id
-    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses']
+    args_dict['events']=['cpu-cycles','page-faults','minor-faults','major-faults','cache-misses','LLC-load-misses','LLC-store-misses','dTLB-load-misses','iTLB-load-misses','instructions']
 
     args_json = json.dumps(args_dict)
 
@@ -22,15 +22,76 @@ def connect_to_perf_server():
     data_received = my_socket.recv(1024)
     print(data_received)
     my_socket.close()
+    
+def get_container_id():
+    cg = open('/proc/self/cgroup')
+    content = cg.readlines()
+    for line in content:
+        if 'docker' in line:
+            cid = line.strip().split('/')[-1]
+            print(cid)
+            return cid
+
+import sysv_ipc
+class SharedMemoryChannel:
+    # [0: 32) Bytes: header
+    ### [0, 4) Bytes: size
+    # [32, -] Bytes: data
+    def __init__(self, key, size, path=None):
+        self.key = key
+        self.shmem = sysv_ipc.SharedMemory(key, sysv_ipc.IPC_CREX, size=size)
+        self.sem = sysv_ipc.Semaphore(key, sysv_ipc.IPC_CREX, initial_value = 1)
+        self.mv = memoryview(self.shmem)
+
+        if path is not None:
+            self.write(path)
+
+    def write(self, uri, offset = 32):
+        buf = open(uri, 'rb').read()
+        length = len(buf)
+        self.sem.acquire()
+        self.mv[0:4] = length.to_bytes(4, 'little')
+        self.mv[32:32+length] = buf
+        # print(self.mv[32:], type(buf))
+        self.sem.release()
+
+    def read(self, size):
+        self.sem.acquire()
+        length = self.mv[0:4]
+        data = self.mv[32:32+size]
+        self.sem.release()
+        return data
+
+    def view(self, size):
+        self.sem.acquire()
+        self.mv = memoryview(self.shmem)
+        self.sem.release()
+        return self.mv[:size]
+
+    def finalize(self):
+        self.sem.remove()
+        self.shmem.detach()
+        self.shmem.remove()
+
+## preinit
+CONTAINER_ID = get_container_id()
+# config_data_channel(int(CONTAINER_ID[:8], 16))
+# shmem = None
+import sys
+if sys.argv[2] == 'shmem':
+    # shmem = SharedMemoryChannel(key=CONTAINER_ID, size=FLAGS.num_images * FLAGS.size_to_transfer)
+    shmem = SharedMemoryChannel(key=int(CONTAINER_ID[:8], 16), size=1 * (32 + 4 * 1024 * 1024), path=sys.argv[4])
+else:
+    shmem = None
+
+
 
 connect_to_perf_server()
 
 import time, subprocess
-import shlex # for subprocess popen
-from multiprocessing import Process
 from absl import app, flags, logging
 from absl.flags import FLAGS
-import cv2 ###
+# import cv2 ###
 import numpy as np
 # import tensorflow as tf ###
 from yolov3_tf2.models import (
@@ -50,7 +111,6 @@ import yolo_pb2_grpc
 from tf_wrapper import TFWrapper, ControlProcedure
 import signal
 
-import sysv_ipc
 
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
 
@@ -73,65 +133,27 @@ flags.DEFINE_integer('size_to_transfer', 4*1024*1024, 'the size of image')
 
 g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
 # g_redis: redis.Redis
-CONTAINER_ID: str
-shmem = None
-
-class SharedMemoryChannel:
-    def __init__(self, key, size):
-        self.shmem = sysv_ipc.SharedMemory(key, sysv_ipc.IPC_CREX, size=size)
-        self.key = key
-        self.sem = sysv_ipc.Semaphore(key, sysv_ipc.IPC_CREX)
-
-    def write(self, uri):
-        self.sem.acquire()
-        self.shmem.write(open(uri, 'rb').read())
-        self.sem.release()
-
-    def read(self, size):
-        self.sem.acquire()
-        data = self.shmem.read(size)
-        self.sem.release()
-        return data
-
-    def view(self, size):
-        self.sem.acquire()
-        mv = memoryview(self.shmem)
-        self.sem.release()
-        return mv
-
-    def finalize(self):
-        self.shmem.detach()
-        self.shmem.remove()
-        self.sem.remove()
-
+# CONTAINER_ID: str
+# shmem = None
+DATA_CHANNEL = None
 
 
 def initialize(stub, server_addr, data_channel):
-    global g_stub, CONTAINER_ID
+    global g_stub, CONTAINER_ID, DATA_CHANNEL
 
-    container_id = subprocess.check_output('cat /proc/self/cgroup | grep cpuset | cut -d/ -f3 | head -1', shell=True, encoding='utf-8').strip()
-    config_data_channel(data_channel, int(container_id[:8], 16))
+    # CONTAINER_ID = get_container_id()
+    # config_data_channel(data_channel, int(CONTAINER_ID[:8], 16))
 
-    ControlProcedure.Connect(stub, FLAGS.object, container_id, shmem_channel=shmem) # path, bin, redis, shmem
+    ControlProcedure.Connect(stub, FLAGS.object, CONTAINER_ID, shmem_channel=shmem) # path, bin, redis, shmem
     g_stub = stub
     signal.signal(signal.SIGINT, finalize)
-    CONTAINER_ID=container_id
+    DATA_CHANNEL=data_channel
 
-def config_data_channel(data_channel, key = None):
-    if data_channel == 'path':
-        pass
-    elif data_channel == 'bin':
-        pass
-    elif data_channel == 'redis':
-        # put_in_redis(FLAGS.image)
-        pass
-    elif data_channel == 'shmem':
-        global shmem
-        shmem = SharedMemoryChannel(key=key, size=FLAGS.num_images * FLAGS.size_to_transfer)
 
 def finalize():
     ControlProcedure.Disconnect(g_stub)
-    shmem.finalize()
+    if DATA_CHANNEL == 'shmem':
+        shmem.finalize()
 
 def put_in_redis(image_path):
     with open(image_path, 'rb') as f:
@@ -141,9 +163,9 @@ def main(_argv):
     # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
     server_addr = os.environ.get('SERVER_ADDR')
     channel = grpc.insecure_channel(f'{server_addr}:1990', \
-        options=[('grpc.max_send_message_length', 10 * 1024 * 10), \
-        ('grpc.max_receive_message_length', 10 * 1024 * 100), \
-        ('grpc.max_message_length', 10 * 1024 * 100)] \
+        options=[('grpc.max_send_message_length', 4 * 1024 * 1024), \
+        ('grpc.max_receive_message_length', 4 * 1024 * 1024), \
+        ('grpc.max_message_length', 4 * 1024 * 1024)] \
     )
     stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
     initialize(stub, server_addr, FLAGS.object)
@@ -175,6 +197,7 @@ def main(_argv):
     logging.info('classes loaded')
 
     if FLAGS.tfrecord:
+        logging.info('this branch?')
         dataset = load_tfrecord_dataset(
             FLAGS.tfrecord, FLAGS.classes, FLAGS.size)
         dataset = dataset.shuffle(512)
@@ -190,10 +213,10 @@ def main(_argv):
             img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
                 channels=3, data_channel=FLAGS.object)
         elif FLAGS.object == 'shmem':
-            img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
-                channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer)
+            img_raw = TFWrapper.tf_image_decode__image(stub, #image_path=FLAGS.image, 
+                channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer, shmem=shmem)
         else:
-            raise Exception(f'Unknown data channel={FLGAS.object}')
+            raise Exception(f'Unknown data channel={FLAGS.object}')
         end=time.time()
         logging.info(f'time={end-start}')
 
@@ -217,25 +240,25 @@ def main(_argv):
                                             np.array(scores[0][i]),
                                             np.array(boxes[0][i])))
 
-    # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
-    img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
+    # # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+    # img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
 
-    # img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
-    # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
-    # cv2.imwrite(FLAGS.output, img)
+    # # img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+    # # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
+    # # cv2.imwrite(FLAGS.output, img)
 
-    img_result = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
-    img_result = draw_outputs(img_result, (boxes, scores, classes, nums), class_names)
-    cv2.imwrite(FLAGS.output, img_result)
+    # img_result = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+    # img_result = draw_outputs(img_result, (boxes, scores, classes, nums), class_names)
+    # cv2.imwrite(FLAGS.output, img_result)
 
-    logging.info('output saved to: {}'.format(FLAGS.output))
+    # logging.info('output saved to: {}'.format(FLAGS.output))
 
     finalize()
 
 
 if __name__ == '__main__':
     try:
-        logging.basicConfig()
+        logging.basicConfig(level=logging.INFO)
         app.run(main)
     except SystemExit:
         pass

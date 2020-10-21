@@ -11,4 +11,5 @@ RUN apt-get update -y && \
     python3 -m pip install --upgrade pip && \
     python3 -m pip install grpcio && \
     python3 -m pip install grpcio-tools && \
-    python3 -m pip install protobuf
+    python3 -m pip install protobuf && \
+    python3 -m pip install sysv_ipc
