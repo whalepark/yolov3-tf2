@@ -19,10 +19,67 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fproto/exp.proto\x12\x03\x65xp\"\x1b\n\x0b\x45\x63hoRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1c\n\x0c\x45\x63hoResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"9\n\x13SendFilePathRequest\x12\x14\n\x0c\x63ontainer_id\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"\x16\n\x14SendFilePathResponse\"$\n\x15SendFileBinaryRequest\x12\x0b\n\x03\x62in\x18\x01 \x01(\x0c\"\x18\n\x16SendFileBinaryResponse\"<\n\x16ServerIOLatencyRequest\x12\x14\n\x0c\x63ontainer_id\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"&\n\x17ServerIOLatencyResponse\x12\x0b\n\x03log\x18\x01 \x01(\t2\xa6\x02\n\x11\x45xperimentService\x12-\n\x04\x45\x63ho\x12\x10.exp.EchoRequest\x1a\x11.exp.EchoResponse\"\x00\x12\x45\n\x0cSendFilePath\x12\x18.exp.SendFilePathRequest\x1a\x19.exp.SendFilePathResponse\"\x00\x12K\n\x0eSendFileBinary\x12\x1a.exp.SendFileBinaryRequest\x1a\x1b.exp.SendFileBinaryResponse\"\x00\x12N\n\x0fServerIOLatency\x12\x1b.exp.ServerIOLatencyRequest\x1a\x1c.exp.ServerIOLatencyResponse\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x0fproto/exp.proto\x12\x03\x65xp\"\x1a\n\x0bInitRequest\x12\x0b\n\x03key\x18\x01 \x01(\x05\"\x0e\n\x0cInitResponse\"\x1b\n\x0b\x45\x63hoRequest\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x1c\n\x0c\x45\x63hoResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"9\n\x13SendFilePathRequest\x12\x14\n\x0c\x63ontainer_id\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"\x16\n\x14SendFilePathResponse\"$\n\x15SendFileBinaryRequest\x12\x0b\n\x03\x62in\x18\x01 \x01(\x0c\"\x18\n\x16SendFileBinaryResponse\"<\n\x16ServerIOLatencyRequest\x12\x14\n\x0c\x63ontainer_id\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"&\n\x17ServerIOLatencyResponse\x12\x0b\n\x03log\x18\x01 \x01(\t\"(\n\x13SendViaShmemRequest\x12\x11\n\tdata_size\x18\x01 \x01(\x05\"\x16\n\x14SendViaShmemResponse\"2\n\x1dSendViaShmem_ExcludeIORequest\x12\x11\n\tdata_size\x18\x01 \x01(\r\" \n\x1eSendViaShmem_ExcludeIOResponse2\x81\x04\n\x11\x45xperimentService\x12-\n\x04Init\x12\x10.exp.InitRequest\x1a\x11.exp.InitResponse\"\x00\x12-\n\x04\x45\x63ho\x12\x10.exp.EchoRequest\x1a\x11.exp.EchoResponse\"\x00\x12\x45\n\x0cSendFilePath\x12\x18.exp.SendFilePathRequest\x1a\x19.exp.SendFilePathResponse\"\x00\x12K\n\x0eSendFileBinary\x12\x1a.exp.SendFileBinaryRequest\x1a\x1b.exp.SendFileBinaryResponse\"\x00\x12N\n\x0fServerIOLatency\x12\x1b.exp.ServerIOLatencyRequest\x1a\x1c.exp.ServerIOLatencyResponse\"\x00\x12\x45\n\x0cSendViaShmem\x12\x18.exp.SendViaShmemRequest\x1a\x19.exp.SendViaShmemResponse\"\x00\x12\x63\n\x16SendViaShmem_ExcludeIO\x12\".exp.SendViaShmem_ExcludeIORequest\x1a#.exp.SendViaShmem_ExcludeIOResponse\"\x00\x62\x06proto3'
 )
 
 
+
+
+_INITREQUEST = _descriptor.Descriptor(
+  name='InitRequest',
+  full_name='exp.InitRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='exp.InitRequest.key', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=24,
+  serialized_end=50,
+)
+
+
+_INITRESPONSE = _descriptor.Descriptor(
+  name='InitResponse',
+  full_name='exp.InitResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=52,
+  serialized_end=66,
+)
 
 
 _ECHOREQUEST = _descriptor.Descriptor(
@@ -52,8 +109,8 @@ _ECHOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=24,
-  serialized_end=51,
+  serialized_start=68,
+  serialized_end=95,
 )
 
 
@@ -84,8 +141,8 @@ _ECHORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=53,
-  serialized_end=81,
+  serialized_start=97,
+  serialized_end=125,
 )
 
 
@@ -123,8 +180,8 @@ _SENDFILEPATHREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=83,
-  serialized_end=140,
+  serialized_start=127,
+  serialized_end=184,
 )
 
 
@@ -148,8 +205,8 @@ _SENDFILEPATHRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=142,
-  serialized_end=164,
+  serialized_start=186,
+  serialized_end=208,
 )
 
 
@@ -180,8 +237,8 @@ _SENDFILEBINARYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=166,
-  serialized_end=202,
+  serialized_start=210,
+  serialized_end=246,
 )
 
 
@@ -205,8 +262,8 @@ _SENDFILEBINARYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=204,
-  serialized_end=228,
+  serialized_start=248,
+  serialized_end=272,
 )
 
 
@@ -244,8 +301,8 @@ _SERVERIOLATENCYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=230,
-  serialized_end=290,
+  serialized_start=274,
+  serialized_end=334,
 )
 
 
@@ -276,10 +333,126 @@ _SERVERIOLATENCYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=292,
-  serialized_end=330,
+  serialized_start=336,
+  serialized_end=374,
 )
 
+
+_SENDVIASHMEMREQUEST = _descriptor.Descriptor(
+  name='SendViaShmemRequest',
+  full_name='exp.SendViaShmemRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='data_size', full_name='exp.SendViaShmemRequest.data_size', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=376,
+  serialized_end=416,
+)
+
+
+_SENDVIASHMEMRESPONSE = _descriptor.Descriptor(
+  name='SendViaShmemResponse',
+  full_name='exp.SendViaShmemResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=418,
+  serialized_end=440,
+)
+
+
+_SENDVIASHMEM_EXCLUDEIOREQUEST = _descriptor.Descriptor(
+  name='SendViaShmem_ExcludeIORequest',
+  full_name='exp.SendViaShmem_ExcludeIORequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='data_size', full_name='exp.SendViaShmem_ExcludeIORequest.data_size', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=442,
+  serialized_end=492,
+)
+
+
+_SENDVIASHMEM_EXCLUDEIORESPONSE = _descriptor.Descriptor(
+  name='SendViaShmem_ExcludeIOResponse',
+  full_name='exp.SendViaShmem_ExcludeIOResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=494,
+  serialized_end=526,
+)
+
+DESCRIPTOR.message_types_by_name['InitRequest'] = _INITREQUEST
+DESCRIPTOR.message_types_by_name['InitResponse'] = _INITRESPONSE
 DESCRIPTOR.message_types_by_name['EchoRequest'] = _ECHOREQUEST
 DESCRIPTOR.message_types_by_name['EchoResponse'] = _ECHORESPONSE
 DESCRIPTOR.message_types_by_name['SendFilePathRequest'] = _SENDFILEPATHREQUEST
@@ -288,7 +461,25 @@ DESCRIPTOR.message_types_by_name['SendFileBinaryRequest'] = _SENDFILEBINARYREQUE
 DESCRIPTOR.message_types_by_name['SendFileBinaryResponse'] = _SENDFILEBINARYRESPONSE
 DESCRIPTOR.message_types_by_name['ServerIOLatencyRequest'] = _SERVERIOLATENCYREQUEST
 DESCRIPTOR.message_types_by_name['ServerIOLatencyResponse'] = _SERVERIOLATENCYRESPONSE
+DESCRIPTOR.message_types_by_name['SendViaShmemRequest'] = _SENDVIASHMEMREQUEST
+DESCRIPTOR.message_types_by_name['SendViaShmemResponse'] = _SENDVIASHMEMRESPONSE
+DESCRIPTOR.message_types_by_name['SendViaShmem_ExcludeIORequest'] = _SENDVIASHMEM_EXCLUDEIOREQUEST
+DESCRIPTOR.message_types_by_name['SendViaShmem_ExcludeIOResponse'] = _SENDVIASHMEM_EXCLUDEIORESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+InitRequest = _reflection.GeneratedProtocolMessageType('InitRequest', (_message.Message,), {
+  'DESCRIPTOR' : _INITREQUEST,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.InitRequest)
+  })
+_sym_db.RegisterMessage(InitRequest)
+
+InitResponse = _reflection.GeneratedProtocolMessageType('InitResponse', (_message.Message,), {
+  'DESCRIPTOR' : _INITRESPONSE,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.InitResponse)
+  })
+_sym_db.RegisterMessage(InitResponse)
 
 EchoRequest = _reflection.GeneratedProtocolMessageType('EchoRequest', (_message.Message,), {
   'DESCRIPTOR' : _ECHOREQUEST,
@@ -346,6 +537,34 @@ ServerIOLatencyResponse = _reflection.GeneratedProtocolMessageType('ServerIOLate
   })
 _sym_db.RegisterMessage(ServerIOLatencyResponse)
 
+SendViaShmemRequest = _reflection.GeneratedProtocolMessageType('SendViaShmemRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SENDVIASHMEMREQUEST,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.SendViaShmemRequest)
+  })
+_sym_db.RegisterMessage(SendViaShmemRequest)
+
+SendViaShmemResponse = _reflection.GeneratedProtocolMessageType('SendViaShmemResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SENDVIASHMEMRESPONSE,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.SendViaShmemResponse)
+  })
+_sym_db.RegisterMessage(SendViaShmemResponse)
+
+SendViaShmem_ExcludeIORequest = _reflection.GeneratedProtocolMessageType('SendViaShmem_ExcludeIORequest', (_message.Message,), {
+  'DESCRIPTOR' : _SENDVIASHMEM_EXCLUDEIOREQUEST,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.SendViaShmem_ExcludeIORequest)
+  })
+_sym_db.RegisterMessage(SendViaShmem_ExcludeIORequest)
+
+SendViaShmem_ExcludeIOResponse = _reflection.GeneratedProtocolMessageType('SendViaShmem_ExcludeIOResponse', (_message.Message,), {
+  'DESCRIPTOR' : _SENDVIASHMEM_EXCLUDEIORESPONSE,
+  '__module__' : 'proto.exp_pb2'
+  # @@protoc_insertion_point(class_scope:exp.SendViaShmem_ExcludeIOResponse)
+  })
+_sym_db.RegisterMessage(SendViaShmem_ExcludeIOResponse)
+
 
 
 _EXPERIMENTSERVICE = _descriptor.ServiceDescriptor(
@@ -355,13 +574,23 @@ _EXPERIMENTSERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=333,
-  serialized_end=627,
+  serialized_start=529,
+  serialized_end=1042,
   methods=[
+  _descriptor.MethodDescriptor(
+    name='Init',
+    full_name='exp.ExperimentService.Init',
+    index=0,
+    containing_service=None,
+    input_type=_INITREQUEST,
+    output_type=_INITRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
   _descriptor.MethodDescriptor(
     name='Echo',
     full_name='exp.ExperimentService.Echo',
-    index=0,
+    index=1,
     containing_service=None,
     input_type=_ECHOREQUEST,
     output_type=_ECHORESPONSE,
@@ -371,7 +600,7 @@ _EXPERIMENTSERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='SendFilePath',
     full_name='exp.ExperimentService.SendFilePath',
-    index=1,
+    index=2,
     containing_service=None,
     input_type=_SENDFILEPATHREQUEST,
     output_type=_SENDFILEPATHRESPONSE,
@@ -381,7 +610,7 @@ _EXPERIMENTSERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='SendFileBinary',
     full_name='exp.ExperimentService.SendFileBinary',
-    index=2,
+    index=3,
     containing_service=None,
     input_type=_SENDFILEBINARYREQUEST,
     output_type=_SENDFILEBINARYRESPONSE,
@@ -391,10 +620,30 @@ _EXPERIMENTSERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ServerIOLatency',
     full_name='exp.ExperimentService.ServerIOLatency',
-    index=3,
+    index=4,
     containing_service=None,
     input_type=_SERVERIOLATENCYREQUEST,
     output_type=_SERVERIOLATENCYRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SendViaShmem',
+    full_name='exp.ExperimentService.SendViaShmem',
+    index=5,
+    containing_service=None,
+    input_type=_SENDVIASHMEMREQUEST,
+    output_type=_SENDVIASHMEMRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SendViaShmem_ExcludeIO',
+    full_name='exp.ExperimentService.SendViaShmem_ExcludeIO',
+    index=6,
+    containing_service=None,
+    input_type=_SENDVIASHMEM_EXCLUDEIOREQUEST,
+    output_type=_SENDVIASHMEM_EXCLUDEIORESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

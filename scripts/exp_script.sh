@@ -29,10 +29,11 @@ function parse_arg() {
 }
 
 function generate_rand_num() {
+    local upto=$1
     if [[ "$INTERVAL" = "1" ]]; then
         local base=$(printf "0.%01d\n" $(( RANDOM % 1000 )))
         # echo ${#base}
-        echo "$base * 3" | bc
+        echo "${base} * ${upto}" | bc
     else
         echo 0
     fi
@@ -364,7 +365,7 @@ function perf_shmem() {
 
         # _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
         _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
-        sleep $(generate_rand_num)
+        sleep $(generate_rand_num) 3
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -396,7 +397,7 @@ function perf_shmem() {
         local container_name=grpc_exp_app_bin_${index}
 
         _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object bin --image data/street.jpg'
-        sleep $(generate_rand_num)
+        sleep $(generate_rand_num) 3
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -431,15 +432,16 @@ function perf_shmem_rlimit() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 5
+    _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 15
 
+    local start=$(date +%s.%N)
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_shmem_${index}
 
-        # _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
-        _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image /img/photographer.jpg'
-        sleep $(generate_rand_num)
+        _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
+        # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image /img/photographer.jpg'
+        sleep $(generate_rand_num) 3
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -450,11 +452,14 @@ function perf_shmem_rlimit() {
 
         docker wait "${container_name}"
     done
+    local end=$(date +%s.%N)
+    local elapsed_time=$(echo $end - $start | tr -d $'\t' | bc)
+    echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
     docker logs grpc_exp_app_shmem_0001
     # docker logs grpc_exp_app_id_0004
-    # docker logs grpc_exp_server_shmem_00
+    docker logs grpc_exp_server_shmem_00
 
     server_container_name=grpc_exp_server_bin_00
     # server_image=grpc_server
@@ -464,16 +469,18 @@ function perf_shmem_rlimit() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 5
+    _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 15
 
+    start=$(date +%s.%N)
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_bin_${index}
 
-        # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object bin --image data/street.jpg'
-        _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object bin --image /img/photographer.jpg'
-        sleep $(generate_rand_num)
+        _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object bin --image data/street.jpg'
+        # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object bin --image /img/photographer.jpg'
+        sleep $(generate_rand_num) 3
     done
+
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
 
@@ -483,9 +490,13 @@ function perf_shmem_rlimit() {
 
         docker wait "${container_name}"
     done
+    end=$(date +%s.%N)
+    elapsed_time=$(echo $end - $start | tr -d $'\t' | bc)
+    echo grpc $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
     docker logs grpc_exp_app_bin_0001
+    docker logs grpc_exp_server_bin_00
     # docker logs grpc_exp_app_bin_0004
     # exit
 

@@ -14,6 +14,11 @@ class ExperimentServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.Init = channel.unary_unary(
+                '/exp.ExperimentService/Init',
+                request_serializer=proto_dot_exp__pb2.InitRequest.SerializeToString,
+                response_deserializer=proto_dot_exp__pb2.InitResponse.FromString,
+                )
         self.Echo = channel.unary_unary(
                 '/exp.ExperimentService/Echo',
                 request_serializer=proto_dot_exp__pb2.EchoRequest.SerializeToString,
@@ -34,10 +39,26 @@ class ExperimentServiceStub(object):
                 request_serializer=proto_dot_exp__pb2.ServerIOLatencyRequest.SerializeToString,
                 response_deserializer=proto_dot_exp__pb2.ServerIOLatencyResponse.FromString,
                 )
+        self.SendViaShmem = channel.unary_unary(
+                '/exp.ExperimentService/SendViaShmem',
+                request_serializer=proto_dot_exp__pb2.SendViaShmemRequest.SerializeToString,
+                response_deserializer=proto_dot_exp__pb2.SendViaShmemResponse.FromString,
+                )
+        self.SendViaShmem_ExcludeIO = channel.unary_unary(
+                '/exp.ExperimentService/SendViaShmem_ExcludeIO',
+                request_serializer=proto_dot_exp__pb2.SendViaShmem_ExcludeIORequest.SerializeToString,
+                response_deserializer=proto_dot_exp__pb2.SendViaShmem_ExcludeIOResponse.FromString,
+                )
 
 
 class ExperimentServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
+
+    def Init(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def Echo(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -63,9 +84,26 @@ class ExperimentServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendViaShmem(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendViaShmem_ExcludeIO(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ExperimentServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'Init': grpc.unary_unary_rpc_method_handler(
+                    servicer.Init,
+                    request_deserializer=proto_dot_exp__pb2.InitRequest.FromString,
+                    response_serializer=proto_dot_exp__pb2.InitResponse.SerializeToString,
+            ),
             'Echo': grpc.unary_unary_rpc_method_handler(
                     servicer.Echo,
                     request_deserializer=proto_dot_exp__pb2.EchoRequest.FromString,
@@ -86,6 +124,16 @@ def add_ExperimentServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_exp__pb2.ServerIOLatencyRequest.FromString,
                     response_serializer=proto_dot_exp__pb2.ServerIOLatencyResponse.SerializeToString,
             ),
+            'SendViaShmem': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendViaShmem,
+                    request_deserializer=proto_dot_exp__pb2.SendViaShmemRequest.FromString,
+                    response_serializer=proto_dot_exp__pb2.SendViaShmemResponse.SerializeToString,
+            ),
+            'SendViaShmem_ExcludeIO': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendViaShmem_ExcludeIO,
+                    request_deserializer=proto_dot_exp__pb2.SendViaShmem_ExcludeIORequest.FromString,
+                    response_serializer=proto_dot_exp__pb2.SendViaShmem_ExcludeIOResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'exp.ExperimentService', rpc_method_handlers)
@@ -95,6 +143,23 @@ def add_ExperimentServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class ExperimentService(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Init(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/exp.ExperimentService/Init',
+            proto_dot_exp__pb2.InitRequest.SerializeToString,
+            proto_dot_exp__pb2.InitResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Echo(request,
@@ -161,5 +226,39 @@ class ExperimentService(object):
         return grpc.experimental.unary_unary(request, target, '/exp.ExperimentService/ServerIOLatency',
             proto_dot_exp__pb2.ServerIOLatencyRequest.SerializeToString,
             proto_dot_exp__pb2.ServerIOLatencyResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendViaShmem(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/exp.ExperimentService/SendViaShmem',
+            proto_dot_exp__pb2.SendViaShmemRequest.SerializeToString,
+            proto_dot_exp__pb2.SendViaShmemResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendViaShmem_ExcludeIO(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/exp.ExperimentService/SendViaShmem_ExcludeIO',
+            proto_dot_exp__pb2.SendViaShmem_ExcludeIORequest.SerializeToString,
+            proto_dot_exp__pb2.SendViaShmem_ExcludeIOResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

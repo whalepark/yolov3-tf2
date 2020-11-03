@@ -107,11 +107,11 @@ class Experiments():
         request = exp_pb2.SendViaShmemRequest()
         response: exp_pb2.SendViaShmemResponse
         
-        start = time.time()
         data = open(uri, 'rb').read()
         Experiments.shmem.write(data)
         request.data_size = len(data)
-
+        
+        start = time.time()
         response = stub.SendViaShmem(request)
         end = time.time()
         logging.info(f'rtt(transmit_shmem)={end-start}')

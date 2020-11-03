@@ -155,7 +155,6 @@ function _run_d_client_shmem_dev() {
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
-
 function _run_d_client_shmem_rlimit() {
     local index=$(($1 % $NUMCPU))
     local image_name=$2
@@ -165,15 +164,15 @@ function _run_d_client_shmem_rlimit() {
     local command=$6
     docker rm -f ${container_name} > /dev/null 2>&1
 
-        # --cpuset-cpus=${index} \
     local docker_cmd="docker run \
         -d \
         --volume=$(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
         --volume=$(pwd)/../images:/img \
         --volume=$(pwd)/..:/root/yolov3-tf2 \
-        --cpus=1 \
         --memory=256mb \
+        --cpus=1 \
+        --cpuset-cpus=${index} \
         --network=${network} \
         --name=${container_name} \
         --workdir='/root/yolov3-tf2' \
@@ -181,7 +180,7 @@ function _run_d_client_shmem_rlimit() {
         --env CONTAINER_ID=${container_name} \
         --cap-add SYS_ADMIN \
         --cap-add IPC_LOCK \
-        --ipc=container:${server_container} \
+        --ipc=container:${server_container}   \
         ${image_name} \
         ${command}"
     eval $docker_cmd
@@ -190,6 +189,7 @@ function _run_d_client_shmem_rlimit() {
     # sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p $pid -o ./data/perf_stat_${container_name}.log &
     #python3.6 detect.py --image data/meme.jpg # default command
 }
+
 
 
 function _run_d_client_w_ramfs() {

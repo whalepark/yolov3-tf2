@@ -129,7 +129,7 @@ class TFWrapper:
         if response.pickled:
             serialized_result = []
             for elem in response.pickled_result:
-                serialized_result.append(elem)
+                serialized_result.append(pickle.loads(elem))
             return serialized_result
         else:
             if len(response.obj_ids) > 1:

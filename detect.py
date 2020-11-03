@@ -205,7 +205,7 @@ def main(_argv):
     else:
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
-        start=time.time()
+        # start=time.time()
         if FLAGS.object == 'bin':
             img_raw = TFWrapper.tf_image_decode__image(stub, 
                 channels=3, data_channel=FLAGS.object, data_bytes=open(FLAGS.image, 'rb').read())
@@ -217,8 +217,8 @@ def main(_argv):
                 channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer, shmem=shmem)
         else:
             raise Exception(f'Unknown data channel={FLAGS.object}')
-        end=time.time()
-        logging.info(f'time={end-start}')
+        # end=time.time()
+        # logging.info(f'time={end-start}')
 
     # img = tf.expand_dims(img_raw, 0)
     img = TFWrapper.tf_expand__dims(stub, img_raw, 0)
@@ -228,9 +228,10 @@ def main(_argv):
     # boxes, scores, classes, nums = yolo(img)
     img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
     img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
-    ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
-    ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
-    boxes, scores, classes, nums = ret_val
+    # ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
+    # ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
+    # boxes, scores, classes, nums = ret_val
+    boxes, scores, classes, nums = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
     t2 = time.time()
     logging.info('inference_time: {}'.format(t2 - t1))
 
@@ -258,7 +259,8 @@ def main(_argv):
 
 if __name__ == '__main__':
     try:
-        logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.CRITICAL)
         app.run(main)
     except SystemExit:
         pass
