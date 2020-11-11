@@ -1,7 +1,7 @@
 import time
 from absl import app, flags, logging
 from absl.flags import FLAGS
-import cv2
+# import cv2
 import numpy as np
 import tensorflow as tf
 from yolov3_tf2.models import (
@@ -60,10 +60,10 @@ def main(_argv):
                                            np.array(scores[0][i]),
                                            np.array(boxes[0][i])))
 
-    img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
-    img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
-    cv2.imwrite(FLAGS.output, img)
-    logging.info('output saved to: {}'.format(FLAGS.output))
+    # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+    # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
+    # cv2.imwrite(FLAGS.output, img)
+    # logging.info('output saved to: {}'.format(FLAGS.output))
 
 
 if __name__ == '__main__':
