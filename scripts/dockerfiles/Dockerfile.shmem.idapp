@@ -1,6 +1,8 @@
 # FROM python:3.6-slim-stretch
 FROM ubuntu:bionic
 
+ENV IS_CLIENT True
+
 RUN apt-get update -y && \
     apt-get install -y --fix-missing git wget && \
     apt-get install -y libgl1-mesa-dev && \
@@ -23,3 +25,5 @@ RUN apt-get update -y && \
     bash gen_proto.sh && \
     python3 -m pip install sysv_ipc
 #     apt install -y python3.6 python3-pip linux-tools-common linux-tools-generic linux-tools-`uname -r` && \
+
+

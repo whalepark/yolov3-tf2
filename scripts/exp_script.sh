@@ -67,6 +67,7 @@ function health_check_dev() {
     _run_client_dev grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello && perf stat -p $! -e cycles,page-faults\""
 }
 
+# deprecated
 function build_image() {
     docker rmi -f $(docker image ls | grep "grpc_exp_server\|grpc_exp_client" | awk '{print $1}')
 
@@ -75,7 +76,7 @@ function build_image() {
     docker image build --no-cache -t grpc_exp_server -f dockerfiles/Dockerfile.idser dockerfiles
 
     # docker rmi -f grpc_exp_client
-    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
+    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
 }
 
 function build_shmem() {
@@ -85,8 +86,8 @@ function build_shmem() {
     docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
     docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
 
-    # docker rmi -f grpc_exp_client
-    # docker image build --no-cache -t grpc_exp_client -f dockerfiles/Dockerfile.idapp dockerfiles
+    # docker rmi -f grpc_exp_shmem_server
+    # docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
 }
 
 function perf() {
@@ -460,6 +461,7 @@ function perf_shmem_rlimit() {
     docker logs grpc_exp_app_shmem_0001
     # docker logs grpc_exp_app_id_0004
     docker logs grpc_exp_server_shmem_00
+    exit 
 
     server_container_name=grpc_exp_server_bin_00
     # server_image=grpc_server

@@ -67,7 +67,7 @@ from batch_norm import BatchNormalization
 from utils import broadcast_iou
 import threading
 from enum import Enum
-from sysv_ipc import Semaphore, SharedMemory, IPC_CREX
+from sysv_ipc import Semaphore, SharedMemory, MessageQueue, IPC_CREX
 # os.chdir(cwd)
 # from collections.abc import Iterable
 # import inspect
@@ -161,11 +161,14 @@ class Container_Info:
 PERF_SERVER_SOCKET = '/sockets/perf_server.sock'
 OBJECT_PASS: OBJECT_PASS_T
 
+## Todo: need to be moved into PocketManager;
 ## global variables
 Model_Create_Lock = threading.Lock()
 Weights_Load_Lock = threading.Lock()
 Graph_Build_In_Progress = False
 Container_Id = "";
+
+universal_key = 0x1001 # key for message queue
 
 Global_Tensor_Dict = {}
 Object_Ownership = {}
@@ -1046,7 +1049,22 @@ def serve():
 
     server.wait_for_termination()
 
+from pocketmgr import PocketManager
 if __name__ == '__main__':
+    mgr = PocketManager()
+    mgr.start()
+
+    exit()
+
+    msgq = MessageQueue(universal_key, IPC_CREX)
+    data, type = msgq.receive()
+    print(data)
+    if type == 0x1:
+        reply_type = type | 0x40000000
+        print(reply_type)
+        msgq.send(data, type = reply_type)
+
+    exit()
     logging.basicConfig()
     FLAGS(sys.argv)
     # print(f'hostroot={hostroot}')
