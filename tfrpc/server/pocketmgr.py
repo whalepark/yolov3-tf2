@@ -20,7 +20,18 @@ class BatchNormalization(tf.keras.layers.BatchNormalization):
         return super().call(x, training)
 
 def debug(*args):
-    print('debug>>', *args)
+    import inspect
+    filename = inspect.stack()[1].filename
+    lineno = inspect.stack()[1].lineno
+    caller = inspect.stack()[1].function
+    print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
+
+def stack_trace():
+    import traceback
+    traceback.print_tb()
+    traceback.print_exception()
+    traceback.print_stack()
+
 
 class TensorFlowServer:
     @staticmethod
@@ -43,8 +54,104 @@ class TensorFlowServer:
         return ReturnValue.OK.value, (exist_value, keras_model)
 
     @staticmethod
+    def tf_callable(client_id, typename, callable, args):
+        try:
+            debug(f'args={args}')
+            debug(f'client_id={client_id}, typename={typename}, callable={callable}')
+            callable_instance = PocketManager.get_instance().get_real_object_with_mock(client_id, callable)
+            real_args = []
+            debug(f'callable_instance={callable_instance}, input_spec={callable_instance.input_spec}')
+            PocketManager.get_instance().disassemble_args(client_id, args, real_args)
+            debug(f'real_args={real_args}')
+            ret = callable_instance(*real_args)
+            debug(f'ret={ret}')
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            debug(tb)
+            from inspect import currentframe, getframeinfo, stack
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
+        else:
+            if type(ret) is list:
+                ret_list = []
+                for index, elem in enumerate(ret):
+                    PocketManager.get_instance().add_object_to_per_client_store(client_id, elem)
+                    ret_list.append(TFDataType.Tensor(elem.name, id(elem), elem.shape.as_list()).to_dict())
+                return ReturnValue.OK.value, ret_list
+            else:
+                PocketManager.get_instance().add_object_to_per_client_store(client_id, ret)
+                return ReturnValue.OK.value, TFDataType.Tensor(ret.name, id(ret), ret.shape.as_list()).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def object_slicer(client_id, mock_dict, key):
+        try:
+            debug(f'mock_dict={mock_dict} key={key}')
+            object = PocketManager.get_instance().get_real_object_with_mock(client_id, mock_dict)
+            # debug(f'object={object}')
+            tensor = object[key]
+            debug(f'tensor={tensor} tensor.shape={tensor.shape}')
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            debug(key)
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name, id(tensor), tensor.shape.as_list()).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_shape(client_id, input, out_type, name=None):
+        try:
+            out_type = eval(out_type)
+            input = PocketManager.get_instance().get_real_object_with_mock(client_id, input)
+            tensor = tf.shape(input=input, out_type=out_type, name=name)
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            debug(tb)
+            from inspect import currentframe, getframeinfo, stack
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name,
+                                                           id(tensor),
+                                                           tensor.shape.as_list()).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_reshape(client_id, tensor, shape, name=None):
+        try:
+            tensor = PocketManager.get_instance().get_real_object_with_mock(client_id, tensor)
+            debug(tensor)
+            debug(shape)
+            returned_tensor = tf.reshape(tensor=tensor, shape=shape, name=name)
+            debug(returned_tensor)
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            debug(tb)
+            from inspect import currentframe, getframeinfo, stack
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, returned_tensor)
+            return ReturnValue.OK.value, TFDataType.Tensor(returned_tensor.name, 
+                                                           id(returned_tensor), 
+                                                           returned_tensor.shape.as_list()).to_dict()
+        finally:
+            pass
+
+
+    @staticmethod
     def tf_config_experimental_list__physical__devices(client_id, device_type):
-        # debug('\tf_config_experimental_list__physical__devices')
         device_list = tf.config.experimental.list_physical_devices(device_type)
         return_list = []
         for elem in device_list:
@@ -54,7 +161,6 @@ class TensorFlowServer:
 
     @staticmethod
     def tf_config_experimental_set__memory__growth(client_id, device, enable):
-        # debug('\tf_config_experimental_set__memory__growth')
         try:
             tf.config.experimental.set_memory_growth(device, enable)
         except Exception as e:
@@ -87,7 +193,6 @@ class TensorFlowServer:
 
     @staticmethod
     def tf_keras_layers_Input(client_id, shape=None, batch_size=None, name=None, dtype=None, sparse=False, tensor=None, ragged=False, **kwargs):
-        # debug('\ntf_keras_layers_Input')
         try:
             tensor = tf.keras.layers.Input(shape=shape, batch_size=batch_size, name=name, dtype=dtype, sparse=sparse, tensor=tensor, ragged=ragged, **kwargs)
         except Exception as e:
@@ -97,7 +202,9 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name, id(tensor)).to_dict()
+            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name, 
+                                                           id(tensor), 
+                                                           tensor.shape.as_list()).to_dict()
         finally:
             pass
 
@@ -110,7 +217,6 @@ class TensorFlowServer:
         kernel_constraint=None, bias_constraint=None, **kwargs):
         # debug('\ntf_keras_layers_Conv2D')
 
-        debug(f'kernel_regularizer={kernel_regularizer}')
         kernel_regularizer = PocketManager.get_instance().get_real_object_with_mock(client_id, kernel_regularizer)
 
         try:
@@ -123,13 +229,13 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name, id(tensor)).to_dict()
+            return ReturnValue.OK.value, TFDataType.Conv2D(tensor.name, 
+                                                           id(tensor)).to_dict()
         finally:
             pass
 
     @staticmethod
     def tf_keras_layers_ZeroPadding2D(client_id, padding=(1, 1), data_format=None, **kwargs):
-        # debug('\ntf_keras_layers_ZeroPadding2D')
         try:
             tensor = tf.keras.layers.ZeroPadding2D(padding=padding, data_format=data_format, **kwargs)
         except Exception as e:
@@ -139,13 +245,13 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Tensor(tensor.name, id(tensor)).to_dict()
+            return ReturnValue.OK.value, TFDataType.ZeroPadding2D(tensor.name, 
+                                                                  id(tensor)).to_dict()
         finally:
             pass
 
     @staticmethod
     def tf_keras_regularizers_l2(client_id, l=0.01):
-        # debug('\ntf_keras_regularizers_l2')
         try:
             l2 = tf.keras.regularizers.l2(l=l)
         except Exception as e:
@@ -155,6 +261,7 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, l2)
+            # return ReturnValue.OK.value, TFDataType.L2(id(l2)).to_dict()
             return ReturnValue.OK.value, TFDataType.L2(id(l2)).to_dict()
         finally:
             pass
@@ -167,32 +274,111 @@ class TensorFlowServer:
     gamma_constraint=None, renorm=False, renorm_clipping=None, renorm_momentum=0.99,
     fused=None, trainable=True, virtual_batch_size=None, adjustment=None, name=None,
     **kwargs):
-        # debug('\ntf_keras_layers_BatchNormalization')
         try:
-            l2 = BatchNormalization(axis=axis, momentum=momentum, epsilon=epsilon, center=center, scale=scale,
-    beta_initializer=beta_initializer, gamma_initializer=gamma_initializer,
-    moving_mean_initializer=moving_mean_initializer, moving_variance_initializer=moving_variance_initializer,
-    beta_regularizer=beta_regularizer, gamma_regularizer=gamma_regularizer, beta_constraint=beta_constraint,
-    gamma_constraint=gamma_constraint, renorm=renorm, renorm_clipping=renorm_clipping, renorm_momentum=renorm_momentum,
-    fused=fused, trainable=trainable, virtual_batch_size=virtual_batch_size, adjustment=adjustment, name=name,
-    **kwargs)
+            tensor = BatchNormalization(axis=axis, momentum=momentum, epsilon=epsilon, center=center, scale=scale,
+            beta_initializer=beta_initializer, gamma_initializer=gamma_initializer,
+            moving_mean_initializer=moving_mean_initializer, moving_variance_initializer=moving_variance_initializer,
+            beta_regularizer=beta_regularizer, gamma_regularizer=gamma_regularizer, beta_constraint=beta_constraint,
+            gamma_constraint=gamma_constraint, renorm=renorm, renorm_clipping=renorm_clipping, renorm_momentum=renorm_momentum,
+            fused=fused, trainable=trainable, virtual_batch_size=virtual_batch_size, adjustment=adjustment, name=name,
+            **kwargs)
         except Exception as e:
             import inspect
             from inspect import currentframe, getframeinfo
             frameinfo = getframeinfo(currentframe())
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
         else:
-            PocketManager.get_instance().add_object_to_per_client_store(client_id, l2)
-            return ReturnValue.OK.value, TFDataType.L2(id(l2)).to_dict()
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.BatchNormalization(tensor.name, 
+                                                                       id(tensor)).to_dict()
         finally:
             pass
 
+    @staticmethod
+    def tf_keras_layers_LeakyReLU(client_id, alpha=0.3, **kwargs):
+        try:
+            tensor = tf.keras.layers.LeakyReLU(alpha=alpha, **kwargs)
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.LeakyReLU(tensor.name, id(tensor)).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_keras_layers_Add(client_id, **kwargs):
+        try:
+            tensor = tf.keras.layers.Add(**kwargs) ###
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.Add(tensor.name, id(tensor)).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_keras_Model(client_id, args, **kwargs):
+        try:
+            real_args = []
+            PocketManager.get_instance().disassemble_args(client_id, args, real_args)
+
+            real_kwargs = {}
+            PocketManager.get_instance().disassemble_kwargs(client_id, kwargs, real_kwargs)
+
+            model = tf.keras.Model(*real_args, **real_kwargs) ###
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, model)
+            PocketManager.get_instance().add_built_model(name=model.name, model=model)
+            return ReturnValue.OK.value, TFDataType.Model(name=model.name,
+                                                          obj_id=id(model)).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_keras_layers_Lambda(client_id, function, output_shape=None, mask=None, arguments=None, **kwargs):
+        try:
+            function = eval(function)
+            tensor = tf.keras.layers.Lambda(function=function, output_shape=output_shape, mask=mask, arguments=arguments, **kwargs)
+            debug(f'\033[91mtensor={tensor}\033[0m')
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.Model(name=tensor.name,
+                                                          obj_id=id(tensor)).to_dict()
+        finally:
+            pass
 
 tf_function_dict = {
     TFFunctions.LOCALQ_DEBUG: 
     TensorFlowServer.hello,
     TFFunctions.MODEL_EXIST:
     TensorFlowServer.check_if_model_exist,
+    TFFunctions.TF_CALLABLE:
+    TensorFlowServer.tf_callable,
+    TFFunctions.OBJECT_SLICER:
+    TensorFlowServer.object_slicer,
+    TFFunctions.TF_SHAPE:
+    TensorFlowServer.tf_shape,
+    TFFunctions.TF_RESHAPE:
+    TensorFlowServer.tf_reshape,
+
     TFFunctions.TF_CONFIG_EXPERIMENTAL_LIST__PHYSICAL__DEVICES: 
     TensorFlowServer.tf_config_experimental_list__physical__devices,
     TFFunctions.TF_CONFIG_EXPERIMENTAL_SET__MEMORY__GROWTH: 
@@ -209,6 +395,14 @@ tf_function_dict = {
     TensorFlowServer.tf_keras_layers_Conv2D,
     TFFunctions.TF_KERAS_LAYERS_BATCHNORMALIZATION: 
     TensorFlowServer.tf_keras_layers_BatchNormalization,
+    TFFunctions.TF_KERAS_LAYERS_LEAKYRELU: 
+    TensorFlowServer.tf_keras_layers_LeakyReLU,
+    TFFunctions.TF_KERAS_LAYERS_ADD: 
+    TensorFlowServer.tf_keras_layers_Add,
+    TFFunctions.TF_KERAS_MODEL: 
+    TensorFlowServer.tf_keras_Model,
+    TFFunctions.TF_KERAS_LAYERS_LAMBDA: 
+    TensorFlowServer.tf_keras_layers_Lambda,
 }
 
 class PocketManager:
@@ -277,10 +471,10 @@ class PocketManager:
 
                     args_dict = json.loads(raw_msg)
                     raw_type = args_dict.pop('raw_type')
+
                     function_type = TFFunctions(raw_type)
                     reply_type = raw_type | 0x40000000
-
-                    debug(f'raw_type:{hex(raw_type)}, reply_type:{hex(reply_type)}')
+                    # debug(f'raw_type:{hex(raw_type)}, reply_type:{hex(reply_type)}, type:{function_type.name}, function={tf_function_dict[function_type]}')
 
                     result, ret = tf_function_dict[function_type](client_id, **args_dict)
                     return_dict = {'result': result}
@@ -288,7 +482,7 @@ class PocketManager:
                         return_dict.update({'actual_return_val': ret})
                     else:
                         return_dict.update(ret)
-                    debug(f'return_dict={return_dict}')
+                        debug(f'\033[91mreturn_dict={return_dict}\033[0m')
                     return_byte_obj = json.dumps(return_dict)
                     queue.send(return_byte_obj, type = reply_type)
                 except BusyError as err:
@@ -313,4 +507,38 @@ class PocketManager:
         return self.per_client_object_store[client_id][obj_id]
 
     def get_real_object_with_mock(self, client_id, mock):
+        # debug(f'client_id={client_id} mock={mock}')
+        # debug(f'mock["obj_id"]={mock["obj_id"]}')
+        # debug(f'have? {mock["obj_id"] in self.per_client_object_store[client_id]}')
         return self.per_client_object_store[client_id][mock['obj_id']]
+
+    def add_built_model(self, name, model):
+        self.model_dict[name] = model
+
+    def disassemble_args(self, client_id, args, real_args):
+        for index, elem in enumerate(args):
+            real_args.append(None)
+            if type(elem) in [list, tuple]:
+                real_args[index] = []
+                self.disassemble_args(client_id, elem, real_args[index])
+            elif type(elem) is dict and 'obj_id' not in elem:
+                real_args[index] = {}
+                self.disassemble_kwargs(client_id, elem, real_args[index])
+            elif type(elem) in (int, float, bool, str, bytes, bytearray):
+                real_args[index] = elem
+            else:
+                real_args[index] = self.get_real_object_with_mock(client_id, elem)
+
+    def disassemble_kwargs(self, client_id, kwargs, real_kwargs):
+        for key, value in kwargs.items():
+            real_kwargs[key] = None
+            if type(value) in [list, tuple]:
+                real_kwargs[key] = []
+                self.disassemble_args(client_id, value, real_kwargs[key])
+            elif type(value) is dict and 'obj_id' not in value:
+                real_kwargs[key] = {}
+                self.disassemble_kwargs(client_id, value, real_kwargs[key])
+            elif type(value) in (int, float, bool, str, bytes, bytearray):
+                real_kwargs[key] = value
+            else:
+                real_kwargs[key] = self.get_real_object_with_mock(client_id, value)

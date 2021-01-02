@@ -51,6 +51,25 @@ yolo_tiny_anchor_masks = np.array([[3, 4, 5], [0, 1, 2]])
 
 
 
+def debug(*args):
+    class bcolors:
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKCYAN = '\033[96m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+    import inspect
+    filename = inspect.stack()[1].filename
+    lineno = inspect.stack()[1].lineno
+    caller = inspect.stack()[1].function
+    print(f'debug>> [{bcolors.WARNING}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
+
+
+
 # def DarknetConv(x, filters, size, strides=1, batch_norm=True):
 #     if strides == 1:
 #         padding = 'same'
@@ -108,9 +127,14 @@ def DarknetConv2(x, filters, size, strides=1, batch_norm=True):
     else:
         x = PocketMessageChannel.get_instance().tf_keras_layers_ZeroPadding2D(((1, 0), (1, 0)))(x)  # top left half-padding
         padding = 'valid'
-    x = PocketMessageChannel.get_instance().tf_keras_layers_Conv2D(filters=filters, kernel_size=size,
-               strides=strides, padding=padding,
-               use_bias=not batch_norm, kernel_regularizer=PocketMessageChannel.get_instance().tf_keras_regularizers_l2(0.0005))(x)
+    x = PocketMessageChannel.get_instance() \
+                            .tf_keras_layers_Conv2D(filters=filters,
+                                                    kernel_size=size,
+                                                    strides=strides, 
+                                                    padding=padding,
+                                                    use_bias=not batch_norm, 
+                                                    kernel_regularizer=PocketMessageChannel.get_instance().tf_keras_regularizers_l2(0.0005))(x)
+
     if batch_norm:
         x = PocketMessageChannel.get_instance().tf_keras_layers_BatchNormalization()(x)
         x = PocketMessageChannel.get_instance().tf_keras_layers_LeakyReLU(alpha=0.1)(x)
@@ -138,6 +162,13 @@ def DarknetResidual(stub, x, filters):
     x = TFWrapper.callable_emulator(stub, add_callable, False, 1, '', arg_prev, arg_x)
     return x
 
+def DarknetResidual2(x, filters):
+    prev = x
+    x = DarknetConv2(x, filters // 2, 1)
+    x = DarknetConv2(x, filters, 3)
+    x = PocketMessageChannel.get_instance().tf_keras_layers_Add()([prev, x])
+    return x
+
 
 # def DarknetBlock(x, filters, blocks):
 #     x = DarknetConv(x, filters, 3, strides=2)
@@ -152,9 +183,9 @@ def DarknetBlock(stub, x, filters, blocks):
     return x
 
 def DarknetBlock2(x, filters, blocks):
-    x = DarknetConv(stub, x, filters, 3, strides=2)
+    x = DarknetConv2(x, filters, 3, strides=2)
     for _ in range(blocks):
-        x = DarknetResidual(stub, x, filters)
+        x = DarknetResidual2(x, filters)
     return x
 
 # def Darknet(name=None):
@@ -167,28 +198,6 @@ def DarknetBlock2(x, filters, blocks):
 #     x = DarknetBlock(x, 1024, 4)
 #     return tf.keras.Model(inputs, (x_36, x_61, x), name=name)
 
-def Darknet(stub=None, name=None):
-    if stub is not None:
-        x = inputs = TFWrapper.tf_keras_layers_Input(stub, shape=[None, None, 3])
-        x = DarknetConv(stub, x, 32, 3)
-        x = DarknetBlock(stub, x, 64, 1)
-        x = DarknetBlock(stub, x, 128, 2)  # skip connection
-        x = x_36 = DarknetBlock(stub, x, 256, 8)  # skip connection
-        x = x_61 = DarknetBlock(stub, x, 512, 8)
-        x = DarknetBlock(stub, x, 1024, 4)
-
-        # return tf.keras.Model(inputs, (x_36, x_61, x), name=name)
-        keras_model_id = TFWrapper.tf_keras_Model(stub, [inputs], (x_36, x_61, x), name=name)
-        return keras_model_id
-    else:
-        x = inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input([None, None, 3])
-        x = DarknetConv2(x, 32, 3)
-        x = DarknetBlock2(x, 64, 1)
-        x = DarknetBlock2(x, 128, 2)  # skip connection
-        x = x_36 = DarknetBlock2(x, 256, 8)  # skip connection
-        x = x_61 = DarknetBlock2(x, 512, 8)
-        x = DarknetBlock2(x, 1024, 4)
-        return PocketMessageChannel.get_instance().tf_keras_Model(inputs, (x_36, x_61, x), name=name)
 
 def Darknet(stub=None, name=None):
     x = inputs = TFWrapper.tf_keras_layers_Input(stub, shape=[None, None, 3])
@@ -324,6 +333,27 @@ def YoloConv(stub, filters, name=None):
 #         return tf.keras.Model(inputs, x, name=name)(x_in)
 #     return yolo_conv
 
+def YoloConv2(filters, name=None):
+    def yolo_conv(x_in):
+        if isinstance(x_in, tuple):
+            inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input(x_in[0].shape[1:]), PocketMessageChannel.get_instance().tf_keras_layers_Input(x_in[1].shape[1:])
+            x, x_skip = inputs
+
+            # concat with skip connection
+            x = DarknetConv2(x, filters, 1)
+            x = PocketMessageChannel.get_instance().tf_keras_layers_UpSampling2D(2)(x)
+            x = PocketMessageChannel.get_instance().tf_keras_layers_Concatenate()([x, x_skip])
+        else:
+            x = inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input(x_in.shape[1:])
+
+        x = DarknetConv2(x, filters, 1)
+        x = DarknetConv2(x, filters * 2, 3)
+        x = DarknetConv2(x, filters, 1)
+        x = DarknetConv2(x, filters * 2, 3)
+        x = DarknetConv2(x, filters, 1)
+        return PocketMessageChannel.get_instance().tf_keras_Model(inputs, x, name=name)(x_in)
+    return yolo_conv
+
 
 # def YoloConvTiny(filters, name=None):
 #     def yolo_conv(x_in):
@@ -404,6 +434,24 @@ def YoloOutput(stub, filters, anchors, classes, name=None):
 #         return tf.keras.Model(inputs, x, name=name)(x_in)
 #     return yolo_output
 
+
+def YoloOutput2(filters, anchors, classes, name=None):
+    def yolo_output(x_in):
+        x = inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input(x_in.shape[1:])
+        x = DarknetConv2(x, filters * 2, 3)
+        x = DarknetConv2(x, anchors * (classes + 5), 1, batch_norm=False)
+        # debug(PocketMessageChannel.get_instance().tf_shape(x))
+        # debug(PocketMessageChannel.get_instance().tf_shape(x)[1])
+        # debug(PocketMessageChannel.get_instance().tf_reshape(x, (-1, PocketMessageChannel.get_instance().tf_shape(x)[1], PocketMessageChannel.get_instance().tf_shape(x)[2],
+        #                                     anchors, classes + 5)))
+        # x = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: PocketMessageChannel.get_instance().tf_reshape(x, (-1, PocketMessageChannel.get_instance().tf_shape(x)[1], PocketMessageChannel.get_instance().tf_shape(x)[2],
+        #                                     anchors, classes + 5)))(x)
+        x = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2], anchors, classes + 5)))(x)
+        debug(x)
+        exit()
+        exit()
+        return PocketMessageChannel.get_instance().tf_keras_Model(inputs, x, name=name)(x_in)
+    return yolo_output
 
 ### moved_to_server side
 # def yolo_boxes(pred, anchors, classes):
@@ -538,22 +586,35 @@ def YoloV3(stub=None, size=None, channels=3, anchors=yolo_anchors,
         x_36, x_61, x = TFWrapper.callable_emulator(stub, callable_model_obj_id, False, 3, '', arg_x)
     if FLAGS.comm == 'msgq':
         x_36, x_61, x = Darknet2(name='yolo_darknet')(x)
+    
+    if FLAGS.comm == 'grpc':
+        x = YoloConv(stub, 512, name='yolo_conv_0')([x])
+        output_0 = YoloOutput(stub, 512, len(masks[0]), classes, name='yolo_output_0')([x])
 
+        x = YoloConv(stub, 256, name='yolo_conv_1')((x, x_61))
+        output_1 = YoloOutput(stub, 256, len(masks[1]), classes, name='yolo_output_1')([x])
+
+        x = YoloConv(stub, 128, name='yolo_conv_2')((x, x_36))
+        output_2 = YoloOutput(stub, 128, len(masks[2]), classes, name='yolo_output_2')([x])
+
+        if training:
+            return tf.keras.Model(inputs, (output_0, output_1, output_2), name='yolov3')
+    elif FLAGS.comm == 'msgq':
+        x = YoloConv2(512, name='yolo_conv_0')(x)
+        output_0 = YoloOutput2(512, len(masks[0]), classes, name='yolo_output_0')(x)
+        debug(output_0)
+        debug('Happily DONE!!!!')
+        exit()
+        exit()
+
+        x = YoloConv2(256, name='yolo_conv_1')((x, x_61))
+        output_1 = YoloOutput2(256, len(masks[1]), classes, name='yolo_output_1')(x)
+
+        x = YoloConv2(128, name='yolo_conv_2')((x, x_36))
+        output_2 = YoloOutput2(128, len(masks[2]), classes, name='yolo_output_2')(x)
+
+    debug('Happily DONE!!!!')
     exit()
-
-    # x_36 = ret_vals[0], x_61 = ret_vals[1], x=ret_vals[0]
-
-    x = YoloConv(stub, 512, name='yolo_conv_0')([x])
-    output_0 = YoloOutput(stub, 512, len(masks[0]), classes, name='yolo_output_0')([x])
-
-    x = YoloConv(stub, 256, name='yolo_conv_1')((x, x_61))
-    output_1 = YoloOutput(stub, 256, len(masks[1]), classes, name='yolo_output_1')([x])
-
-    x = YoloConv(stub, 128, name='yolo_conv_2')((x, x_36))
-    output_2 = YoloOutput(stub, 128, len(masks[2]), classes, name='yolo_output_2')([x])
-
-    if training:
-        return tf.keras.Model(inputs, (output_0, output_1, output_2), name='yolov3')
 
     # boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
     #                  name='yolo_boxes_0')(output_0)

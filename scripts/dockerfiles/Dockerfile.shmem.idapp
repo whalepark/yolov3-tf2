@@ -1,7 +1,7 @@
 # FROM python:3.6-slim-stretch
 FROM ubuntu:bionic
 
-ENV IS_CLIENT True
+ENV POCKET_CLIENT True
 
 RUN apt-get update -y && \
     apt-get install -y --fix-missing git wget && \

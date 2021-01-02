@@ -1,3 +1,9 @@
+def debug(*args):
+    import inspect
+    filename = inspect.stack()[1].filename
+    lineno = inspect.stack()[1].lineno
+    caller = inspect.stack()[1].function
+    print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
 
 def make_json(container_id):
     import json
@@ -20,7 +26,7 @@ def connect_to_perf_server():
     json_data_to_send = make_json(container_id)
     my_socket.sendall(json_data_to_send.encode('utf-8'))
     data_received = my_socket.recv(1024)
-    print(data_received)
+    # debug(data_received)
     my_socket.close()
     
 def get_container_id():
@@ -29,7 +35,7 @@ def get_container_id():
     for line in content:
         if 'docker' in line:
             cid = line.strip().split('/')[-1]
-            print(cid)
+            # debug(cid)
             return cid
 
 
@@ -133,7 +139,6 @@ def main(_argv):
     elif FLAGS.comm == 'msgq':
         # Todo: 0x1 needs to be one unique value, for multiple concurrent instances.
         msgq = PocketMessageChannel.get_instance()
-        print(msgq)
         # Todo: remove. below function is just for debugging purpose.
         # Or, transform to initial estabilshment of connection
         msgq.hello('misun')
