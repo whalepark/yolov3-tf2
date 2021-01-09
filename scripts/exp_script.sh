@@ -440,7 +440,7 @@ function perf_shmem_rlimit() {
         local index=$(printf "%04d" $i)
         local container_name=grpc_exp_app_shmem_${index}
 
-        _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
+        _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object path --image data/street.jpg'
         # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image /img/photographer.jpg'
         sleep $(generate_rand_num) 3
     done
@@ -461,7 +461,7 @@ function perf_shmem_rlimit() {
     docker logs grpc_exp_app_shmem_0001
     # docker logs grpc_exp_app_id_0004
     docker logs grpc_exp_server_shmem_00
-    exit 
+    # exit
 
     server_container_name=grpc_exp_server_bin_00
     # server_image=grpc_server

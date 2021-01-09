@@ -440,16 +440,7 @@ def YoloOutput2(filters, anchors, classes, name=None):
         x = inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input(x_in.shape[1:])
         x = DarknetConv2(x, filters * 2, 3)
         x = DarknetConv2(x, anchors * (classes + 5), 1, batch_norm=False)
-        # debug(PocketMessageChannel.get_instance().tf_shape(x))
-        # debug(PocketMessageChannel.get_instance().tf_shape(x)[1])
-        # debug(PocketMessageChannel.get_instance().tf_reshape(x, (-1, PocketMessageChannel.get_instance().tf_shape(x)[1], PocketMessageChannel.get_instance().tf_shape(x)[2],
-        #                                     anchors, classes + 5)))
-        # x = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: PocketMessageChannel.get_instance().tf_reshape(x, (-1, PocketMessageChannel.get_instance().tf_shape(x)[1], PocketMessageChannel.get_instance().tf_shape(x)[2],
-        #                                     anchors, classes + 5)))(x)
-        x = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2], anchors, classes + 5)))(x)
-        debug(x)
-        exit()
-        exit()
+        x = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2], anchors, classes + 5)), context=locals())(x)
         return PocketMessageChannel.get_instance().tf_keras_Model(inputs, x, name=name)(x_in)
     return yolo_output
 
@@ -536,6 +527,59 @@ def YoloOutput2(filters, anchors, classes, name=None):
 
 #     return tf.keras.Model(inputs, outputs, name='yolov3')
 
+def YoloV32(size=None, channels=3, classes=80, training=False):
+# anchors=yolo_anchors,
+        #    masks=yolo_anchor_masks, 
+    try:
+        # Invalid # keras_model = tf.Graph.get_tensor_by_name('yolov3')
+        is_exist, keras_model = PocketMessageChannel.get_instance().check_if_model_exist('yolov3')
+    except KeyError as e:
+        is_exist = False
+    else:
+        is_exist = True
+
+    if is_exist:
+        if keras_model == None:
+            while True:
+                time.sleep(random.uniform(1,3))
+                keras_model = PocketMessageChannel.get_instance().check_if_model_exist('yolov3')
+                if keras_model != None:
+                    break
+        else:
+            return keras_model
+    
+    # x = inputs = Input([size, size, channels], name='input')
+    x = inputs = PocketMessageChannel.get_instance().tf_keras_layers_Input([size, size, channels], name='input')
+
+    # x_36, x_61, x = Darknet(name='yolo_darknet')(x)
+    x_36, x_61, x = Darknet2(name='yolo_darknet')(x)
+
+    x = YoloConv2(512, name='yolo_conv_0')(x)
+    output_0 = YoloOutput2(512, len(yolo_anchor_masks[0]), classes, name='yolo_output_0')(x)
+
+    x = YoloConv2(256, name='yolo_conv_1')((x, x_61))
+    output_1 = YoloOutput2(256, len(yolo_anchor_masks[1]), classes, name='yolo_output_1')(x)
+
+    x = YoloConv2(128, name='yolo_conv_2')((x, x_36))
+    output_2 = YoloOutput2(128, len(yolo_anchor_masks[2]), classes, name='yolo_output_2')(x)
+
+
+    boxes_0 = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[0]], classes),
+                    name='yolo_boxes_0', context=locals())(output_0)
+
+
+    boxes_1 = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[1]], classes),
+                     name='yolo_boxes_1', context=locals())(output_1)
+
+    boxes_2 = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: yolo_boxes(x, yolo_anchors[yolo_anchor_masks[2]], classes),
+                     name='yolo_boxes_2', context=locals())(output_2)
+
+
+    outputs = PocketMessageChannel.get_instance().tf_keras_layers_Lambda(lambda x: yolo_nms(x, yolo_anchors, yolo_anchor_masks, classes),
+                     name='yolo_nms', context=locals())((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
+
+    return PocketMessageChannel.get_instance().tf_keras_Model(inputs, outputs, name='yolov3')
+
 def YoloV3(stub=None, size=None, channels=3, anchors=yolo_anchors,
            masks=yolo_anchor_masks, classes=80, training=False):
 
@@ -602,10 +646,6 @@ def YoloV3(stub=None, size=None, channels=3, anchors=yolo_anchors,
     elif FLAGS.comm == 'msgq':
         x = YoloConv2(512, name='yolo_conv_0')(x)
         output_0 = YoloOutput2(512, len(masks[0]), classes, name='yolo_output_0')(x)
-        debug(output_0)
-        debug('Happily DONE!!!!')
-        exit()
-        exit()
 
         x = YoloConv2(256, name='yolo_conv_1')((x, x_61))
         output_1 = YoloOutput2(256, len(masks[1]), classes, name='yolo_output_1')(x)

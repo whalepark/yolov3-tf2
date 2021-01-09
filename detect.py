@@ -1,9 +1,9 @@
-def debug(*args):
-    import inspect
-    filename = inspect.stack()[1].filename
-    lineno = inspect.stack()[1].lineno
-    caller = inspect.stack()[1].function
-    print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
+# def debug(*args):
+#     import inspect
+#     filename = inspect.stack()[1].filename
+#     lineno = inspect.stack()[1].lineno
+#     caller = inspect.stack()[1].function
+#     print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
 
 def make_json(container_id):
     import json
@@ -40,6 +40,7 @@ def get_container_id():
 
 
 
+
 connect_to_perf_server()
 
 import time, subprocess
@@ -49,9 +50,9 @@ from absl.flags import FLAGS
 import numpy as np
 # import tensorflow as tf ###
 from yolov3_tf2.models import (
-    YoloV3, YoloV3Tiny
+    YoloV3, YoloV3Tiny, YoloV32
 )
-from yolov3_tf2.dataset import transform_images, load_tfrecord_dataset
+from yolov3_tf2.dataset import transform_images, transform_images2, load_tfrecord_dataset
 from yolov3_tf2.utils import draw_outputs
 
 
@@ -68,14 +69,13 @@ from tf_wrapper import TFWrapper, ControlProcedure
 ## preinit
 CONTAINER_ID = get_container_id()
 from yolo_msgq import SharedMemoryChannel, PocketMessageChannel
+from pocket_tf_if import *
 
 if sys.argv[2] == 'shmem':
     # shmem = SharedMemoryChannel(key=CONTAINER_ID, size=FLAGS.num_images * FLAGS.size_to_transfer)
     shmem = SharedMemoryChannel(key=int(CONTAINER_ID[:8], 16), size=1 * (32 + 4 * 1024 * 1024), path=sys.argv[4])
 else:
     shmem = None
-
-import signal
 
 
 CHUNK_SIZE = 4000000 # approximation to 4194304, grpc message size limit
@@ -137,19 +137,19 @@ def main(_argv):
         stub = yolo_pb2_grpc.YoloTensorflowWrapperStub(channel)
         initialize(stub, server_addr, FLAGS.object)
     elif FLAGS.comm == 'msgq':
-        # Todo: 0x1 needs to be one unique value, for multiple concurrent instances.
         msgq = PocketMessageChannel.get_instance()
         # Todo: remove. below function is just for debugging purpose.
         # Or, transform to initial estabilshment of connection
-        msgq.hello('misun')
-        msgq.hello_via_lq('misun local')
+        # msgq.hello('misun')
+        # msgq.hello_via_lq('misun local')
     else:
         raise Exception('unknown communication channel. comm parameter should be defined as either \'--comm=grpc\' or \'--comm=msgq\'.')
+
+    # exit()
 
     if FLAGS.hello:
         health = ControlProcedure.SayHello(stub, 'misun')
         exit()
-
     # physical_devices = tf.config.experimental.list_physical_devices('GPU')
     if FLAGS.comm == 'grpc':
         physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
@@ -171,13 +171,14 @@ def main(_argv):
         if FLAGS.comm == 'grpc':
             yolo = YoloV3(stub=stub, classes=FLAGS.num_classes)
         elif FLAGS.comm == 'msgq':
-            yolo = YoloV3(classes=FLAGS.num_classes)
-
-    exit()
+            yolo = YoloV32(classes=FLAGS.num_classes)
 
     # yolo.load_weights(FLAGS.weights).expect_partial()
-    status_obj_id = TFWrapper.attribute_model_load__weights(stub, 'yolov3', FLAGS.weights) ## todo check if already weighted
-    TFWrapper.attribute_checkpoint_expect__partial(stub, status_obj_id)
+    if FLAGS.comm == 'grpc':
+        status_obj_id = TFWrapper.attribute_model_load__weights(stub, 'yolov3', FLAGS.weights) ## todo check if already weighted
+        TFWrapper.attribute_checkpoint_expect__partial(stub, status_obj_id)
+    elif FLAGS.comm == 'msgq':
+        yolo.load_weights(FLAGS.weights)
     logging.info('weights loaded')
 
     class_names = [c.strip() for c in open(FLAGS.classes).readlines()]
@@ -193,61 +194,83 @@ def main(_argv):
         # img_raw = tf.image.decode_image(
         #     open(FLAGS.image, 'rb').read(), channels=3)
         # start=time.time()
-        if FLAGS.object == 'bin':
-            img_raw = TFWrapper.tf_image_decode__image(stub, 
-                channels=3, data_channel=FLAGS.object, data_bytes=open(FLAGS.image, 'rb').read())
-        elif FLAGS.object == 'path':
-            img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
-                channels=3, data_channel=FLAGS.object)
-        elif FLAGS.object == 'shmem':
-            img_raw = TFWrapper.tf_image_decode__image(stub, #image_path=FLAGS.image, 
-                channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer, shmem=shmem)
-        else:
-            raise Exception(f'Unknown data channel={FLAGS.object}')
+        if FLAGS.comm == 'grpc':
+            if FLAGS.object == 'bin':
+                img_raw = TFWrapper.tf_image_decode__image(stub, 
+                    channels=3, data_channel=FLAGS.object, data_bytes=open(FLAGS.image, 'rb').read())
+            elif FLAGS.object == 'path':
+                img_raw = TFWrapper.tf_image_decode__image(stub, image_path=FLAGS.image, 
+                    channels=3, data_channel=FLAGS.object)
+            elif FLAGS.object == 'shmem':
+                img_raw = TFWrapper.tf_image_decode__image(stub, #image_path=FLAGS.image, 
+                    channels=3, data_channel=FLAGS.object, data_size_in_byte=FLAGS.size_to_transfer, shmem=shmem)
+            else:
+                raise Exception(f'Unknown data channel={FLAGS.object}')
+        elif FLAGS.comm == 'msgq':
+            img_raw = PocketMessageChannel.get_instance().tf_image_decode__image(open(FLAGS.image, 'rb').read(), channels=3)
+            
         # end=time.time()
         # logging.info(f'time={end-start}')
 
     # img = tf.expand_dims(img_raw, 0)
-    img = TFWrapper.tf_expand__dims(stub, img_raw, 0)
-    img = transform_images(stub, img, FLAGS.size)
+    if FLAGS.comm == 'grpc':
+        img = TFWrapper.tf_expand__dims(stub, img_raw, 0)
+        img = transform_images(stub, img, FLAGS.size)
 
-    t1 = time.time()
-    # boxes, scores, classes, nums = yolo(img)
-    img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
-    img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
-    # ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
-    # ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
-    # boxes, scores, classes, nums = ret_val
-    boxes, scores, classes, nums = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
-    t2 = time.time()
-    logging.info('inference_time: {}'.format(t2 - t1))
+        t1 = time.time()
+        # boxes, scores, classes, nums = yolo(img)
+        img_obj_wrapper = yolo_pb2.CallRequest.ObjId()
+        img_obj_wrapper.obj_id, img_obj_wrapper.release = img, False
+        # ret_val = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
+        # ret_val = TFWrapper.iterable_indexing(stub, ret_val, 0)
+        # boxes, scores, classes, nums = ret_val
+        boxes, scores, classes, nums = TFWrapper.callable_emulator(stub, yolo, True, 1, 'yolov3', img_obj_wrapper)
+        t2 = time.time()
+        logging.info('inference_time: {}'.format(t2 - t1))
 
-    logging.info('detections:')
-    for i in range(nums[0]):
-        logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
-                                            np.array(scores[0][i]),
-                                            np.array(boxes[0][i])))
+        logging.info('detections:')
+        for i in range(nums[0]):
+            logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
+                                                np.array(scores[0][i]),
+                                                np.array(boxes[0][i])))
 
-    # # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
-    # img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
+        # # # img = cv2.cvtColor(img_raw.numpy(), cv2.COLOR_RGB2BGR)
+        # # img_raw_numpy = TFWrapper.byte_tensor_to_numpy(stub, img_raw)
 
-    # # img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
-    # # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
-    # # cv2.imwrite(FLAGS.output, img)
+        # # # img = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+        # # # img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
+        # # # cv2.imwrite(FLAGS.output, img)
 
-    # img_result = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
-    # img_result = draw_outputs(img_result, (boxes, scores, classes, nums), class_names)
-    # cv2.imwrite(FLAGS.output, img_result)
+        # # img_result = cv2.cvtColor(img_raw_numpy, cv2.COLOR_RGB2BGR)
+        # # img_result = draw_outputs(img_result, (boxes, scores, classes, nums), class_names)
+        # # cv2.imwrite(FLAGS.output, img_result)
 
-    # logging.info('output saved to: {}'.format(FLAGS.output))
+        # # logging.info('output saved to: {}'.format(FLAGS.output))
 
-    finalize()
+        finalize()
+    elif FLAGS.comm == 'msgq':
+        img = PocketMessageChannel.get_instance().tf_expand__dims(img_raw, 0)
+        img = transform_images2(img, FLAGS.size)
+
+        t1 = time.time()
+        boxes, scores, classes, nums = yolo(img)
+        t2 = time.time()
+        logging.info('inference_time: {}'.format(t2 - t1))
+
+        logging.info('detections:')
+        for i in range(nums[0]):
+            logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
+                                                np.array(scores[0][i]),
+                                                np.array(boxes[0][i])))
+
+    exit()
+      
 
 
 if __name__ == '__main__':
     try:
-        # logging.basicConfig(level=logging.INFO)
-        logging.basicConfig(level=logging.CRITICAL)
+        logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.CRITICAL)
         app.run(main)
     except SystemExit:
         pass

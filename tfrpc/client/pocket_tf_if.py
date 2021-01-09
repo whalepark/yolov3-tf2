@@ -1,5 +1,6 @@
 from enum import IntEnum, Enum
-import sys, os
+import os
+from sysv_ipc import SharedMemory, Semaphore, IPC_CREX
 # self.value, self.name
 
 CLIENT_TO_SERVER = 0x1
@@ -17,14 +18,63 @@ def debug(*args):
     caller = inspect.stack()[1].function
     print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
 
-# if os.environ.get('POCKET_CLIENT') == 'True':
-#     POCKET_CLIENT = True
-#     print('POCKET_CLIENT True')
-#     import yolo_msgq
-#     MessageChannelInstance = yolo_msgq.PocketMessageChannel.get_instance()
-# else:
-#     POCKET_CLIENT = False
-#     print('POCKET_CLIENT FALSE')
+class SharedMemoryChannel:
+    # [0: 32) Bytes: header
+    ### [0, 4) Bytes: size
+    # [32, -] Bytes: data
+    def __init__(self, key, size=None, path=None):
+        self.key = int(key[:8], 16)
+        import time
+        if POCKET_CLIENT:
+            # debug('here!!!', time.time(), self.key, type(self.key))
+            self.shmem = SharedMemory(self.key , IPC_CREX, size=size)
+            self.sem = Semaphore(self.key , IPC_CREX, initial_value = 1)
+            
+        else:
+            # debug('there!!!', time.time(), self.key, type(self.key))
+            self.shmem = SharedMemory(self.key)
+            self.sem = Semaphore(self.key)
+
+        self.mv = memoryview(self.shmem)
+
+        if path is not None:
+            self.write(uri=path)
+
+    def write(self, uri=None, contents=None, offset = 32):
+        if uri is None and contents is None:
+            raise Exception('Either uri or contents need to be provided!')
+        elif uri is not None and contents is not None:
+            raise Exception('Either uri or contents need to be provided!')
+
+        if uri is not None:
+            buf = open(uri, 'rb').read()
+        elif contents is not None:
+            buf = contents
+
+        length = len(buf)
+        self.sem.acquire()
+        self.mv[0:4] = length.to_bytes(4, 'little')
+        self.mv[32:32+length] = buf
+        # print(self.mv[32:], type(buf))
+        self.sem.release()
+
+    def read(self, size=None):
+        self.sem.acquire()
+        length = self.mv[0:4]
+        data = self.mv[32:32+size]
+        self.sem.release()
+        return data
+
+    def view(self, size=None):
+        self.sem.acquire()
+        self.mv = memoryview(self.shmem)
+        self.sem.release()
+        return self.mv[:size]
+
+    def finalize(self):
+        self.sem.remove()
+        self.shmem.detach()
+        self.shmem.remove()
 
 class PocketControl(IntEnum):
     CONNECT = 0x1
@@ -39,6 +89,7 @@ class TFFunctions(IntEnum):
     OBJECT_SLICER = 0x00000004
     TF_SHAPE = 0x00000005
     TF_RESHAPE = 0x00000006
+    TENSOR_DIVISION = 0x00000007
 
     TF_CONFIG_EXPERIMENTAL_LIST__PHYSICAL__DEVICES = 0x10000001
     TF_CONFIG_EXPERIMENTAL_SET__MEMORY__GROWTH = 0x10000002
@@ -52,6 +103,14 @@ class TFFunctions(IntEnum):
     TF_KERAS_LAYERS_ADD = 0x1000000a
     TF_KERAS_MODEL = 0x1000000b
     TF_KERAS_LAYERS_LAMBDA = 0x1000000c
+    TF_KERAS_LAYERS_UPSAMPLING2D = 0x1000000d
+    TF_KERAS_LAYERS_CONCATENATE = 0x1000000e
+    TF_IMAGE_DECODE__IMAGE = 0x1000000f
+    TF_EXPAND__DIMS = 0x10000010
+    TF_IMAGE_RESIZE = 0x10000011
+
+    TF_MODEL_LOAD_WEIGHTS = 0x20000001
+
 
 class TFDtypes(Enum):
     tf_dtypes_float16 = 'tf.dtypes.float16'
@@ -77,6 +136,16 @@ class TFDtypes(Enum):
     tf_dtypes_qint32 = 'tf.dtypes.qint32'
     tf_dtypes_resource = 'tf.dtypes.resource'
     tf_dtypes_variant = 'tf.dtypes.variant'
+
+class ResizeMethod(Enum):
+    AREA = 'area'
+    BICUBIC = 'bicubic'
+    BILINEAR = 'bilinear'
+    GAUSSIAN = 'gaussian'
+    LANCZOS3 = 'lanczos3'
+    LANCZOS5 = 'lanczos5'
+    MITCHELLCUBIC = 'mitchellcubic'
+    NEAREST_NEIGHBOR = 'nearest'
 
 class ReturnValue(IntEnum):
     OK = 0
@@ -118,16 +187,35 @@ class TFDataType:
     #             raise Exception('Only client can call this!')
 
     class Tensor:
-        def __init__ (self, name = None, obj_id = None, shape=None, dict = None):
+        tensor_division = empty_function
+
+        @classmethod
+        def make_tensor(cls, dict):
+            if 'value' in dict and dict['value'] is not None:
+                return dict['value']
+            else:
+                return cls(dict=dict)
+
+        def __init__ (self, name = None, obj_id = None, shape=None, tensor=None, dict = None):
             if dict == None:
                 self._typename = 'tf.Tensor'
                 self.name = name
                 self.obj_id = obj_id
                 self.shape = shape
+                if tensor is not None:
+                    try:
+                        self.value = tensor.numpy().item()
+                    except ValueError as e:
+                        tensor = None
             else:
-                debug(dict)
                 for key, value in dict.items():
                     self.__setattr__(key, value)
+
+        def set_value(self, value):
+            self.value = value
+
+        def __int__(self):
+            return self.value
 
         def to_dict(self):
             return self.__dict__
@@ -137,23 +225,28 @@ class TFDataType:
                 ret = TFDataType.callable_delegator(self._typename, self.to_dict(), *args)
                 return ret
             else:
-                debug(False)
+                raise Exception('Only client can call this!')
 
         def __getitem__(self, key):
             if POCKET_CLIENT is True:
-                debug(f'key={key} name={self.name}, id={self.obj_id}')
+                # debug(f'key={key} name={self.name}, id={self.obj_id}')
                 ret = TFDataType.iterable_slicer(self.to_dict(), key)
                 return ret
             else:
                 raise Exception('Only client can call this!')
         
-        # def __setitem__(self, index):
-        #     if POCKET_CLIENT is True:
-        #         ret = TFDataType.iterable
+        def __truediv__(self, other):
+        # def __div__(self, other):
+            if POCKET_CLIENT is True:
+                ret = TFDataType.Tensor.tensor_division(self.to_dict(), other)
+                return ret
+            else:
+                raise Exception('Only client can call this!')
 
 
 
     class Model(Tensor):
+        load_weights = empty_function
         def __init__ (self, name = None, obj_id = None, dict = None):
             if dict == None:
                 self._typename = 'tf.keras.Model'
@@ -162,6 +255,12 @@ class TFDataType:
             else:
                 for key, value in dict.items():
                     self.__setattr__(key, value)
+
+        def load_weights(self, filepath, by_name=False, skip_mismatch=False):
+            if POCKET_CLIENT is True:
+                TFDataType.Model.load_weights(self, filepath, by_name=False, skip_mismatch=False)
+            else:
+                raise Exception('Only client can call this!')
 
 
     class ZeroPadding2D(Tensor):
@@ -242,3 +341,25 @@ class TFDataType:
         #     self.arguments = arguments
 
         # def __call__ (self, input)
+
+
+    class UpSampling2D(Tensor):
+        def __init__ (self, name = None, obj_id = None, dict = None):
+            if dict == None:
+                self._typename = 'tf.keras.layers.Add'
+                self.name = name
+                self.obj_id = obj_id
+            else:
+                for key, value in dict.items():
+                    self.__setattr__(key, value)
+
+
+    class Concatenate(Tensor):
+        def __init__ (self, name = None, obj_id = None, dict = None):
+            if dict == None:
+                self._typename = 'tf.keras.layers.Add'
+                self.name = name
+                self.obj_id = obj_id
+            else:
+                for key, value in dict.items():
+                    self.__setattr__(key, value)

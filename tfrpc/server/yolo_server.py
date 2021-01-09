@@ -1051,6 +1051,7 @@ def serve():
 
 from pocketmgr import PocketManager
 if __name__ == '__main__':
+    FLAGS(sys.argv)
     mgr = PocketManager()
     mgr.start()
 
