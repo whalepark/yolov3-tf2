@@ -5,7 +5,7 @@ import sys, os
 cwd = os.getcwd()
 os.chdir(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath('../tfrpc/client'))
-from tf_wrapper import TFWrapper, YoloWrapper
+# from tf_wrapper import TFWrapper, YoloWrapper
 from yolo_msgq import PocketMessageChannel
 os.chdir(cwd)
 
@@ -77,15 +77,7 @@ def transform_targets(y_train, anchors, anchor_masks, size):
 
     return tuple(y_outs)
 
-
-def transform_images(stub, x_train, size):
-    # x_train = tf.image.resize(x_train, (size, size))
-    x_train = TFWrapper.tf_image_resize(stub, x_train, (size, size))
-    # x_train = x_train / 255
-    x_train = TFWrapper.tensor_op_divide(stub, x_train, 255)
-    return x_train
-
-def transform_images2(x_train, size):
+def transform_images(x_train, size):
     x_train = PocketMessageChannel.get_instance().tf_image_resize(x_train, (size, size))
     x_train = x_train / 255
     return x_train

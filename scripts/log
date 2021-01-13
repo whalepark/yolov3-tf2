@@ -1,0 +1,341 @@
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:562, YoloV3] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee080>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] input_1:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d/Identity:0', 'obj_id': 139630791373264}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eea90>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization/Identity:0', 'obj_id': 139630791012080}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu/Identity:0', 'obj_id': 139630791729896}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'zero_padding2d/Identity:0', 'obj_id': 139630791731408}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] zero_padding2d/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_1/Identity:0', 'obj_id': 139630790599624}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed30>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_1/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_1/Identity:0', 'obj_id': 139630790420072}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_1/Identity:0', 'obj_id': 139630790421416}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_1/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_2/Identity:0', 'obj_id': 139630790481176}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eec18>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_2/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_2/Identity:0', 'obj_id': 139630789761288}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_2/Identity:0', 'obj_id': 139630789762744}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_2/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_3/Identity:0', 'obj_id': 139630789826600}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eee48>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_3/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_3/Identity:0', 'obj_id': 139630789627744}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_3/Identity:0', 'obj_id': 139630789694016}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add/Identity:0', 'obj_id': 139630789695192}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'zero_padding2d_1/Identity:0', 'obj_id': 139630789696760}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] zero_padding2d_1/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_4/Identity:0', 'obj_id': 139630789224040}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeef0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_4/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_4/Identity:0', 'obj_id': 139630789048248}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_4/Identity:0', 'obj_id': 139630789099592}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_4/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_5/Identity:0', 'obj_id': 139630789101944}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef28>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_5/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_5/Identity:0', 'obj_id': 139630788892600}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_5/Identity:0', 'obj_id': 139630788457360}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_5/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_6/Identity:0', 'obj_id': 139630788460160}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeda0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_6/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_6/Identity:0', 'obj_id': 139630788234712}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_6/Identity:0', 'obj_id': 139630788314840}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_1/Identity:0', 'obj_id': 139630788315960}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_1/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_7/Identity:0', 'obj_id': 139630788342952}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeac8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_7/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_7/Identity:0', 'obj_id': 139630787678952}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_7/Identity:0', 'obj_id': 139630787681920}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_7/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_8/Identity:0', 'obj_id': 139630787741680}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eefd0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_8/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_8/Identity:0', 'obj_id': 139630787537944}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_8/Identity:0', 'obj_id': 139630787617288}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_2/Identity:0', 'obj_id': 139630787618408}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'zero_padding2d_2/Identity:0', 'obj_id': 139630787619920}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] zero_padding2d_2/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_9/Identity:0', 'obj_id': 139630787134912}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeac8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_9/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_9/Identity:0', 'obj_id': 139630786960296}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_9/Identity:0', 'obj_id': 139630786961248}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_9/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_10/Identity:0', 'obj_id': 139630787025104}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eefd0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_10/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_10/Identity:0', 'obj_id': 139629293517400}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_10/Identity:0', 'obj_id': 139629293089512}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_10/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_11/Identity:0', 'obj_id': 139629293092312}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef98>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_11/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_11/Identity:0', 'obj_id': 139629292867256}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_11/Identity:0', 'obj_id': 139629292959280}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_3/Identity:0', 'obj_id': 139629292960400}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_3/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_12/Identity:0', 'obj_id': 139629293007872}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee9e8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_12/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_12/Identity:0', 'obj_id': 139629292307904}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_12/Identity:0', 'obj_id': 139629292309976}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_12/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_13/Identity:0', 'obj_id': 139629292377928}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeba8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_13/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_13/Identity:0', 'obj_id': 139628990515352}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_13/Identity:0', 'obj_id': 139628990599520}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_4/Identity:0', 'obj_id': 139628990600640}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_4/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_14/Identity:0', 'obj_id': 139628990116752}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eecf8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_14/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_14/Identity:0', 'obj_id': 139628989943880}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_14/Identity:0', 'obj_id': 139628989946120}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_14/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_15/Identity:0', 'obj_id': 139628989989496}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed68>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_15/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_15/Identity:0', 'obj_id': 139628989819312}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_15/Identity:0', 'obj_id': 139628989819984}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_5/Identity:0', 'obj_id': 139628989354224}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_5/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_16/Identity:0', 'obj_id': 139628989356576}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed30>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_16/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_16/Identity:0', 'obj_id': 139628989143976}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_16/Identity:0', 'obj_id': 139628989228088}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_16/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_17/Identity:0', 'obj_id': 139628989230888}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeac8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_17/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_17/Identity:0', 'obj_id': 139628989005440}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_17/Identity:0', 'obj_id': 139628988581760}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_6/Identity:0', 'obj_id': 139628988582880}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_6/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_18/Identity:0', 'obj_id': 139628988622160}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eec18>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_18/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_18/Identity:0', 'obj_id': 139630836375336}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_18/Identity:0', 'obj_id': 139630836417088}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_18/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_19/Identity:0', 'obj_id': 139628988326800}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee9e8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_19/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_19/Identity:0', 'obj_id': 139628988143096}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_19/Identity:0', 'obj_id': 139628988145224}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_7/Identity:0', 'obj_id': 139628988211944}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_7/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_20/Identity:0', 'obj_id': 139628988214744}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef98>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_20/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_20/Identity:0', 'obj_id': 139628987989576}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_20/Identity:0', 'obj_id': 139628987565840}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_20/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_21/Identity:0', 'obj_id': 139628987606408}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eecc0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_21/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_21/Identity:0', 'obj_id': 139628987434376}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_21/Identity:0', 'obj_id': 139628987435832}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_8/Identity:0', 'obj_id': 139628987436952}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_8/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_22/Identity:0', 'obj_id': 139628986972424}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eefd0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_22/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_22/Identity:0', 'obj_id': 139628986760328}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_22/Identity:0', 'obj_id': 139628986835968}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_22/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_23/Identity:0', 'obj_id': 139628986838768}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee908>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_23/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_23/Identity:0', 'obj_id': 139628986192896}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_23/Identity:0', 'obj_id': 139628986193960}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_9/Identity:0', 'obj_id': 139628986195080}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_9/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_24/Identity:0', 'obj_id': 139628986246648}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eee48>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_24/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_24/Identity:0', 'obj_id': 139628986068496}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_24/Identity:0', 'obj_id': 139628986130672}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_24/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_25/Identity:0', 'obj_id': 139628986133024}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed68>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_25/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_25/Identity:0', 'obj_id': 139628985404384}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_25/Identity:0', 'obj_id': 139628985464088}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_10/Identity:0', 'obj_id': 139628985465208}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'zero_padding2d_3/Identity:0', 'obj_id': 139628985466720}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] zero_padding2d_3/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_26/Identity:0', 'obj_id': 139628985551056}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeda0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_26/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_26/Identity:0', 'obj_id': 139628985335368}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_26/Identity:0', 'obj_id': 139628984886160}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_26/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_27/Identity:0', 'obj_id': 139628984888960}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eefd0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_27/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_27/Identity:0', 'obj_id': 139628984680120}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_27/Identity:0', 'obj_id': 139628984768440}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_27/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_28/Identity:0', 'obj_id': 139628984811816}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeda0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_28/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_28/Identity:0', 'obj_id': 139627180360592}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_28/Identity:0', 'obj_id': 139627180362720}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_11/Identity:0', 'obj_id': 139627180413056}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_11/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_29/Identity:0', 'obj_id': 139627180415408}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeef0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_29/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_29/Identity:0', 'obj_id': 139627180195400}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_29/Identity:0', 'obj_id': 139627180283048}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_29/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_30/Identity:0', 'obj_id': 139627180285904}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef60>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_30/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_30/Identity:0', 'obj_id': 139627179652656}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_30/Identity:0', 'obj_id': 139627179653328}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_12/Identity:0', 'obj_id': 139627179654448}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_12/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_31/Identity:0', 'obj_id': 139627179710112}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed68>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_31/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_31/Identity:0', 'obj_id': 139627179506712}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_31/Identity:0', 'obj_id': 139627179065752}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_31/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_32/Identity:0', 'obj_id': 139627179068104}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eefd0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_32/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_32/Identity:0', 'obj_id': 139627178851912}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_32/Identity:0', 'obj_id': 139627178939840}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_13/Identity:0', 'obj_id': 139627178940960}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_13/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_33/Identity:0', 'obj_id': 139627178464144}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef28>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_33/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_33/Identity:0', 'obj_id': 139627178280440}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_33/Identity:0', 'obj_id': 139627178282568}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_33/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_34/Identity:0', 'obj_id': 139627178350520}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eee48>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_34/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_34/Identity:0', 'obj_id': 139627178138200}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_34/Identity:0', 'obj_id': 139627177693872}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_14/Identity:0', 'obj_id': 139627177694992}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_14/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_35/Identity:0', 'obj_id': 139627177739656}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eecc0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_35/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_35/Identity:0', 'obj_id': 139627177567624}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_35/Identity:0', 'obj_id': 139627177569080}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_35/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_36/Identity:0', 'obj_id': 139627177608360}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeba8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_36/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_36/Identity:0', 'obj_id': 139627176924888}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_36/Identity:0', 'obj_id': 139627176927072}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_15/Identity:0', 'obj_id': 139627176981504}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_15/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_37/Identity:0', 'obj_id': 139627176984304}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee668>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_37/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_37/Identity:0', 'obj_id': 139627176858400}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_37/Identity:0', 'obj_id': 139627176859688}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_37/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_38/Identity:0', 'obj_id': 139627176378776}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef98>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_38/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_38/Identity:0', 'obj_id': 139627176204720}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_38/Identity:0', 'obj_id': 139627176205392}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_16/Identity:0', 'obj_id': 139627176276208}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_16/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_39/Identity:0', 'obj_id': 139627176278560}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee9e8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_39/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_39/Identity:0', 'obj_id': 139627176049632}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_39/Identity:0', 'obj_id': 139627175621912}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_39/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_40/Identity:0', 'obj_id': 139627175624152}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eee80>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_40/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_40/Identity:0', 'obj_id': 139627175490056}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_40/Identity:0', 'obj_id': 139627175491904}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_17/Identity:0', 'obj_id': 139627175493024}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_17/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_41/Identity:0', 'obj_id': 139627175548688}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef60>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_41/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_41/Identity:0', 'obj_id': 139627174821056}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_41/Identity:0', 'obj_id': 139627174908424}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_41/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_42/Identity:0', 'obj_id': 139627174910832}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eea90>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_42/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_42/Identity:0', 'obj_id': 139627174694584}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_42/Identity:0', 'obj_id': 139627174774320}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_18/Identity:0', 'obj_id': 139627174775440}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'zero_padding2d_4/Identity:0', 'obj_id': 139627174310072}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] zero_padding2d_4/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_43/Identity:0', 'obj_id': 139627174312424}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed30>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_43/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_43/Identity:0', 'obj_id': 139627174095056}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_43/Identity:0', 'obj_id': 139627174196392}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_43/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_44/Identity:0', 'obj_id': 139627174199248}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed68>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_44/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_44/Identity:0', 'obj_id': 139627173545352}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_44/Identity:0', 'obj_id': 139627173546192}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_44/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_45/Identity:0', 'obj_id': 139627173597760}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36ee9e8>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_45/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_45/Identity:0', 'obj_id': 139627173419160}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_45/Identity:0', 'obj_id': 139627173420280}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_19/Identity:0', 'obj_id': 139627173474712}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_19/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_46/Identity:0', 'obj_id': 139627173477064}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eed30>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_46/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_46/Identity:0', 'obj_id': 139627172744776}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_46/Identity:0', 'obj_id': 139627172812224}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_46/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_47/Identity:0', 'obj_id': 139627172864912}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eea90>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_47/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_47/Identity:0', 'obj_id': 139626375013880}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_47/Identity:0', 'obj_id': 139626375014888}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_20/Identity:0', 'obj_id': 139626375016008}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_20/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_48/Identity:0', 'obj_id': 139626375059384}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eee10>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_48/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_48/Identity:0', 'obj_id': 139626374859352}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_48/Identity:0', 'obj_id': 139626374943408}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_48/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_49/Identity:0', 'obj_id': 139626374946096}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eef98>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_49/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_49/Identity:0', 'obj_id': 139626374709088}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_49/Identity:0', 'obj_id': 139626374293208}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_21/Identity:0', 'obj_id': 139626374294328}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] add_21/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_50/Identity:0', 'obj_id': 139626374337704}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeb38>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_50/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_50/Identity:0', 'obj_id': 139626374159272}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_50/Identity:0', 'obj_id': 139626374160224}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:120, DarknetConv2] leaky_re_lu_50/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'conv2d_51/Identity:0', 'obj_id': 139626373703888}
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:123, DarknetConv2] <pocket_tf_if.TFDataType.Tensor object at 0x7f03e36eeef0>
+debug>> [/root/yolov3-tf2/yolov3_tf2/models.py:124, DarknetConv2] conv2d_51/Identity:0
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'batch_normalization_51/Identity:0', 'obj_id': 139626373488480}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'leaky_re_lu_51/Identity:0', 'obj_id': 139626373567432}
+debug>> [/root/yolov3-tf2/tfrpc/client/yolo_msgq.py:228, tf_callable] ret={'_typename': 'tf.Tensor', 'name': 'add_22/Identity:0', 'obj_id': 139626373568552}

@@ -123,6 +123,11 @@ class PocketMessageChannel:
             TFDataType.Tensor.tensor_division = self.get_tensor_division()
             PocketMessageChannel.__instance = self
 
+    def __del__(self):
+        self.disconnect()
+        del self.shmem
+        self.lq.remove()
+
     # control functions
     # for debugging
     def hello(self, message):
@@ -156,10 +161,23 @@ class PocketMessageChannel:
 
 
     # for disconnecting
-    def detach(self):
-        pass
-        # self.mq.send('detach')
-        # self.mq.remove()
+    def disconnect(self):
+        msg_type = int(PocketControl.DISCONNECT)
+        reply_type = msg_type | 0x40000000
+        args_dict = {'client_id': PocketMessageChannel.client_id}
+        args_dict['raw_type'] = msg_type
+        
+        args_json = json.dumps(args_dict)
+        self.gq.send(args_json, type = CLIENT_TO_SERVER)
+        raw_msg, _ = self.gq.receive(block=True, type=reply_type)
+        msg = json.loads(raw_msg)
+        if msg['result'] == ReturnValue.OK.value:
+            ret = msg.get('actual_return_val', None)
+            return ret
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
 
     # for debugging    
     def hello_via_lq(self, message):

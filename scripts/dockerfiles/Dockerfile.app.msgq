@@ -5,13 +5,10 @@ ENV POCKET_CLIENT True
 
 RUN apt-get update -y && \
     apt-get install -y --fix-missing git build-essential && \
-    # apt install -y python3.6 python3-pip && \
-    # python3 -m pip && \
     python3 -m pip install --upgrade pip setuptools wheel && \
     python3 -m pip install numpy && \
     python3 -m pip install absl-py && \
     python3 -m pip install sysv_ipc && \
-    # # apt install -y libsm6 libxrender1 libfontconfig1 libglib2.0-0 time && \
     git clone https://github.com/whalepark/yolov3-tf2.git /root/yolov3-tf2 && \
     cd /root/yolov3-tf2 && \
     git checkout pocket-msgq-bench && \

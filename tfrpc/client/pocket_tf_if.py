@@ -1,5 +1,5 @@
 from enum import IntEnum, Enum
-import os
+import os, sys
 from sysv_ipc import SharedMemory, Semaphore, IPC_CREX
 # self.value, self.name
 
@@ -9,6 +9,8 @@ POCKET_CLIENT = False
 
 if os.environ.get('POCKET_CLIENT', 'False') == 'True':
     POCKET_CLIENT = True
+else:
+    import tensorflow as tf
 
 
 def debug(*args):
@@ -39,6 +41,12 @@ class SharedMemoryChannel:
 
         if path is not None:
             self.write(uri=path)
+
+    def __del__(self):
+        if POCKET_CLIENT:
+            self.finalize()
+        else:
+            self.shmem.detach()
 
     def write(self, uri=None, contents=None, offset = 32):
         if uri is None and contents is None:
@@ -202,11 +210,20 @@ class TFDataType:
                 self.name = name
                 self.obj_id = obj_id
                 self.shape = shape
-                if tensor is not None:
-                    try:
-                        self.value = tensor.numpy().item()
-                    except ValueError as e:
-                        tensor = None
+                self.value = None
+                if not POCKET_CLIENT:
+                    if tensor is not None:
+                        try:
+                            # self.value = tensor.numpy().item()
+                            tensor_size = tf.size(tensor)
+                            if tensor_size <= 32:
+                                self.value = tensor.numpy().tolist()
+                            elif tensor_size == 1:
+                                self.value = tensor.numpy().item()
+                            else:
+                                pass
+                        except ValueError as e:
+                            pass
             else:
                 for key, value in dict.items():
                     self.__setattr__(key, value)
@@ -214,8 +231,8 @@ class TFDataType:
         def set_value(self, value):
             self.value = value
 
-        def __int__(self):
-            return self.value
+        # def __repr__(self):
+        #     return self.value
 
         def to_dict(self):
             return self.__dict__
@@ -229,8 +246,10 @@ class TFDataType:
 
         def __getitem__(self, key):
             if POCKET_CLIENT is True:
-                # debug(f'key={key} name={self.name}, id={self.obj_id}')
-                ret = TFDataType.iterable_slicer(self.to_dict(), key)
+                if self.value is None:
+                    ret = TFDataType.iterable_slicer(self.to_dict(), key)
+                else:
+                    ret = self.value[key]
                 return ret
             else:
                 raise Exception('Only client can call this!')
@@ -247,14 +266,18 @@ class TFDataType:
 
     class Model(Tensor):
         load_weights = empty_function
-        def __init__ (self, name = None, obj_id = None, dict = None):
+        def __init__ (self, name = None, obj_id = None, weights_loaded = False, dict = None):
             if dict == None:
                 self._typename = 'tf.keras.Model'
                 self.name = name
                 self.obj_id = obj_id
+                self.weights_loaded = weights_loaded
             else:
                 for key, value in dict.items():
                     self.__setattr__(key, value)
+
+        def mark_as_weights_loaded(self):
+            self.weights_loaded = True
 
         def load_weights(self, filepath, by_name=False, skip_mismatch=False):
             if POCKET_CLIENT is True:

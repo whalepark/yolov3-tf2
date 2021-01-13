@@ -6,7 +6,7 @@ from absl import flags
 from absl.flags import FLAGS
 
 from time import sleep
-from sysv_ipc import Semaphore, SharedMemory, MessageQueue, IPC_CREX, BusyError
+from sysv_ipc import MessageQueue, IPC_CREX, BusyError, ExistentialError
 from threading import Thread
 from pocket_tf_if import PocketControl, TFFunctions, ReturnValue, TFDataType, CLIENT_TO_SERVER, SERVER_TO_CLIENT, SharedMemoryChannel
 
@@ -113,7 +113,6 @@ def stack_trace():
 class TensorFlowServer:
     @staticmethod
     def hello(client_id, message):
-        # debug('\hello')
         return_dict = {'message': message}
         return ReturnValue.OK.value, return_dict
 
@@ -122,18 +121,20 @@ class TensorFlowServer:
         keras_model = None
         if model_name in PocketManager.get_instance().model_dict:
             exist_value = True
-            model = PocketManager.get_instance().model_dict[model_name]
-            if model.available:
-                keras_model = TFDataType.Model(model_name, id(model))
+            _, mock_model = PocketManager.get_instance().get_built_model(model_name)
+            return ReturnValue.OK.value, (exist_value, mock_model.to_dict())
         else:
             exist_value = False
+            return ReturnValue.OK.value, (exist_value, None)
 
-        return ReturnValue.OK.value, (exist_value, keras_model)
 
     @staticmethod
     def tf_callable(client_id, typename, callable, args):
         try:
-            callable_instance = PocketManager.get_instance().get_real_object_with_mock(client_id, callable)
+            if typename == 'tf.keras.Model':
+                callable_instance, _ = PocketManager.get_instance().get_built_model(callable['name'])
+            else:
+                callable_instance = PocketManager.get_instance().get_real_object_with_mock(client_id, callable)
             real_args = []
             PocketManager.get_instance().disassemble_args(client_id, args, real_args)
             ret = callable_instance(*real_args)
@@ -165,7 +166,6 @@ class TensorFlowServer:
     def object_slicer(client_id, mock_dict, key):
         try:
             object = PocketManager.get_instance().get_real_object_with_mock(client_id, mock_dict)
-            # debug(f'object={object}')
             tensor = object[key]
         except Exception as e:
             import inspect
@@ -189,7 +189,6 @@ class TensorFlowServer:
     @staticmethod
     def tensor_division(client_id, mock_dict, other):
         try:
-            # debug(f'mock_dict={mock_dict} other={other}')
             object = PocketManager.get_instance().get_real_object_with_mock(client_id, mock_dict)
             tensor = object / other
         except Exception as e:
@@ -459,7 +458,7 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Model(name=tensor.name,
+            return ReturnValue.OK.value, TFDataType.Lambda(name=tensor.name,
                                                           obj_id=id(tensor)).to_dict()
         finally:
             pass
@@ -477,7 +476,7 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Model(name=tensor.name,
+            return ReturnValue.OK.value, TFDataType.UpSampling2D(name=tensor.name,
                                                           obj_id=id(tensor)).to_dict()
         finally:
             pass
@@ -495,7 +494,7 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
-            return ReturnValue.OK.value, TFDataType.Model(name=tensor.name,
+            return ReturnValue.OK.value, TFDataType.Concatenate(name=tensor.name,
                                                           obj_id=id(tensor)).to_dict()
         finally:
             pass
@@ -524,8 +523,9 @@ class TensorFlowServer:
     @staticmethod
     def model_load_weights(client_id, model, filepath, by_name=False, skip_mismatch=False):
         try:
-            model = PocketManager.get_instance().get_real_object_with_mock(client_id, model)
+            model, mock_model = PocketManager.get_instance().get_built_model(model['name'])
             model.load_weights(filepath=filepath, by_name=by_name, skip_mismatch=skip_mismatch)
+            mock_model.mark_as_weights_loaded()
         except Exception as e:
             import traceback
             tb = traceback.format_exc()
@@ -683,9 +683,16 @@ class PocketManager:
                 self.send_ack_to_client(args_dict['client_id'])
                 self.shmem_dict[args_dict['client_id']] = SharedMemoryChannel(args_dict['client_id'])
             elif type == PocketControl.DISCONNECT:
-                # Todo: Clean up
-                pass
-                self.per_client_object_store.pop(args_dict['client_id'], None)
+                client_id = args_dict['client_id']
+
+                del self.per_client_object_store[client_id]
+                del self.shmem_dict[client_id]
+                del self.queues_dict[client_id]
+
+                return_dict = {'result': ReturnValue.OK.value}
+                return_byte_obj = json.dumps(return_dict)
+
+                self.gq.send(return_byte_obj, type=reply_type)
             elif type == PocketControl.HELLO:
                 return_dict = {'result': ReturnValue.OK.value, 'message': args_dict['message']}
                 return_byte_obj = json.dumps(return_dict)
@@ -715,7 +722,9 @@ class PocketManager:
                         # debug(f'\033[91mreturn_dict={return_dict}\033[0m')
                     return_byte_obj = json.dumps(return_dict)
                     queue.send(return_byte_obj, type = reply_type)
-                except BusyError as err:
+                except BusyError as e:
+                    pass
+                except ExistentialError as e:
                     pass
                 sleep(0.001)
          
@@ -737,13 +746,13 @@ class PocketManager:
         return self.per_client_object_store[client_id][obj_id]
 
     def get_real_object_with_mock(self, client_id, mock):
-        # debug(f'client_id={client_id} mock={mock}')
-        # debug(f'mock["obj_id"]={mock["obj_id"]}')
-        # debug(f'have? {mock["obj_id"] in self.per_client_object_store[client_id]}')
         return self.per_client_object_store[client_id][mock['obj_id']]
 
     def add_built_model(self, name, model):
-        self.model_dict[name] = model
+        self.model_dict[name] = (model, TFDataType.Model(name, id(model)))
+
+    def get_built_model(self, name):
+        return self.model_dict[name]
 
     def disassemble_args(self, client_id, args, real_args):
         for index, elem in enumerate(args):
