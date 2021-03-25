@@ -21,11 +21,12 @@ function help() {
 }
 
 function build_image() {
-    docker rmi ubench_grpc_vs_lipc ubench_grpc_rtt/server ubench_grpc_vs_lipc/client
+    docker rmi ubench_grpc_vs_lipc ubench_grpc_vs_lipc/server ubench_grpc_vs_lipc/client
+    # docker rmi ubench_grpc_vs_lipc/server ubench_grpc_vs_lipc/client
 
-    docker image build -t ubench_grpc_rtt -f dockerfiles/Dockerfile .
-    docker image build -t ubench_grpc_rtt/server -f dockerfiles/Dockerfile.server .
-    docker image build -t ubench_grpc_rtt/client -f dockerfiles/Dockerfile.client .
+    docker image build -t ubench_grpc_vs_lipc -f dockerfiles/Dockerfile .
+    docker image build -t ubench_grpc_vs_lipc/server -f dockerfiles/Dockerfile.server .
+    docker image build -t ubench_grpc_vs_lipc/client -f dockerfiles/Dockerfile.client .
 }
 
 function build_proto() {
@@ -60,7 +61,7 @@ function run() {
                --volume=/var/run/docker.sock:/var/run/docker.sock \
                --workdir='/server' \
                --ipc=shareable \
-               ubench_exp_grpc/server:latest \
+               ubench_grpc_vs_lipc/server:latest \
                python3 server.py
     
     docker run \
@@ -70,7 +71,7 @@ function run() {
             --workdir='/client' \
             --env SERVER_ADDR=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' server) \
             --ipc=container:server \
-            ubench_exp_grpc/client:latest \
+            ubench_grpc_vs_lipc/client:latest \
             python3 client.py --file $file #/imgs/street.jpg
 
     docker logs server
@@ -195,7 +196,7 @@ case $COMMAND in
         init_tmpfs
         run_tmpfs
         ;;
-    generic-run)
+    # generic-run)
 
     *|help)
         help

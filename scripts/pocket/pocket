@@ -1,0 +1,167 @@
+#!/usr/bin/python3
+import sys
+import argparse
+import subprocess
+import socket
+import json
+import os
+from shlex import split
+import logging
+
+
+DIRPATH = os.path.dirname(os.path.realpath(__file__))
+# DIRPATH = '/'
+POCKETD_SOCKET_PATH = f'{DIRPATH}/tmp/pocketd.sock'
+
+
+class GlobalOption:
+    def __init__(self, parser):
+        self.debug = parser.parse_args(['--debug']).debug
+
+class PocketDaemon:
+    def __init__(self):
+        pass
+
+    def make_json(self, sender, command, args_dict):
+        tmp_data_to_send = {}
+        args_dict['sender'] = sender
+        args_dict['command'] = command
+        data_to_send = json.dumps(args_dict)
+        return data_to_send
+
+    def notify_start(self, app_name, server_name):
+        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        my_socket.connect(POCKETD_SOCKET_PATH)
+        args_dict = {'sender': 'CLI',
+                     'command': 'run',
+                     'client': app_name, 'service': server_name}
+        json_data_to_send = json.dumps(args_dict)
+        my_socket.send(json_data_to_send.encode('utf-8'))
+        data_received = my_socket.recv(1024)
+        logging.debug(f'data_received={data_received}')
+        my_socket.close()
+
+    def daemon_config(self, tmp_args_dict):
+        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        my_socket.connect(POCKETD_SOCKET_PATH)
+        sender = 'CLI'
+        command = 'config'
+        args_dict = json.dumps(tmp_args_dict)
+        json_data_to_send = self.make_json(sender, command, args_dict)
+        my_socket.send(json_data_to_send.encode('utf-8'))
+        data_received = my_socket.recv(1024)
+        logging.debug(f'data_received={data_received}')
+        my_socket.close()
+
+pocketd = PocketDaemon()
+
+def pocket_run(args):
+    command = ['docker', 'run']
+
+    if args.d:
+        command.append('-d')
+    if args.perf:
+        command.extend(['--cap-add', 'SYS_ADMIN'])
+        command.extend(['--cap-add', 'IPC_LOCK'])
+    command.extend(['--name', args.name])
+    command.extend(['--ipc', f'container:{args.service}'])
+    if args.network is not None:
+        command.extend(['--network', args.network])
+    if args.workdir is not None:
+        command.extend(['--workdir', args.workdir])
+    if args.memory is not None:
+        command.extend(['--memory', args.memory])
+    if args.cpus is not None:
+        command.extend(['--cpus', args.cpus])
+    if args.index is not None:
+        command.extend(['--cpuset-cpus', args.index])
+    if args.env is not None:
+        for elem in args.env:
+            command.extend(['--env', elem])
+    if args.volume is not None:
+        for elem in args.volume:
+            command.extend(['--volume', elem])
+
+    ## default_args
+    command.extend(['--volume', POCKETD_SOCKET_PATH])
+
+
+    if args.binary is not None:
+        command.append(args.binary)
+    if args.command is not None:
+        command.extend(args.command)
+
+    # print(command)
+    # print(' '.join(command))
+    if global_option.debug:
+        process = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        for line in process.stdout:
+            sys.stdout.write(str(line))
+    else:
+        process = subprocess.run(command, check=True)
+
+    pocketd.notify_start(args.name, args.service)
+
+def pocket_wait(args):
+    command = ['docker', 'wait']
+    command.append(args.name)
+
+    if global_option.debug:
+        process = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        for line in process.stdout:
+            sys.stdout.write(str(line))
+    else:
+        process = subprocess.run(command, check=True)
+
+
+def build_run_parser(parser):
+    parser.add_argument('-d', action='store_true')
+    parser.add_argument('--perf', action='store_true')
+    parser.add_argument('-b', '--binary', type=str, required=True, help='an image to run')
+    parser.add_argument('-t', '--name', type=str, required=True, help='a name of the application')
+    parser.add_argument('-s', '--service', type=str, required=True, help='a service to attach')
+    parser.add_argument('-n', '--network', type=str, default=None, help='a network namespace to attach')
+    parser.add_argument('-w', '--workdir', type=str, default=None, help='a network namespace to attach')
+    parser.add_argument('-m', '--memory', type=str, help='a command to run')
+    parser.add_argument('-c', '--cpus', type=str, help='a command to run')
+    parser.add_argument('-i', '--index', type=str, help='a command to run')
+    parser.add_argument('-e', '--env', action='append', type=str, default=None, help='environment variables')
+    parser.add_argument('-v', '--volume', action='append', type=str, default=None, help='volumes to attach')
+    parser.add_argument('command', type=str, nargs='+', default = None, help='a command to run')
+    parser.set_defaults(func=pocket_run)
+
+def build_wait_parser(parser):
+    parser.add_argument('name', type=str, help='a name of an application to wait for termination')
+    parser.set_defaults(func=pocket_wait)
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format = '[%(asctime)s, %(lineno)d|POCKETD] %(message)s')
+
+    parser = argparse.ArgumentParser(prog='Pocket',
+                usage='%(prog)s [options]',
+                description='''
+                Pocket CLI.''')
+
+    parser.add_argument('--debug', action='store_true', help='enable debug output')
+    global_option = GlobalOption(parser)
+
+    subparsers = parser.add_subparsers(title='subcommands',
+                    description='''
+                    supported subcommands''',
+                    help='subcommands')
+
+    # Subcommands
+    run_parser = subparsers.add_parser('run', help='run a pocketized app')
+    wait_parser = subparsers.add_parser('wait', help='wait until a specified app terminates')
+
+    if len(sys.argv) == 1:
+        parser.parse_args(['--help'])
+        exit()
+
+    build_run_parser(run_parser)
+    build_wait_parser(wait_parser)
+
+
+    args = parser.parse_args()
+    logging.debug(f'args={args}')
+    args.func(args)

@@ -46,9 +46,8 @@ def wait_until_process_terminates(pid: int):
 def run_server():
     SERVER_SOCKET.listen(CONCURRENT_CONNECTIONS)
     while True:
-        print('waiting clients...')
+        print('[PERF-SERVER] waiting clients...')
         conn, _addr = SERVER_SOCKET.accept()
-        print('here?')
         if MULTIPROC: 
             process = multiprocessing.Process(target=handle_client, args=(conn, _addr))
             process.daemon = True
@@ -88,7 +87,7 @@ def parse_arguments(string: str):
 
 
 def handle_client(conn, addr):
-    print('handle client!')
+    print('[PERF-SERVER] handle client!')
     while True:
         data_received = conn.recv(1024)
         pid, events, container_name = parse_arguments(data_received.decode('utf-8'))
@@ -100,7 +99,7 @@ def handle_client(conn, addr):
     conn.close()
 
 def finalize(signum, frame):
-    print('finalizing workers...')
+    print('[PERF-SERVER] finalizing workers...')
     for process in multiprocessing.active_children():
         # logging.info("Shutting down process %r", process)
         process.terminate()

@@ -336,6 +336,8 @@ function _run_d_server_shmem_rlimit() {
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
+        --cpus=6.0 \
+        --memory=3072mb \
         --volume /var/run/docker.sock:/var/run/docker.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \

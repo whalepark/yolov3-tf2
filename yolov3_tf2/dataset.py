@@ -6,6 +6,7 @@ cwd = os.getcwd()
 os.chdir(os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath('../tfrpc/client'))
 from tf_wrapper import TFWrapper, YoloWrapper
+from yolo_msgq import PocketMessageChannel
 os.chdir(cwd)
 
 # @tf.function
@@ -84,6 +85,10 @@ def transform_images(stub, x_train, size):
     x_train = TFWrapper.tensor_op_divide(stub, x_train, 255)
     return x_train
 
+def transform_images2(x_train, size):
+    x_train = PocketMessageChannel.get_instance().tf_image_resize(x_train, (size, size))
+    x_train = x_train / 255
+    return x_train
 
 # # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md#conversion-script-outline-conversion-script-outline
 # # Commented out fields are not required in our project

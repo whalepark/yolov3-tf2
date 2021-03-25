@@ -1,67 +1,33 @@
 import json
+from tfrpc.client.pocket_tf_if import POCKET_CLIENT
 from types import FunctionType
 from inspect import getsourcelines
-from sysv_ipc import SharedMemory, Semaphore, MessageQueue, IPC_CREX
-from pocket_tf_if import TFFunctions, PocketControl, ReturnValue, CLIENT_TO_SERVER, TFDataType, TFDtypes
-
-def debug(*args):
-    class bcolors:
-        HEADER = '\033[95m'
-        OKBLUE = '\033[94m'
-        OKCYAN = '\033[96m'
-        OKGREEN = '\033[92m'
-        WARNING = '\033[93m'
-        FAIL = '\033[91m'
-        ENDC = '\033[0m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
-    import inspect
-    filename = inspect.stack()[1].filename
-    lineno = inspect.stack()[1].lineno
-    caller = inspect.stack()[1].function
-    print(f'debug>> [{bcolors.OKCYAN}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
+from sysv_ipc import MessageQueue, IPC_CREX
+from pocket_tf_if import TFFunctions, PocketControl, ReturnValue, CLIENT_TO_SERVER, TFDataType, TFDtypes, SharedMemoryChannel, ResizeMethod
+from time import sleep
 
 
+import numpy as np
 
-class SharedMemoryChannel:
-    # [0: 32) Bytes: header
-    ### [0, 4) Bytes: size
-    # [32, -] Bytes: data
-    def __init__(self, key, size, path=None):
-        self.key = key
-        self.shmem = SharedMemory(key, IPC_CREX, size=size)
-        self.sem = Semaphore(key, IPC_CREX, initial_value = 1)
-        self.mv = memoryview(self.shmem)
+# def debug(*args):
+#     class bcolors:
+#         HEADER = '\033[95m'
+#         OKBLUE = '\033[94m'
+#         OKCYAN = '\033[96m'
+#         OKGREEN = '\033[92m'
+#         WARNING = '\033[93m'
+#         FAIL = '\033[91m'
+#         ENDC = '\033[0m'
+#         BOLD = '\033[1m'
+#         UNDERLINE = '\033[4m'
+#     import inspect
+#     filename = inspect.stack()[1].filename
+#     lineno = inspect.stack()[1].lineno
+#     caller = inspect.stack()[1].function
+#     print(f'debug>> [{bcolors.OKCYAN}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
 
-        if path is not None:
-            self.write(path)
+  
 
-    def write(self, uri, offset = 32):
-        buf = open(uri, 'rb').read()
-        length = len(buf)
-        self.sem.acquire()
-        self.mv[0:4] = length.to_bytes(4, 'little')
-        self.mv[32:32+length] = buf
-        # print(self.mv[32:], type(buf))
-        self.sem.release()
-
-    def read(self, size):
-        self.sem.acquire()
-        length = self.mv[0:4]
-        data = self.mv[32:32+size]
-        self.sem.release()
-        return data
-
-    def view(self, size):
-        self.sem.acquire()
-        self.mv = memoryview(self.shmem)
-        self.sem.release()
-        return self.mv[:size]
-
-    def finalize(self):
-        self.sem.remove()
-        self.shmem.detach()
-        self.shmem.remove()
 
 class Utils:
     @staticmethod
@@ -97,10 +63,24 @@ class PocketMessageChannel:
 
     def get_tf_iterable_sliced(self):
         instance = self
-        def delegate_tf_callable(mock_dict, key):
+        def delegate_tf_data_slicing(mock_dict, key):
             ret = instance.object_slicer(mock_dict, key)
             return ret
-        return delegate_tf_callable
+        return delegate_tf_data_slicing
+
+    def get_model_load_weights(self):
+        instance = self
+        def delegate_model_load_weights(mock_dict, key):
+            ret = instance.model_load_weights(mock_dict, key)
+            return ret
+        return delegate_model_load_weights
+
+    def get_tensor_division(self):
+        instance = self
+        def delegate_tensor_division(mock_dict, other):
+            ret = instance.tensor_division(mock_dict, other)
+            return ret
+        return delegate_tensor_division
 
     def disassemble_args(self, args, real_args):
         for index, elem in enumerate(args):
@@ -135,10 +115,13 @@ class PocketMessageChannel:
 
         else:
             self.gq = MessageQueue(PocketMessageChannel.universal_key)
+            self.shmem = SharedMemoryChannel(key=PocketMessageChannel.client_id, size=1 * (32 + 4 * 1024 * 1024))
             self.conn(PocketMessageChannel.local_key)
-            PocketMessageChannel.__instance = self
             TFDataType.callable_delegator = self.get_tf_callable()
             TFDataType.iterable_slicer = self.get_tf_iterable_sliced()
+            TFDataType.Model.load_weights = self.get_model_load_weights()
+            TFDataType.Tensor.tensor_division = self.get_tensor_division()
+            PocketMessageChannel.__instance = self
 
     # control functions
     # for debugging
@@ -269,7 +252,50 @@ class PocketMessageChannel:
         # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
 
         if msg['result'] == ReturnValue.OK.value:
-            return TFDataType.Tensor(dict=msg['actual_return_val'])
+            return TFDataType.Tensor.make_tensor(dict=msg['actual_return_val'])
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tensor_division(self, mock_dict, other):
+        msg_type = int(TFFunctions.TENSOR_DIVISION)
+        reply_type = msg_type | 0x40000000
+        args_dict = {'mock_dict': mock_dict, 'other': other}
+        args_dict['raw_type'] = msg_type
+
+        args_json = json.dumps(args_dict)
+
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+        # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Tensor.make_tensor(dict=msg['actual_return_val'])
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def model_load_weights(self, model, filepath, by_name=False, skip_mismatch=False):
+        msg_type = int(TFFunctions.TF_MODEL_LOAD_WEIGHTS)
+        reply_type = msg_type | 0x40000000
+        args_dict = {'model': model, 'filepath': filepath, 'by_name': by_name, 'skip_mismatch': skip_mismatch}
+        args_dict['raw_type'] = msg_type
+
+        self.convert_object_to_dict(args_dict)
+        args_json = json.dumps(args_dict)
+
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+        # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
+
+        if msg['result'] == ReturnValue.OK.value:
+            return
         elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
             raise Exception(msg['exception'])
         else:
@@ -305,9 +331,7 @@ class PocketMessageChannel:
         # args_dict.update(**kwargs)
         args_dict['raw_type'] = msg_type
 
-        debug(args_dict)
         self.convert_object_to_dict(args_dict)
-        debug(args_dict)
         args_json = json.dumps(args_dict)
 
         self.lq.send(args_json, type=CLIENT_TO_SERVER)
@@ -547,7 +571,6 @@ class PocketMessageChannel:
             raise Exception('Invalid Result!')
 
     def tf_keras_layers_Add(self, **kwargs):
-
         msg_type = int(TFFunctions.TF_KERAS_LAYERS_ADD) ###
         reply_type = msg_type | 0x40000000
 
@@ -598,9 +621,18 @@ class PocketMessageChannel:
         msg_type = int(TFFunctions.TF_KERAS_LAYERS_LAMBDA) ###
         reply_type = msg_type | 0x40000000
 
+        function, raw_args = self.__get_str_from_lambda(function)
         args_dict = {'function': function, 'output_shape': output_shape, 'mask': mask, 'arguments': arguments} ###
         args_dict.update(**kwargs)
         args_dict['raw_type'] = msg_type
+
+        context = kwargs.get('context', None)
+        if context is None:
+            raise Exception('context info is needed!')
+        context = self.__context_filter(context, function, raw_args)
+        function = self.__substitute_closure_vars_with_context(function, context)
+        args_dict.pop('context')
+        args_dict['function'] = function
 
         self.convert_object_to_dict(args_dict)
 
@@ -617,13 +649,132 @@ class PocketMessageChannel:
         else:
             raise Exception('Invalid Result!')
 
+    def tf_keras_layers_UpSampling2D(self, size=(2, 2), data_format=None, interpolation='nearest', **kwargs):
+        msg_type = int(TFFunctions.TF_KERAS_LAYERS_UPSAMPLING2D) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'size':size, 'data_format':data_format} ###
+        args_dict.update(**kwargs)
+        args_dict['raw_type'] = msg_type
+        for key, value in args_dict.copy().items():
+            if hasattr(value, 'to_dict'):
+                args_dict[key] = value.to_dict()
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Add(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tf_keras_layers_Concatenate(self, axis=-1, **kwargs):
+        msg_type = int(TFFunctions.TF_KERAS_LAYERS_CONCATENATE) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'axis':axis} ###
+        args_dict.update(**kwargs)
+        args_dict['raw_type'] = msg_type
+        for key, value in args_dict.copy().items():
+            if hasattr(value, 'to_dict'):
+                args_dict[key] = value.to_dict()
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Add(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tf_image_decode__image(self, contents, channels=None, dtype=TFDtypes.tf_dtypes_uint8, name=None, expand_animations=True):
+        msg_type = int(TFFunctions.TF_IMAGE_DECODE__IMAGE) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'contents': contents, 'channels': channels, 'dtype': dtype, 'name': name, 'expand_animations': expand_animations} ###
+        args_dict['raw_type'] = msg_type
+        self.convert_object_to_dict(args_dict)
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Tensor(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tf_expand__dims(self, input, axis, name=None):
+        msg_type = int(TFFunctions.TF_EXPAND__DIMS) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'input': input, 'axis': axis, 'name': name} ###
+        args_dict['raw_type'] = msg_type
+        self.convert_object_to_dict(args_dict)
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Tensor(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tf_image_resize(self, images, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
+    antialias=False, name=None):
+        msg_type = int(TFFunctions.TF_IMAGE_RESIZE) ###
+        reply_type = msg_type | 0x40000000
+
+        if type(method) is not str:
+            method = method.value
+
+        args_dict = {'images': images, 'size': size, 'method': method, 'preserve_aspect_ratio': preserve_aspect_ratio, 'antialias': antialias, 'name': name} ###
+        args_dict['raw_type'] = msg_type
+        self.convert_object_to_dict(args_dict)
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Tensor(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
     def __remove_code_after_lambda(self, string):
         parenthese_cursor = 1
         new_substring = ''
         for index in range(0, len(string)):
             if string[index] == '(':
                 parenthese_cursor += 1
+                # debug(parenthese_cursor, index, string[index+1:])
             elif string[index] == ')':
+                parenthese_cursor -= 1
+                # debug(parenthese_cursor, index, string[index+1:])
+            elif parenthese_cursor == 1 and string[index] == ',':
                 parenthese_cursor -= 1
 
             if parenthese_cursor is 0:
@@ -634,15 +785,40 @@ class PocketMessageChannel:
     def __get_str_from_lambda(self, func):
         func_string = str(getsourcelines(func)[0])
         func_string = func_string.split('lambda', 2)[1]
+        raw_args = [elem.strip() for elem in func_string.split(':')[0].split(',')]
         func_string = self.__remove_code_after_lambda(func_string)
-        return func_string
+        return func_string, raw_args
+
+    def __context_filter(self, context, function, function_param):
+        new_context = {}
+        for key, value in context.items():
+            if key in function and key not in function_param:
+                new_context[key] = value
+
+        return new_context
+
+    def __substitute_closure_vars_with_context(self, function, context):
+        new_string = function
+        for key, value in context.copy().items():
+            index = 0
+            while index < len(function):
+                if function[index:].startswith(key) and \
+                   not function[index-1].isalnum() and \
+                   not function[index+len(key)].isalnum():
+                   substitute = str(value)
+                   new_string = function[:index] + function[index:].replace(key, substitute, 1)
+                   function = new_string
+                index += 1
+            function = new_string
+        return function
+
+
 
     def convert_object_to_dict(self, old_dict: dict = None, old_list: list = None):
-        debug(old_dict)
         if old_dict is not None:
             for key, value in old_dict.copy().items():
                 datatype = type(value)
-                if datatype is TFDataType.Tensor:
+                if isinstance(value, TFDataType.Tensor):
                     old_dict[key] = value.to_dict()
                 elif datatype is TFDtypes:
                     old_dict[key] = value.value
@@ -653,21 +829,29 @@ class PocketMessageChannel:
                     self.convert_object_to_dict(old_list = tuple_to_list)
                 elif datatype is dict and 'to_dict' not in value:
                     self.convert_object_to_dict(old_dict = value)
-                elif datatype in (int, float, bool, str, bytes, bytearray, type(None)):
+                elif datatype in (int, float, bool, str, bytearray, type(None)):
                     pass
                 elif datatype is FunctionType:
                     lambda_str = self.__get_str_from_lambda(value)
                     old_dict[key] = lambda_str
                     # debug(lambda_str)
+                elif datatype is np.ndarray:
+                    old_dict[key] = value.tolist()
+                    pass
+                elif datatype is bytes:
+                    # old_dict[key] = value.decode()
+                    # debug(type(old_dict[key]))
+                    old_dict[key] = len(value)
+                    self.shmem.write(contents=value)
                 else:
                     old_dict[key] = value.__dict__
-                    debug(f'[warning] unknown type {type(value)} is converted to dict.')
+                    # debug(f'[warning] unknown type {type(value)} is converted to dict.')
                     # raise Exception(f'No such type! Error! {type(value)}')
 
         if old_list is not None:
             for index, elem in enumerate(old_list):
                 datatype = type(elem)
-                if datatype is TFDataType.Tensor:
+                if isinstance(elem, TFDataType.Tensor):
                     old_list[index] = elem.to_dict()
                 elif datatype is TFDtypes:
                     old_list[index] = elem.value
@@ -678,13 +862,19 @@ class PocketMessageChannel:
                     self.convert_object_to_dict(old_list = tuple_to_list)
                 elif datatype is dict and 'to_dict' not in elem:
                     self.convert_object_to_dict(old_dict = elem)
-                elif datatype in (int, float, bool, str, bytes, bytearray, type(None)):
+                elif datatype in (int, float, bool, str,bytearray, type(None)):
                     pass
                 elif datatype is FunctionType:
                     lambda_str = self.__get_str_from_lambda(elem)
-                    old_dict[index] = lambda_str
+                    old_list[index] = lambda_str
                     # debug(lambda_str)
+                elif datatype is np.ndarray:
+                    old_list[index] = elem.tolist()
+                    pass
+                elif datatype is bytes:
+                    old_list[index] = len(elem)
+                    self.shmem.write(contents=elem)
                 else:
                     old_list[index] = elem.__dict__
-                    debug(f'[warning] unknown type {type(elem)} is converted to dict.')
+                    # debug(f'[warning] unknown type {type(elem)} is converted to dict.')
                     # raise Exception(f'No such type! Error! {type(elem)}')
