@@ -319,6 +319,7 @@ function _run_d_server_shmem_dev() {
     echo 'Server bootup!'
 }
 
+## for cgroups measure
 function _run_d_server_shmem_rlimit() {
     local image=$1
     local container=$2
@@ -328,17 +329,14 @@ function _run_d_server_shmem_rlimit() {
     docker run \
         -d \
         --privileged \
-        --network=$network \
-        --cap-add SYS_ADMIN \
-        --cap-add IPC_LOCK \
         --name=$container \
         --workdir='/root/yolov3-tf2' \
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
-        --cpus=6.0 \
-        --memory=3072mb \
-        --volume /var/run/docker.sock:/var/run/docker.sock \
+        --cpus=1.0 \
+        --memory=1024mb \
+        --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
         --volume=/var/lib/docker/overlay2:/layers \
@@ -354,32 +352,65 @@ function _run_d_server_shmem_rlimit() {
     echo 'Server bootup!'
 }
 
-function _run_d_server_redis() {
+function _run_d_server_shmem_rlimit_cProfile() {
     local image=$1
     local container=$2
     local network=$3
-    local server_ip=$4
+    local timestamp=$4
     local pause=$([[ "$#" == 5 ]] && echo $5 || echo 5)
+        # --cpuset-cpus=0 \
     docker run \
         -d \
         --privileged \
-        --network=$network \
-        --ip=$server_ip \
-        --pid=host \
-        --cap-add SYS_ADMIN \
-        --cap-add IPC_LOCK \
         --name=$container \
         --workdir='/root/yolov3-tf2' \
         --env YOLO_SERVER=1 \
-        --volume /var/run/docker.sock:/var/run/docker.sock \
+        --ip=$SERVER_IP \
+        --ipc=shareable \
+        --cpus=1.0 \
+        --memory=1024mb \
+        --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
+        --volume=/var/lib/docker/overlay2:/layers \
         --volume=$(pwd)/ramfs:/ramfs \
-        --volume=$(pwd)/../images:/images \
-        --volume=$HOME/yolov3-tf2:/root/yolov3-tf2 \
+        --volume=$(pwd)/..:/root/yolov3-tf2 \
+        --volume=$(pwd)/../images:/img \
         $image \
-        bash -c "redis-server --daemonize yes && python tfrpc/server/yolo_server.py"
-    utils_attach_root $container
+        python -m cProfile -o /data/${timestamp}-cprofile/${container}.cprofile tfrpc/server/yolo_server.py
+
+    sleep $pause
+    echo 'Server bootup!'
+}
+
+function _run_d_server_shmem_rlimit_perf() {
+    local image=$1
+    local container=$2
+    local network=$3
+    local timestamp=$4
+    local pause=$([[ "$#" == 5 ]] && echo $5 || echo 5)
+        # --cpuset-cpus=0 \
+    docker run \
+        -d \
+        --privileged \
+        --name=$container \
+        --workdir='/root/yolov3-tf2' \
+        --env YOLO_SERVER=1 \
+        --ip=$SERVER_IP \
+        --ipc=shareable \
+        --cpus=2.0 \
+        --memory=1024mb \
+        --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+        --volume $(pwd)/data:/data \
+        --volume=$(pwd)/sockets:/sockets \
+        --volume=/var/lib/docker/overlay2:/layers \
+        --volume=$(pwd)/ramfs:/ramfs \
+        --volume=$(pwd)/..:/root/yolov3-tf2 \
+        --volume=$(pwd)/../images:/img \
+        $image \
+        python tfrpc/server/yolo_server.py
+        # ls -al /data/$timestamp
+
     sleep $pause
     echo 'Server bootup!'
 }

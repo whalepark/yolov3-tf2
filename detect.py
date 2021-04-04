@@ -124,6 +124,10 @@ def finalize():
     ControlProcedure.Disconnect(g_stub)
     if DATA_CHANNEL == 'shmem':
         shmem.finalize()
+
+def finalize_msgq():
+    msgq = PocketMessageChannel.get_instance()
+    msgq.detach()
     
 def main(_argv):
     if FLAGS.comm == 'grpc':
@@ -262,6 +266,8 @@ def main(_argv):
             logging.info('\t{}, {}, {}'.format(class_names[int(classes[0][i])],
                                                 np.array(scores[0][i]),
                                                 np.array(boxes[0][i])))
+
+        finalize_msgq()
 
     exit()
       

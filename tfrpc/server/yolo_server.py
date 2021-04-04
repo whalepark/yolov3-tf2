@@ -26,6 +26,7 @@ import socket
 from concurrent import futures
 import logging
 import grpc
+import signal
 
 import yolo_pb2, yolo_pb2_grpc
 import pickle
@@ -1045,13 +1046,20 @@ def serve():
     # tf.config.threading.set_inter_op_parallelism_threads(48)
     # tf.config.threading.set_intra_op_parallelism_threads(96)
     server.start()
-    connect_to_perf_server(socket.gethostname())
+    # connect_to_perf_server(socket.gethostname())
 
     server.wait_for_termination()
+
+def finalize(signum, frame):
+    # if 'cProfile' in dir():
+    #     cProfile.create_stats()
+    sys.exit(0)
 
 from pocketmgr import PocketManager
 if __name__ == '__main__':
     FLAGS(sys.argv)
+    signal.signal(signal.SIGINT, finalize)
+
     mgr = PocketManager()
     mgr.start()
 

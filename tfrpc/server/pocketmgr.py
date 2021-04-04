@@ -13,6 +13,18 @@ from pocket_tf_if import PocketControl, TFFunctions, ReturnValue, TFDataType, CL
 
 GLOBAL_SLEEP = 0.01
 LOCAL_SLEEP = 0.0001
+POCKETD_SOCKET_PATH = '/tmp/pocketd.sock'
+
+class Utils:
+    @staticmethod
+    def get_container_id():
+        cg = open('/proc/self/cgroup')
+        content = cg.readlines()
+        for line in content:
+            if 'docker' in line:
+                cid = line.strip().split('/')[-1]
+                # debug(cid)
+                return cid
 
 ### moved from apps
 class BatchNormalization(tf.keras.layers.BatchNormalization):
@@ -131,6 +143,8 @@ class TensorFlowServer:
         else:
             exist_value = False
 
+            debug(f'exist={exist_value}, kerasModel={keras_model}')
+
         return ReturnValue.OK.value, (exist_value, keras_model)
 
     @staticmethod
@@ -188,6 +202,41 @@ class TensorFlowServer:
                 return ReturnValue.OK.value, ret
         finally:
             pass
+
+    @staticmethod
+    def tensor_division(client_id, mock_dict, other):
+        try:
+            # debug(f'mock_dict={mock_dict} other={other}')
+            object = PocketManager.get_instance().get_real_object_with_mock(client_id, mock_dict)
+            tensor = object / other
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
+            return ReturnValue.OK.value, TFDataType.Tensor(None, id(tensor), tensor.shape.as_list()).to_dict()
+        finally:
+            pass
+
+    # @staticmethod
+    # def __substitute_closure_vars_with_context(function, context):
+    #     new_string = function
+    #     debug(context)
+    #     for key, value in context.copy().items():
+    #         index = 0
+    #         while index < len(function):
+    #             if function[index:].startswith(key) and \
+    #                not function[index-1].isalnum() and \
+    #                not function[index+len(key)].isalnum():
+    #                substitute = str(value)
+    #                new_string = function[:index] + function[index:].replace(key, substitute, 1)
+    #                function = new_string
+    #             index += 1
+    #         function = new_string
+    #     return function
+
 
     @staticmethod
     def tensor_division(client_id, mock_dict, other):
@@ -669,6 +718,38 @@ class PocketManager:
         self.handle_clients_thread.join()
         self.gq_thread.join()
 
+    def return_resource(self, client_id):
+        import socket
+        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        my_socket.connect(POCKETD_SOCKET_PATH)
+        service_id = Utils.get_container_id()
+        args_dict = {'sender': 'BE',
+                     'command': 'resource',
+                     'subcommand': 'return', 'client_id': client_id, 'service_id': service_id}
+        json_data_to_send = json.dumps(args_dict)
+        my_socket.send(json_data_to_send.encode('utf-8'))
+        data_received = my_socket.recv(1024)
+        my_socket.close()
+
+    def clean_up(self, client_id, queue):
+        self.per_client_object_store.pop(client_id, None)
+        self.shmem_dict.pop(client_id, None)
+
+        raw_type = int(PocketControl.DISCONNECT)
+        reply_type = raw_type | 0x40000000
+        return_dict = {'result': ReturnValue.OK.value}
+
+        return_byte_obj = json.dumps(return_dict)
+        queue.send(return_byte_obj, type = reply_type)
+
+        # self.queues_dict[client_id].remove()
+        self.queues_dict.pop(client_id)
+
+        # def notify_start(self, app_name, server_name):
+        t=Thread(target=self.return_resource, args=[client_id])
+        t.start()
+
+
     def pocket_new_connection(self):
         while True:
             raw_msg, raw_type = self.gq.receive(block=True, type=CLIENT_TO_SERVER)
@@ -686,9 +767,11 @@ class PocketManager:
                 self.send_ack_to_client(args_dict['client_id'])
                 self.shmem_dict[args_dict['client_id']] = SharedMemoryChannel(args_dict['client_id'])
             elif type == PocketControl.DISCONNECT:
-                # Todo: Clean up
                 pass
+                self.queues_dict[args_dict['client_id']].remove()
+                self.queues_dict.pop(args_dict['client_id'])
                 self.per_client_object_store.pop(args_dict['client_id'], None)
+                self.shmem_dict.pop(args_dict['client_id'], None)
             elif type == PocketControl.HELLO:
                 return_dict = {'result': ReturnValue.OK.value, 'message': args_dict['message']}
                 return_byte_obj = json.dumps(return_dict)
@@ -704,6 +787,10 @@ class PocketManager:
 
                     args_dict = json.loads(raw_msg)
                     raw_type = args_dict.pop('raw_type')
+
+                    if raw_type == int(PocketControl.DISCONNECT) and args_dict.pop('tf', True) is False:
+                        self.clean_up(client_id, queue)
+                        continue
 
                     function_type = TFFunctions(raw_type)
                     reply_type = raw_type | 0x40000000
@@ -721,7 +808,7 @@ class PocketManager:
                     queue.send(return_byte_obj, type = reply_type)
                 except BusyError as err:
                     pass
-                sleep(LOCAL_SLEEP)
+                # sleep(LOCAL_SLEEP)
          
     def add_client_queue(self, client_id, key):
         client_queue = MessageQueue(key)

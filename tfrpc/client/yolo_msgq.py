@@ -1,9 +1,11 @@
 import json
-from tfrpc.client.pocket_tf_if import POCKET_CLIENT
+import sys, os
+# sys.path.insert(0, os.path.abspath('tfrpc/client'))
+# from tfrpc.client.pocket_tf_if import POCKET_CLIENT
 from types import FunctionType
 from inspect import getsourcelines
 from sysv_ipc import MessageQueue, IPC_CREX
-from pocket_tf_if import TFFunctions, PocketControl, ReturnValue, CLIENT_TO_SERVER, TFDataType, TFDtypes, SharedMemoryChannel, ResizeMethod
+from pocket_tf_if import TFFunctions, PocketControl, ReturnValue, CLIENT_TO_SERVER, TFDataType, TFDtypes, SharedMemoryChannel, ResizeMethod, POCKET_CLIENT
 from time import sleep
 
 
@@ -157,6 +159,18 @@ class PocketMessageChannel:
 
     # for disconnecting
     def detach(self):
+        msg_type = int(PocketControl.DISCONNECT)
+        reply_type = msg_type | 0x40000000
+        args_dict = {'client_id': PocketMessageChannel.client_id, 'key': PocketMessageChannel.local_key}
+        args_dict['raw_type'] = msg_type
+        args_dict['tf'] = False
+        
+        args_json = json.dumps(args_dict)
+
+        self.lq.send(args_json, type = CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+        self.lq.remove()
+        msg = json.loads(raw_msg)
         pass
         # self.mq.send('detach')
         # self.mq.remove()
