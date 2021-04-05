@@ -386,11 +386,10 @@ function _run_d_server_shmem_rlimit_cProfile() {
 function _run_d_server_shmem_rlimit_static1_cProfile() {
     local image=$1
     local container=$2
-    local network=$3
-    local timestamp=$4
-    local cpus=$5
-    local memory=$6
-    local pause=$([[ "$#" == 7 ]] && echo $7 || echo 5)
+    local timestamp=$3
+    local cpus=$4
+    local memory=$5
+    local pause=$([[ "$#" == 6 ]] && echo $6 || echo 5)
         # --cpuset-cpus=0 \
     docker run \
         -d \
@@ -398,7 +397,6 @@ function _run_d_server_shmem_rlimit_static1_cProfile() {
         --name=$container \
         --workdir='/root/yolov3-tf2' \
         --env YOLO_SERVER=1 \
-        --ip=$SERVER_IP \
         --ipc=shareable \
         --cpus=$cpus \
         --memory=$memory \
@@ -419,11 +417,10 @@ function _run_d_server_shmem_rlimit_static1_cProfile() {
 function _run_d_server_shmem_rlimit_static2_cProfile() {
     local image=$1
     local container=$2
-    local network=$3
-    local timestamp=$4
-    local cpus=$5
-    local memory=$6
-    local pause=$([[ "$#" == 7 ]] && echo $7 || echo 5)
+    local timestamp=$3
+    local cpus=$4
+    local memory=$5
+    local pause=$([[ "$#" == 6 ]] && echo $6 || echo 5)
         # --cpuset-cpus=0 \
     docker run \
         -d \
@@ -431,7 +428,6 @@ function _run_d_server_shmem_rlimit_static2_cProfile() {
         --name=$container \
         --workdir='/root/yolov3-tf2' \
         --env YOLO_SERVER=1 \
-        --ip=$SERVER_IP \
         --ipc=shareable \
         --cpus=$cpus \
         --memory=$memory \

@@ -872,7 +872,7 @@ function measure_static_1() {
     # exit
     local numinstances=$1
     local container_list=()
-    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static-cprofile)
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static1-cprofile)
     local rusage_logging_file=tmp-service.log
 
     local server_container_name=grpc_exp_server_shmem_00
@@ -885,13 +885,12 @@ function measure_static_1() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit_static1_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.0 1024mb 15
+    _run_d_server_shmem_rlimit_static1_cProfile ${server_image} ${server_container_name} $TIMESTAMP 1.0 1024mb 15
 
     docker \
         run \
             -d \
             --ipc container:${server_container_name} \
-            -n $NETWORK \
             --memory=1024mb \
             --cpus=1 \
             --volume=$(pwd)/data:/data \
@@ -903,7 +902,7 @@ function measure_static_1() {
             --workdir='/root/yolov3-tf2' \
             --name grpc_exp_app_shmem_0000 \
             grpc_exp_shmem_client \
-            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
 
     docker \
         wait \
@@ -918,7 +917,6 @@ function measure_static_1() {
                 run \
                     -d \
                     --ipc container:${server_container_name} \
-                    -n $NETWORK \
                     --memory=1024mb \
                     --cpus=1 \
                     --volume=$(pwd)/data:/data \
@@ -930,7 +928,7 @@ function measure_static_1() {
                     --workdir='/root/yolov3-tf2' \
                     --name ${container_name} \
                     grpc_exp_shmem_client \
-                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+                    python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
@@ -968,7 +966,7 @@ function measure_static_1() {
 function measure_static_2() {
     local numinstances=$1
     local container_list=()
-    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static-cprofile)
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static2-cprofile)
     local rusage_logging_file=tmp-service.log
 
     local server_container_name=grpc_exp_server_shmem_00
@@ -981,13 +979,12 @@ function measure_static_2() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit_static2_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.8 1843mb 15
+    _run_d_server_shmem_rlimit_static2_cProfile ${server_image} ${server_container_name} $TIMESTAMP 1.8 1843mb 15
 
     docker \
         run \
             -d \
             --ipc container:${server_container_name} \
-            -n $NETWORK \
             --memory=205mb \
             --cpus=0.2 \
             --volume=$(pwd)/data:/data \
@@ -999,7 +996,7 @@ function measure_static_2() {
             --workdir='/root/yolov3-tf2' \
             --name grpc_exp_app_shmem_0000 \
             grpc_exp_shmem_client \
-            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
 
     docker \
         wait \
@@ -1014,7 +1011,6 @@ function measure_static_2() {
                 run \
                     -d \
                     --ipc container:${server_container_name} \
-                    -n $NETWORK \
                     --memory=205mb \
                     --cpus=0.2 \
                     --volume=$(pwd)/data:/data \
@@ -1026,7 +1022,7 @@ function measure_static_2() {
                     --workdir='/root/yolov3-tf2' \
                     --name ${container_name} \
                     grpc_exp_shmem_client \
-                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+                    python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
