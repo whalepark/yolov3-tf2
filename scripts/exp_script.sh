@@ -868,8 +868,8 @@ function measure_perf() {
 }
 
 function measure_static_1() {
-    echo measure static!
-    exit
+    # echo measure static!
+    # exit
     local numinstances=$1
     local container_list=()
     local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static-cprofile)
@@ -885,7 +885,7 @@ function measure_static_1() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit_static_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.0 1024mb 15
+    _run_d_server_shmem_rlimit_static1_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.0 1024mb 15
 
     docker \
         run \
@@ -903,7 +903,7 @@ function measure_static_1() {
             --workdir='/root/yolov3-tf2' \
             --name grpc_exp_app_shmem_0000 \
             grpc_exp_shmem_client \
-            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
 
     docker \
         wait \
@@ -930,7 +930,7 @@ function measure_static_1() {
                     --workdir='/root/yolov3-tf2' \
                     --name ${container_name} \
                     grpc_exp_shmem_client \
-                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static1-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
@@ -947,7 +947,7 @@ function measure_static_1() {
 
     sleep 3
 
-    for filename in data/$TIMESTAMP-static-cprofile/* ; do
+    for filename in data/$TIMESTAMP-static1-cprofile/* ; do
         echo $filename
         if [[ "$filename" == *.cprofile ]]; then
             ./pocket/parseprof -f "$filename"
@@ -966,8 +966,6 @@ function measure_static_1() {
 }
 
 function measure_static_2() {
-    echo measure static!
-    exit
     local numinstances=$1
     local container_list=()
     local rusage_logging_dir=$(realpath data/${TIMESTAMP}-static-cprofile)
@@ -983,7 +981,7 @@ function measure_static_2() {
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit_static_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.8 1843mb 15
+    _run_d_server_shmem_rlimit_static2_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 1.8 1843mb 15
 
     docker \
         run \
@@ -1001,7 +999,7 @@ function measure_static_2() {
             --workdir='/root/yolov3-tf2' \
             --name grpc_exp_app_shmem_0000 \
             grpc_exp_shmem_client \
-            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
 
     docker \
         wait \
@@ -1028,7 +1026,7 @@ function measure_static_2() {
                     --workdir='/root/yolov3-tf2' \
                     --name ${container_name} \
                     grpc_exp_shmem_client \
-                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-static2-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
@@ -1045,7 +1043,7 @@ function measure_static_2() {
 
     sleep 3
 
-    for filename in data/$TIMESTAMP-static-cprofile/* ; do
+    for filename in data/$TIMESTAMP-static2-cprofile/* ; do
         echo $filename
         if [[ "$filename" == *.cprofile ]]; then
             ./pocket/parseprof -f "$filename"
@@ -1126,9 +1124,9 @@ case $COMMAND in
         measure_perf $NUMINSTANCES
         ;;
     motivation)
-        echo misun
-        # measure_static_1 $NUMINSTANCE
-        # measure_static_2 $NUMINSTANCE
+        # echo misun
+        measure_static_1 $NUMINSTANCE
+        measure_static_2 $NUMINSTANCE
         ;;
     'build-shmem')
         build_shmem
