@@ -383,6 +383,39 @@ function _run_d_server_shmem_rlimit_cProfile() {
     echo 'Server bootup!'
 }
 
+function _run_d_server_shmem_rlimit_static_cProfile() {
+    local image=$1
+    local container=$2
+    local network=$3
+    local timestamp=$4
+    local cpus=$5
+    local memory=$6
+    local pause=$([[ "$#" == 7 ]] && echo $7 || echo 5)
+        # --cpuset-cpus=0 \
+    docker run \
+        -d \
+        --privileged \
+        --name=$container \
+        --workdir='/root/yolov3-tf2' \
+        --env YOLO_SERVER=1 \
+        --ip=$SERVER_IP \
+        --ipc=shareable \
+        --cpus=$cpus \
+        --memory=$memory \
+        --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+        --volume $(pwd)/data:/data \
+        --volume=$(pwd)/sockets:/sockets \
+        --volume=/var/lib/docker/overlay2:/layers \
+        --volume=$(pwd)/ramfs:/ramfs \
+        --volume=$(pwd)/..:/root/yolov3-tf2 \
+        --volume=$(pwd)/../images:/img \
+        $image \
+        python -m cProfile -o /data/${timestamp}-static-cprofile/${container}.cprofile tfrpc/server/yolo_server.py
+
+    sleep $pause
+    echo 'Server bootup!'
+}
+
 function _run_d_server_shmem_rlimit_perf() {
     local image=$1
     local container=$2
