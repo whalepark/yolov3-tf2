@@ -10,6 +10,8 @@ EXP_ROOT="${HOME}/settings/tf-slim/lightweight/pjt/grpc"
 SUBNETMASK=111.222.0.0/16
 SERVER_IP=111.222.3.26
 
+mkdir -p data
+
 source internal_functions.sh
 
 function parse_arg() {
@@ -80,15 +82,15 @@ function build_image() {
 }
 
 function build_shmem() {
-    # docker rmi -f $(docker image ls | grep "grpc_exp_shmem_server\|grpc_exp_shmem_client" | awk '{print $1}')
+    docker rmi -f $(docker image ls | grep "grpc_exp_shmem_server\|grpc_exp_shmem_client" | awk '{print $1}')
 
     cp ../../yolov3.weights ./dockerfiles
-    # docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
+    docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
     docker image build --no-cache -t grpc_exp_shmem_client_perf -f dockerfiles/Dockerfile.shmem.perf.idapp dockerfiles
-    # docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
+    docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
 
-    # docker rmi -f grpc_exp_shmem_client
-    # docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
+    docker rmi -f grpc_exp_shmem_client
+    docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
 }
 
 function perf() {

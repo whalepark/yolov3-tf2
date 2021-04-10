@@ -244,6 +244,12 @@ def remove_remaining_sockets():
 def create_and_bind_sockets():
     global POCKETD_SOCKET
 
+    try:
+        os.mkdir('tmp')
+    except FileExistsError as e:
+        logging.debug('directory "tmp" exists')
+        pass
+
     POCKETD_SOCKET = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     POCKETD_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     POCKETD_SOCKET.bind(POCKETD_SOCKET_PATH)
