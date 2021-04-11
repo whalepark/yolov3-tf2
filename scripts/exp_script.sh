@@ -590,8 +590,9 @@ function measure_rusage() {
             --cpus=1 \
             --volume=$(pwd)/data:/data \
             --volume=$(pwd)/sockets:/sockets \
-            --volume=$(pwd)/../images:/img \
-            --volume=$(pwd)/..:/root/yolov3-tf2 \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env SERVER_ADDR=${SERVER_IP} \
             --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
             --workdir='/root/yolov3-tf2' \
@@ -629,8 +630,9 @@ function measure_rusage() {
                     --cpus=1 \
                     --volume=$(pwd)/data:/data \
                     --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../images:/img \
-                    --volume=$(pwd)/..:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../yolov3-tf2/images:/img \
+                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                     --env SERVER_ADDR=${SERVER_IP} \
                     --env CONTAINER_ID=${container_name} \
                     --workdir='/root/yolov3-tf2' \
@@ -660,8 +662,8 @@ function measure_rusage() {
     echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     docker logs grpc_exp_server_shmem_00
+    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     # docker ps -a
     # ls /sys/fs/cgroup/memory/docker/
 }
@@ -696,8 +698,9 @@ function measure_cprofile() {
             --cpus=1 \
             --volume=$(pwd)/data:/data \
             --volume=$(pwd)/sockets:/sockets \
-            --volume=$(pwd)/../images:/img \
-            --volume=$(pwd)/..:/root/yolov3-tf2 \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env SERVER_ADDR=${SERVER_IP} \
             --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
             --workdir='/root/yolov3-tf2' \
@@ -724,8 +727,9 @@ function measure_cprofile() {
                     --cpus=1 \
                     --volume=$(pwd)/data:/data \
                     --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../images:/img \
-                    --volume=$(pwd)/..:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../yolov3-tf2/images:/img \
+                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                     --env SERVER_ADDR=${SERVER_IP} \
                     --env CONTAINER_ID=${container_name} \
                     --workdir='/root/yolov3-tf2' \
@@ -762,8 +766,8 @@ function measure_cprofile() {
     echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     docker logs grpc_exp_server_shmem_00
+    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     # docker ps -a
     # ls /sys/fs/cgroup/memory/docker/
 }
@@ -799,7 +803,8 @@ function measure_perf() {
             --volume=$(pwd)/data:/data \
             --volume=$(pwd)/sockets:/sockets \
             --volume=$(pwd)/../images:/img \
-            --volume=$(pwd)/..:/root/yolov3-tf2 \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env SERVER_ADDR=${SERVER_IP} \
             --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
             --workdir='/root/yolov3-tf2' \
@@ -831,8 +836,9 @@ function measure_perf() {
                     --cpus=1 \
                     --volume=$(pwd)/data:/data \
                     --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../images:/img \
-                    --volume=$(pwd)/..:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../yolov3-tf2/images:/img \
+                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                     --env SERVER_ADDR=${SERVER_IP} \
                     --env CONTAINER_ID=${container_name} \
                     --workdir='/root/yolov3-tf2' \
@@ -863,8 +869,8 @@ function measure_perf() {
     echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     docker logs grpc_exp_server_shmem_00
+    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     # docker ps -a
     # ls /sys/fs/cgroup/memory/docker/
 }
@@ -897,8 +903,9 @@ function measure_static_1() {
             --cpus=1 \
             --volume=$(pwd)/data:/data \
             --volume=$(pwd)/sockets:/sockets \
-            --volume=$(pwd)/../images:/img \
-            --volume=$(pwd)/..:/root/yolov3-tf2 \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env SERVER_ADDR=${SERVER_IP} \
             --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
             --workdir='/root/yolov3-tf2' \
@@ -925,6 +932,7 @@ function measure_static_1() {
                     --volume=$(pwd)/sockets:/sockets \
                     --volume=$(pwd)/../images:/img \
                     --volume=$(pwd)/..:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                     --env SERVER_ADDR=${SERVER_IP} \
                     --env CONTAINER_ID=${container_name} \
                     --workdir='/root/yolov3-tf2' \
@@ -959,8 +967,8 @@ function measure_static_1() {
     echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     docker logs grpc_exp_server_shmem_00
+    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     # docker ps -a
     # ls /sys/fs/cgroup/memory/docker/
 }
@@ -991,8 +999,9 @@ function measure_static_2() {
             --cpus=0.2 \
             --volume=$(pwd)/data:/data \
             --volume=$(pwd)/sockets:/sockets \
-            --volume=$(pwd)/../images:/img \
-            --volume=$(pwd)/..:/root/yolov3-tf2 \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env SERVER_ADDR=${SERVER_IP} \
             --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
             --workdir='/root/yolov3-tf2' \
@@ -1017,8 +1026,9 @@ function measure_static_2() {
                     --cpus=0.2 \
                     --volume=$(pwd)/data:/data \
                     --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../images:/img \
-                    --volume=$(pwd)/..:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../yolov3-tf2/images:/img \
+                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                     --env SERVER_ADDR=${SERVER_IP} \
                     --env CONTAINER_ID=${container_name} \
                     --workdir='/root/yolov3-tf2' \
@@ -1053,8 +1063,8 @@ function measure_static_2() {
     echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
 
     # For debugging
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     docker logs grpc_exp_server_shmem_00
+    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
     # docker ps -a
     # ls /sys/fs/cgroup/memory/docker/
 }
@@ -1085,6 +1095,21 @@ function help() {
     echo example: bash ./exp_script.sh rtt
 }
 
+function env_set() {
+    conda install -y absl-py
+    pip install tensorflow==2.1.0
+    pip opencv-python==4.1.1.26
+
+    local current_dir=$(pwd)
+    cd ..
+    python convert.py
+    git checkout experiments
+    cd $current_dir
+
+    cp -R ../yolov3-tf2/checkpoints ../tfrpc/server/
+    cp ../tfrpc/client/pocket_tf_if.py ../tfrpc/server
+}
+
 trap finalize SIGINT
 COMMAND=$([[ $# == 0 ]] && echo help || echo $1)
 parse_arg ${@:2}
@@ -1095,6 +1120,9 @@ case $COMMAND in
         ;;
     health|hello)
         health_check
+        ;;
+    'env-set')
+        env_set
         ;;
     'old-perf')
         perf $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses

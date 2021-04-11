@@ -25,8 +25,9 @@ from .utils import broadcast_iou
 import sys, os, time
 cwd = os.getcwd()
 os.chdir(os.path.dirname(__file__))
-sys.path.insert(0, os.path.abspath('../tfrpc/client'))
-from tf_wrapper import TFWrapper, YoloWrapper
+sys.path.insert(0, os.path.abspath('../../tfrpc/client'))
+
+# from tf_wrapper import TFWrapper, YoloWrapper POCKET_GRPC
 from yolo_msgq import SharedMemoryChannel, PocketMessageChannel
 
 os.chdir(cwd)

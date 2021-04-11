@@ -60,11 +60,11 @@ import logging
 import grpc
 import sys, os
 
-# Todo: remove
-sys.path.insert(0, os.path.abspath('tfrpc/client'))
-import yolo_pb2
-import yolo_pb2_grpc
-from tf_wrapper import TFWrapper, ControlProcedure
+# Todo: remove ## POCKET_GRPC
+# sys.path.insert(0, os.path.abspath('../tfrpc/client'))
+# import yolo_pb2
+# import yolo_pb2_grpc
+# from tf_wrapper import TFWrapper, ControlProcedure
 
 ## preinit
 CONTAINER_ID = get_container_id()
@@ -98,10 +98,12 @@ flags.DEFINE_integer('num_images', 1, 'the number of images to process')
 flags.DEFINE_integer('size_to_transfer', 4*1024*1024, 'the size of image')
 flags.DEFINE_string('comm', 'msgq', 'specify communication channel, can be either msgq or grpc')
 
-g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
-# g_redis: redis.Redis
-# CONTAINER_ID: str
-# shmem = None
+# POCKET_GRPC
+# g_stub: yolo_pb2_grpc.YoloTensorflowWrapperStub
+
+# # g_redis: redis.Redis
+# # CONTAINER_ID: str
+# # shmem = None
 DATA_CHANNEL = None
 
 

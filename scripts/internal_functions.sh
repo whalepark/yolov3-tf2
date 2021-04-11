@@ -363,7 +363,7 @@ function _run_d_server_shmem_rlimit_cProfile() {
         -d \
         --privileged \
         --name=$container \
-        --workdir='/root/yolov3-tf2' \
+        --workdir='/root' \
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
@@ -374,8 +374,9 @@ function _run_d_server_shmem_rlimit_cProfile() {
         --volume=$(pwd)/sockets:/sockets \
         --volume=/var/lib/docker/overlay2:/layers \
         --volume=$(pwd)/ramfs:/ramfs \
-        --volume=$(pwd)/..:/root/yolov3-tf2 \
-        --volume=$(pwd)/../images:/img \
+        --volume=$(pwd)/../tfrpc/server:/root/tfrpc/server \
+        --volume=$(pwd)/../yolov3-tf2/:/root/yolov3-tf2 \
+        --volume=$(pwd)/../yolov3-tf2/images:/img \
         $image \
         python -m cProfile -o /data/${timestamp}-cprofile/${container}.cprofile tfrpc/server/yolo_server.py
 

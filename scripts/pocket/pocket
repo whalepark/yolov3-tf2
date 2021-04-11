@@ -193,10 +193,11 @@ def pocket_run(args):
         command.extend(args.command)
         logging.debug(f'command={command}')
         ## @@@@@@ end-to-end time
-        process = subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        # process = subprocess.run(command, check=True)
-        # logging.debug(f'stdout={process.stdout}')
-        # logging.debug(f'stderr={process.stderr}')
+        # process = subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        process = subprocess.run(command, check=True)
+        logging.debug(f'stdout={process.stdout}')
+        logging.debug(f'stderr={process.stderr}')
+
         resource_gauge(args.name, log_dir)
         DockerUtils.remove_container(args.name)
 
