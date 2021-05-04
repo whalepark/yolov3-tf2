@@ -16,13 +16,19 @@ scripts/data/*
 scripts/moved_data/*
 !scripts/moved_data/data_aggregator.py
 !scripts/moved_data/mon/remove_mon.py
-!scripts/moved_data/*/cprofile/parseprof.py
-!scripts/moved_data/*/cprofile/parseprof
+!scripts/moved_data/50/cprofile/parseprof.py
+!scripts/moved_data/80/cprofile/parseprof.py
+!scripts/moved_data/50/cprofile/parseprof
+!scripts/moved_data/80/cprofile/parseprof
 
 mobilenetv2/data/*
 mobilenetv2/moved_data/*
 !mobilenetv2/moved_data/data_aggregator.py
 !mobilenetv2/moved_data/mon/remove_mon.py
+!mobilenetv2/moved_data/50/cprofile/parseprof.py
+!mobilenetv2/moved_data/80/cprofile/parseprof.py
+!mobilenetv2/moved_data/50/cprofile/parseprof
+!mobilenetv2/moved_data/80/cprofile/parseprof
 
 scripts/dockerfiles/yolov3.weights
 data/yolov3.weights
