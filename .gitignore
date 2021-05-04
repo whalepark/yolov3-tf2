@@ -53,3 +53,7 @@ mobilenetv2/movde_data/80/cprofile/aggregate/*
 scripts/dockerfiles/yolov3.weights
 data/yolov3.weights
 scripts/yolov3.weights
+
+
+#Temporary
+yolov3-tf2-grpc

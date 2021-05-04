@@ -7,6 +7,7 @@ TIMESTAMP=$(date +%Y%m%d-%H:%M:%S)
 NETWORK=tf-grpc-exp
 RSRC_RATIO=0.5
 INTERVAL=0
+RSRC_RALLOC=1
 
 EXP_ROOT="${HOME}/settings/tf-slim/lightweight/pjt/grpc"
 SUBNETMASK=111.222.0.0/16
@@ -30,6 +31,9 @@ function parse_arg() {
                 ;;
             -r=*|--ratio=*)
                 RSRC_RATIO="${arg#*=}"
+                ;;
+            -ra=*|--resource-realloc=*)
+                RSRC_RALLOC="${arg#*=}"
                 ;;
         esac
     done
@@ -581,6 +585,7 @@ function measure_latency() {
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
             --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
             -- python3.6 detect.py --object path --image data/street.jpg
@@ -607,6 +612,7 @@ function measure_latency() {
                 --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
                 --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                 --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
                 --env CONTAINER_ID=${container_name} \
                 --workdir='/root/yolov3-tf2' \
                 -- python3.6 detect.py --object path --image data/street.jpg &
@@ -813,6 +819,7 @@ function measure_rusage() {
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
             --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
             -- python3.6 detect.py --object path --image data/street.jpg &
@@ -849,6 +856,7 @@ function measure_rusage() {
                 --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
                 --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                 --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
                 --env CONTAINER_ID=${container_name} \
                 --workdir='/root/yolov3-tf2' \
                 -- python3.6 detect.py --object path --image data/street.jpg &
@@ -898,6 +906,7 @@ function measure_cprofile() {
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
             --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
             -- python3.6 -m cProfile -o /data/${TIMESTAMP}-${numinstances}-cprofile/pocket-client-0000.cprofile detect.py --object path --image data/street.jpg
@@ -927,6 +936,7 @@ function measure_cprofile() {
                 --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
                 --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                 --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
                 --env CONTAINER_ID=${container_name} \
                 --workdir='/root/yolov3-tf2' \
                 -- python3.6 -m cProfile -o /data/${TIMESTAMP}-${numinstances}-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
@@ -994,6 +1004,7 @@ function measure_perf() {
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
             --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
             --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
             -- perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf/pocket-client-0000.perf.log python3.6 detect.py --object path --image data/street.jpg
@@ -1031,6 +1042,7 @@ function measure_perf() {
                 --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
                 --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
                 --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env RSRC_REALLOC_ON=${RSRC_RALLOC} \
                 --env CONTAINER_ID=$container_name \
                 --workdir='/root/yolov3-tf2' \
                 -- perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf/$container_name.perf.log python3.6 detect.py --object path --image data/street.jpg

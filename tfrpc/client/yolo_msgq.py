@@ -30,6 +30,7 @@ def debug(*args):
     print(f'debug>> [{bcolors.OKCYAN}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
 
 RSRC_REALLOC_RATIO = float(os.environ['RSRC_REALLOC_RATIO'])
+RSRC_REALLOC_ON = True if os.environ['RSRC_REALLOC_ON'] is 1 else False
 POCKETD_SOCKET_PATH = '/tmp/pocketd.sock'
 
 class Utils:
@@ -236,10 +237,15 @@ class PocketMessageChannel:
 
         msg_type = int(PocketControl.CONNECT)
         reply_type = msg_type | 0x40000000
-        self.MEMORY_RECEIVE_BACK = Utils.request_memory_move()
-        self.CPU_RECEIVE_BACK, numerator, self.CPU_DENOM = Utils.request_cpu_move()
 
-        Utils.deduct_resource(self.pocketd, self.MEMORY_RECEIVE_BACK, self.CPU_RECEIVE_BACK, self.CPU_DENOM)
+        if RSRC_REALLOC_ON:
+            self.MEMORY_RECEIVE_BACK = Utils.request_memory_move()
+            self.CPU_RECEIVE_BACK, numerator, self.CPU_DENOM = Utils.request_cpu_move()
+            Utils.deduct_resource(self.pocketd, self.MEMORY_RECEIVE_BACK, self.CPU_RECEIVE_BACK, self.CPU_DENOM)
+        else:
+            self.MEMORY_RECEIVE_BACK = 0.0
+            self.CPU_RECEIVE_BACK, numerator, self.CPU_DENOM = 0.0, 0.0, 0.0
+            
 
         args_dict = {'client_id': PocketMessageChannel.client_id, 
                      'key'      : key,

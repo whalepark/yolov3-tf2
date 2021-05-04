@@ -6,28 +6,37 @@ me=$(whoami)
 sudo chown -R $me data
 sudo chgrp -R $me data
 
-
+## all commands
 # commands=("latency-mon" "rusage-mon" "perf-mon" "latency" "rusage" "perf" "cprofile")
-commands=("perf" "perf-mon")
 
+## all pocket commands
+commands=("latency" "rusage" "perf" "cprofile")
 
+## feasibility check
 for command in "${commands[@]}"; do
-    for i in 1 5 10; do
-        for j in 1 2 3 4 5 6 7 8 9 10; do
-            bash exp_script.sh $command -n=$i --ratio=0.5
-        done
-    done
+    bash exp_script.sh ${command} -n=2 --resource-realoc=0
 done
 
+# bash exp_script.sh latency -n=2 --resource-realloc=0
 
 
-for command in "${commands[@]}"; do
-    for i in 1 5 10; do
-        for j in 1 2 3 4 5 6 7 8 9 10; do
-            bash exp_script.sh $command -n=$i --ratio=0.8
-        done
-    done
-done
+# for command in "${commands[@]}"; do
+#     for i in 1 5 10; do
+#         for j in 1 2 3 4 5 6 7 8 9 10; do
+#             bash exp_script.sh $command -n=$i --ratio=0.5
+#         done
+#     done
+# done
+
+
+
+# for command in "${commands[@]}"; do
+#     for i in 1 5 10; do
+#         for j in 1 2 3 4 5 6 7 8 9 10; do
+#             bash exp_script.sh $command -n=$i --ratio=0.8
+#         done
+#     done
+# done
 
 
 

@@ -224,40 +224,6 @@ function _run_d_client_w_ramfs() {
     #python3.6 detect.py --image data/meme.jpg # default command
 }
 
-function _run_d_client_w_redis() {
-    local index=$(($1 % $NUMCPU))
-    local image_name=$2
-    local container_name=$3
-    local server_container=$4
-    local network=$5
-    local server_ip=$6
-
-    docker rm -f ${container_name} > /dev/null 2>&1
-
-    docker run \
-        -d \
-        --volume=$(pwd)/data:/data \
-        --volume=$(pwd)/sockets:/sockets \
-        --volume=$(pwd)/../images:/images \
-        --volume=$(pwd)/ramfs:/ramfs \
-        --volume=$HOME/yolov3-tf2:/root/yolov3-tf2 \
-        --network=${network} \
-        --name=${container_name} \
-        --workdir='/root/yolov3-tf2' \
-        --env SERVER_ADDR=${server_ip} \
-        --env CONTAINER_ID=${container_name} \
-        --cap-add SYS_ADMIN \
-        --cap-add IPC_LOCK \
-        --cpuset-cpus=${index} \
-        ${image_name} \
-        python3.6 detect.py --image /images/meme.jpg --object redis
-        # python3.6 detect.py --image /images/meme.jpg --object path
-
-    # local pid=$(docker inspect -f '{{.State.Pid}}' $container_name)
-    # sudo perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -p ${pid} -o ./data/perf_stat_"${container_name}".log &
-    #python3.6 detect.py --image data/meme.jpg # default command
-}
-
 function _run_d_server_dev() {
     local image=$1
     local container=$2

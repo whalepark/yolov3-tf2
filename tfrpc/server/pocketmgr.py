@@ -63,13 +63,14 @@ class Utils:
             cpu_numerator = float(cfs_quota_us.read().strip())
         return cpu_numerator/cpu_denominator
 
+    ### remove
     @staticmethod
     def request_memory_move():
         with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as limit_in_bytes:
             memory_limit = float(limit_in_bytes.read().strip()) * RSRC_REALLOC_RATIO
         return memory_limit
 
-                
+    ### remove 
     @staticmethod
     def request_cpu_move():
         with open(f'/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'r') as cfs_period_us:
@@ -1038,12 +1039,13 @@ class PocketManager:
                 self.per_client_object_store[args_dict['client_id']] = {}
                 self.send_ack_to_client(args_dict['client_id'])
                 self.shmem_dict[args_dict['client_id']] = SharedMemoryChannel(args_dict['client_id'])
-                request = ResourceMoveRequest(ResourceMoveRequest.Command.ADD, 
-                                              args_dict['client_id'],
-                                              args_dict['mem'], 
-                                              args_dict['cpu'],
-                                              args_dict['cpu_denom'])
-                self.resource_move_queue.put(request)
+                if args_dict['mem'] is not 0.0 or args_dict['cpu'] is not 0.0: 
+                    request = ResourceMoveRequest(ResourceMoveRequest.Command.ADD, 
+                                                args_dict['client_id'],
+                                                args_dict['mem'], 
+                                                args_dict['cpu'],
+                                                args_dict['cpu_denom'])
+                    self.resource_move_queue.put(request)
             elif type == PocketControl.DISCONNECT:
                 pass ### @@@ remove
                 self.queues_dict.pop(args_dict['client_id'])
