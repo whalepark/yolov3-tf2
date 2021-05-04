@@ -94,13 +94,19 @@ class DockerUtils:
 
 
     @staticmethod
-    def set_cpus_limit(id: str, amount: float, denominator = 100000):
-        numerator = int(amount * denominator)
-        logging.debug(f'numerator={numerator}')
+    def set_cpus_limit(id: str, amount: float = None, numerator = None, denominator = 100000):
+        if numerator is None and amount is not None:
+            numerator = int(amount * denominator)
+            logging.debug(f'numerator={numerator}')
+        elif numerator is not None and amount is None:
+            pass
+        else:
+            raise Exception('Either amount or numerator needs to be provide, not none or both.')
+
         with open(f'/sys/fs/cgroup/cpu/docker/{id}/cpu.cfs_period_us', 'w') as cfs_period_us:
             cfs_period_us.write(str(denominator))
         with open(f'/sys/fs/cgroup/cpu/docker/{id}/cpu.cfs_quota_us', 'w') as cfs_quota_us:
-            cfs_quota_us.write(str(numerator))
+            cfs_quota_us.write(str(int(numerator)))
 
     @staticmethod
     def migrate_memory(ratio: float, source_id: str, dest_id: str):
@@ -214,12 +220,34 @@ class CLI(Sender):
         ResourceMoveRequestQueue.put(request)
 
 class FrontEnd(Sender):
-    pass
+    def __init__(self, args_dict):
+        super().__init__(args_dict)
 
+    def handle(self, command: str):
+        if command == 'set_resource':
+            self.set_resource()
+        else:
+            raise Exception(f'Invalid command {command}')
+
+    
+    def set_resource(self):
+        client_name = self.client
+        memory = self.mem
+        cfs_quota = self.cfs_quota
+
+        client_euid = DockerUtils.get_container_id(client_name)
+        logging.debug(f'client-euid={client_euid}')
+        DockerUtils.set_memory_limit(client_euid, str(int(memory)))
+        DockerUtils.set_cpus_limit(client_euid, numerator = cfs_quota)
+
+
+# moved to serivce @@@
 class ResourceMoveRequest:
     class Command(Enum):
         MIGRATE = 1
         GIVEBACK = 2
+        ADD = 3
+        SUB = 4
 
     def __init__(self, command: Command, service, client):
         self.command = command

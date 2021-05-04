@@ -132,6 +132,7 @@ def finalize_msgq():
     msgq.detach()
     
 def main(_argv):
+    # time1 = time.time()
     if FLAGS.comm == 'grpc':
         # os.environ['SERVER_ADDR'] = 'localhost' # todo: remove after debugging
         server_addr = os.environ.get('SERVER_ADDR')
@@ -150,7 +151,7 @@ def main(_argv):
         # msgq.hello_via_lq('misun local')
     else:
         raise Exception('unknown communication channel. comm parameter should be defined as either \'--comm=grpc\' or \'--comm=msgq\'.')
-
+    # time1_1 = time.time()
     # exit()
 
     if FLAGS.hello:
@@ -161,6 +162,7 @@ def main(_argv):
         physical_devices = TFWrapper.tf_config_experimental_list__physical__devices(stub, device_type='GPU')
     elif FLAGS.comm == 'msgq':
         physical_devices = msgq.tf_config_experimental_list__physical__devices('GPU')
+    # time1_2 = time.time()
 
     if len(physical_devices) > 0: # in my settings, this if statement always returns false
         # tf.config.experimental.set_memory_growth(physical_devices[0], True) 
@@ -169,6 +171,8 @@ def main(_argv):
         elif FLAGS.comm == 'msgq':
             PocketMessageChannel.get_instance().tf_config_experimental_set__memory__growth(physical_devices[0], True)
 
+    # time2 = time.time()
+    graph_construction_start = time.time()
     if FLAGS.tiny:
         yolo = YoloV3Tiny(classes=FLAGS.num_classes)
         # yolo = YoloV3Tiny(stub=stub, classes=FLAGS.num_classes)
@@ -178,6 +182,7 @@ def main(_argv):
             yolo = YoloV3(stub=stub, classes=FLAGS.num_classes)
         elif FLAGS.comm == 'msgq':
             yolo = YoloV32(classes=FLAGS.num_classes)
+    # time3 = time.time()
 
     # yolo.load_weights(FLAGS.weights).expect_partial()
     if FLAGS.comm == 'grpc':
@@ -186,6 +191,9 @@ def main(_argv):
     elif FLAGS.comm == 'msgq':
         yolo.load_weights(FLAGS.weights)
     logging.info('weights loaded')
+    graph_construction_end = time.time()
+    logging.info(f'graph_construction_time: {graph_construction_end-graph_construction_start}')
+    # time4 = time.time()
 
     class_names = [c.strip() for c in open(FLAGS.classes).readlines()]
     logging.info('classes loaded')
@@ -257,6 +265,7 @@ def main(_argv):
     elif FLAGS.comm == 'msgq':
         img = PocketMessageChannel.get_instance().tf_expand__dims(img_raw, 0)
         img = transform_images2(img, FLAGS.size)
+        # time5 = time.time()
 
         t1 = time.time()
         boxes, scores, classes, nums = yolo(img)
@@ -269,8 +278,19 @@ def main(_argv):
                                                 np.array(scores[0][i]),
                                                 np.array(boxes[0][i])))
 
+        # time6 = time.time()
         finalize_msgq()
+    # time7 = time.time()
+    # logging.info(f'time1={time2-time1}')
+    # logging.info(f'time2={time3-time2}')
+    # logging.info(f'time3={time4-time3}')
+    # logging.info(f'time4={time5-time4}')
+    # logging.info(f'time5={time6-time5}')
+    # logging.info(f'time6={time7-time6}')
 
+    # logging.info(f'time1.1={time1_1-time1}')
+    # logging.info(f'time1.2={time1_2-time1_1}')
+    # logging.info(f'time1.3={time2-time1_2:f}')
     exit()
       
 

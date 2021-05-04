@@ -4,6 +4,7 @@ import sys, os
 # from tfrpc.client.pocket_tf_if import POCKET_CLIENT
 from types import FunctionType
 from inspect import getsourcelines
+import socket
 from sysv_ipc import MessageQueue, IPC_CREX
 from pocket_tf_if import TFFunctions, PocketControl, ReturnValue, CLIENT_TO_SERVER, TFDataType, TFDtypes, SharedMemoryChannel, ResizeMethod, POCKET_CLIENT
 from time import sleep
@@ -11,25 +12,25 @@ from time import sleep
 
 import numpy as np
 
-# def debug(*args):
-#     class bcolors:
-#         HEADER = '\033[95m'
-#         OKBLUE = '\033[94m'
-#         OKCYAN = '\033[96m'
-#         OKGREEN = '\033[92m'
-#         WARNING = '\033[93m'
-#         FAIL = '\033[91m'
-#         ENDC = '\033[0m'
-#         BOLD = '\033[1m'
-#         UNDERLINE = '\033[4m'
-#     import inspect
-#     filename = inspect.stack()[1].filename
-#     lineno = inspect.stack()[1].lineno
-#     caller = inspect.stack()[1].function
-#     print(f'debug>> [{bcolors.OKCYAN}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
+def debug(*args):
+    class bcolors:
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKCYAN = '\033[96m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+    import inspect
+    filename = inspect.stack()[1].filename
+    lineno = inspect.stack()[1].lineno
+    caller = inspect.stack()[1].function
+    print(f'debug>> [{bcolors.OKCYAN}{filename}:{lineno}{bcolors.ENDC}, {caller}]', *args)
 
-  
-
+RSRC_REALLOC_RATIO = float(os.environ['RSRC_REALLOC_RATIO'])
+POCKETD_SOCKET_PATH = '/tmp/pocketd.sock'
 
 class Utils:
     @staticmethod
@@ -41,6 +42,81 @@ class Utils:
                 cid = line.strip().split('/')[-1]
                 # debug(cid)
                 return cid
+
+    @staticmethod
+    def get_memory_limit():
+        with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as limit_in_bytes:
+            memory_limit = float(limit_in_bytes.read().strip())
+        return memory_limit
+
+    @staticmethod
+    def get_cpu_limit():
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'r') as cfs_period_us:
+            cpu_denominator = float(cfs_period_us.read().strip())
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'r') as cfs_quota_us:
+            cpu_numerator = float(cfs_quota_us.read().strip())
+        return cpu_numerator/cpu_denominator
+
+    @staticmethod
+    def request_memory_move():
+        with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as limit_in_bytes:
+            memory_limit = float(limit_in_bytes.read().strip()) * RSRC_REALLOC_RATIO
+        return memory_limit
+
+                
+    @staticmethod
+    def request_cpu_move():
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'r') as cfs_period_us:
+            cpu_denominator = float(cfs_period_us.read().strip())
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'r') as cfs_quota_us:
+            cpu_numerator = float(cfs_quota_us.read().strip())
+        return (cpu_numerator/cpu_denominator) * RSRC_REALLOC_RATIO, cpu_numerator, cpu_denominator
+
+    @staticmethod
+    def deduct_resource(pocketd, mem, cpu, cpu_denom):
+        mem = Utils.get_memory_limit() - mem
+        cpu = (Utils.get_cpu_limit() - cpu) * cpu_denom
+
+        pocketd.set_resource(mem=mem, cfs_quota = cpu)
+
+class PocketDaemon:
+    def __init__(self):
+        # debug('pocketd creation')
+        pass
+
+    def make_json(self, sender, command, args_dict):
+        tmp_data_to_send = {}
+        args_dict['sender'] = sender
+        args_dict['command'] = command
+        data_to_send = json.dumps(args_dict)
+        return data_to_send
+
+    def set_resource(self, mem, cfs_quota):
+        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        my_socket.connect(POCKETD_SOCKET_PATH)
+        args_dict = {'sender'   : 'FE',
+                     'command'  : 'set_resource',
+                     'client'   : PocketMessageChannel.client_id, 
+                     'mem'      : mem,
+                     'cfs_quota': cfs_quota}
+        json_data_to_send = json.dumps(args_dict)
+        my_socket.send(json_data_to_send.encode('utf-8'))
+        data_received = my_socket.recv(1024)
+        my_socket.close()
+
+    # # def measure_resource(self, container_list):
+
+    def daemon_config(self, tmp_args_dict):
+        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        my_socket.connect(POCKETD_SOCKET_PATH)
+        sender = 'CLI'
+        command = 'config'
+        args_dict = json.dumps(tmp_args_dict)
+        json_data_to_send = self.make_json(sender, command, args_dict)
+        my_socket.send(json_data_to_send.encode('utf-8'))
+        data_received = my_socket.recv(1024)
+        logging.debug(f'data_received={data_received}')
+        my_socket.close()
         
 
 class PocketMessageChannel:
@@ -84,6 +160,13 @@ class PocketMessageChannel:
             return ret
         return delegate_tensor_division
 
+    # def get_shape_getter(self):
+    #     instance = self
+    #     def delegate_tensor_shape(mock_dict):
+    #         ret = instance.tensor_shape(mock_dict)
+    #         return ret
+    #     return delegate_tensor_shape
+
     def disassemble_args(self, args, real_args):
         for index, elem in enumerate(args):
             real_args.append(None)
@@ -116,6 +199,7 @@ class PocketMessageChannel:
             raise Exception("Only one channel can be exist.")
 
         else:
+            self.pocketd = PocketDaemon()
             self.gq = MessageQueue(PocketMessageChannel.universal_key)
             self.shmem = SharedMemoryChannel(key=PocketMessageChannel.client_id, size=1 * (32 + 4 * 1024 * 1024))
             self.conn(PocketMessageChannel.local_key)
@@ -123,14 +207,20 @@ class PocketMessageChannel:
             TFDataType.iterable_slicer = self.get_tf_iterable_sliced()
             TFDataType.Model.load_weights = self.get_model_load_weights()
             TFDataType.Tensor.tensor_division = self.get_tensor_division()
+            # TFDataType.Tensor.get_shape = self.get_shape_getter()
             PocketMessageChannel.__instance = self
+
+            self.MEMORY_RECEIVE_BACK: float
+            self.CPU_RECEIVE_BACK: float
+            self.CPU_DENOM: float
 
     # control functions
     # for debugging
     def hello(self, message):
         msg_type = int(PocketControl.HELLO)
         reply_type = msg_type | 0x40000000
-        args_dict = {'raw_type': msg_type, 'message': message}
+        args_dict = {'raw_type': msg_type,
+                     'message': message}
         args_json = json.dumps(args_dict)
 
         self.gq.send(args_json, block=True, type=CLIENT_TO_SERVER)
@@ -146,7 +236,17 @@ class PocketMessageChannel:
 
         msg_type = int(PocketControl.CONNECT)
         reply_type = msg_type | 0x40000000
-        args_dict = {'client_id': PocketMessageChannel.client_id, 'key': key}
+        self.MEMORY_RECEIVE_BACK = Utils.request_memory_move()
+        self.CPU_RECEIVE_BACK, numerator, self.CPU_DENOM = Utils.request_cpu_move()
+
+        Utils.deduct_resource(self.pocketd, self.MEMORY_RECEIVE_BACK, self.CPU_RECEIVE_BACK, self.CPU_DENOM)
+
+        args_dict = {'client_id': PocketMessageChannel.client_id, 
+                     'key'      : key,
+                     'mem'      : self.MEMORY_RECEIVE_BACK,
+                     'cpu'      : self.CPU_RECEIVE_BACK,
+                     'cpu_denom': self.CPU_DENOM}
+
         args_dict['raw_type'] = msg_type
         
         args_json = json.dumps(args_dict)
@@ -161,7 +261,12 @@ class PocketMessageChannel:
     def detach(self):
         msg_type = int(PocketControl.DISCONNECT)
         reply_type = msg_type | 0x40000000
-        args_dict = {'client_id': PocketMessageChannel.client_id, 'key': PocketMessageChannel.local_key}
+        args_dict = {'client_id': PocketMessageChannel.client_id,
+                     'key': PocketMessageChannel.local_key,
+                     'mem': self.MEMORY_RECEIVE_BACK,
+                     'cpu'      : self.CPU_RECEIVE_BACK,
+                     'cpu_denom': self.CPU_DENOM}
+
         args_dict['raw_type'] = msg_type
         args_dict['tf'] = False
         
@@ -231,7 +336,6 @@ class PocketMessageChannel:
 
         self.lq.send(args_json, type=CLIENT_TO_SERVER)
         raw_msg, _ = self.lq.receive(block=True, type=reply_type)
-        # debug(raw_msg)
 
         msg = json.loads(raw_msg)
         if msg['result'] == ReturnValue.OK.value:
@@ -263,7 +367,6 @@ class PocketMessageChannel:
         raw_msg, _ = self.lq.receive(block=True, type=reply_type)
 
         msg = json.loads(raw_msg)
-        # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
 
         if msg['result'] == ReturnValue.OK.value:
             return TFDataType.Tensor.make_tensor(dict=msg['actual_return_val'])
@@ -284,7 +387,6 @@ class PocketMessageChannel:
         raw_msg, _ = self.lq.receive(block=True, type=reply_type)
 
         msg = json.loads(raw_msg)
-        # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
 
         if msg['result'] == ReturnValue.OK.value:
             return TFDataType.Tensor.make_tensor(dict=msg['actual_return_val'])
@@ -293,7 +395,30 @@ class PocketMessageChannel:
         else:
             raise Exception('Invalid Result!')
 
+    # def tensor_shape(self, mock_dict):
+    #     msg_type = int(TFFunctions.TENSOR_SHAPE)
+    #     reply_type = msg_type | 0x40000000
+    #     args_dict = {'mock_dict': mock_dict}
+    #     args_dict['raw_type'] = msg_type
+
+    #     args_json = json.dumps(args_dict)
+
+    #     self.lq.send(args_json, type=CLIENT_TO_SERVER)
+    #     raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+    #     msg = json.loads(raw_msg)
+
+    #     if msg['result'] == ReturnValue.OK.value:
+    #         return msg['actual_return_val']
+    #     elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+    #         raise Exception(msg['exception'])
+    #     else:
+    #         raise Exception('Invalid Result!')
+
     def model_load_weights(self, model, filepath, by_name=False, skip_mismatch=False):
+        if model.already_built:
+            return
+
         msg_type = int(TFFunctions.TF_MODEL_LOAD_WEIGHTS)
         reply_type = msg_type | 0x40000000
         args_dict = {'model': model, 'filepath': filepath, 'by_name': by_name, 'skip_mismatch': skip_mismatch}
@@ -306,7 +431,6 @@ class PocketMessageChannel:
         raw_msg, _ = self.lq.receive(block=True, type=reply_type)
 
         msg = json.loads(raw_msg)
-        # debug('tf_callable', json.dumps(msg, indent=2, sort_keys=True))
 
         if msg['result'] == ReturnValue.OK.value:
             return
@@ -373,7 +497,7 @@ class PocketMessageChannel:
 
         msg = json.loads(raw_msg)
         # debug('tf_config_experimental_list__physical__devices', json.dumps(msg, indent=2, sort_keys=True))
-        
+
         if msg['result'] == ReturnValue.OK.value:
             return [TFDataType.PhysicalDevice(dict=item) for item in msg['actual_return_val']]
         elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
@@ -773,6 +897,51 @@ class PocketMessageChannel:
 
         if msg['result'] == ReturnValue.OK.value:
             return TFDataType.Tensor(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def tf_keras_applications_MobileNetV2(self, *args, **kwargs):
+        msg_type = int(TFFunctions.TF_KERAS_APPLICATIONS_MOBILENETV2) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'args': args} ###
+        args_dict.update(**kwargs)
+        args_dict['raw_type'] = msg_type
+
+        self.convert_object_to_dict(args_dict)
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return TFDataType.Model(dict=msg.get('actual_return_val', None)) ###
+        elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
+            print(msg['message'])
+            raise Exception(msg['exception'])
+        else:
+            raise Exception('Invalid Result!')
+
+    def np_argmax(self, a, axis=None, out=None):
+        msg_type = int(TFFunctions.NP_ARGMAX) ###
+        reply_type = msg_type | 0x40000000
+
+        args_dict = {'a': a, 'axis': axis, 'out': out} ###
+        args_dict['raw_type'] = msg_type
+        self.convert_object_to_dict(args_dict)
+
+        args_json = json.dumps(args_dict)
+        self.lq.send(args_json, type=CLIENT_TO_SERVER)
+        raw_msg, _ = self.lq.receive(block=True, type=reply_type)
+
+        msg = json.loads(raw_msg)
+
+        if msg['result'] == ReturnValue.OK.value:
+            return msg.get('actual_return_val', None) ### integer
         elif msg['result'] == ReturnValue.EXCEPTIONRAISED.value:
             raise Exception(msg['exception'])
         else:

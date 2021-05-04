@@ -531,19 +531,18 @@ def YoloOutput2(filters, anchors, classes, name=None):
 def YoloV32(size=None, channels=3, classes=80, training=False):
 # anchors=yolo_anchors,
         #    masks=yolo_anchor_masks, 
+    import logging
     try:
         # Invalid # keras_model = tf.Graph.get_tensor_by_name('yolov3')
         is_exist, keras_model = PocketMessageChannel.get_instance().check_if_model_exist('yolov3')
     except KeyError as e:
         is_exist = False
-    else:
-        is_exist = True
 
     if is_exist:
         if keras_model == None:
             while True:
                 time.sleep(random.uniform(1,3))
-                keras_model = PocketMessageChannel.get_instance().check_if_model_exist('yolov3')
+                is_exist, keras_model = PocketMessageChannel.get_instance().check_if_model_exist('yolov3')
                 if keras_model != None:
                     break
         else:

@@ -5,6 +5,8 @@ cd $BASEDIR
 NUMINSTANCES=1
 TIMESTAMP=$(date +%Y%m%d-%H:%M:%S)
 NETWORK=tf-grpc-exp
+RSRC_RATIO=0.5
+INTERVAL=0
 
 EXP_ROOT="${HOME}/settings/tf-slim/lightweight/pjt/grpc"
 SUBNETMASK=111.222.0.0/16
@@ -26,6 +28,9 @@ function parse_arg() {
             -ri=*|--random-interval=*)
                 INTERVAL="${arg#*=}"
                 ;;
+            -r=*|--ratio=*)
+                RSRC_RATIO="${arg#*=}"
+                ;;
         esac
     done
 }
@@ -37,36 +42,25 @@ function generate_rand_num() {
         # echo ${#base}
         echo "${base} * ${upto}" | bc
     else
-        echo 0
+        echo 1.5
     fi
 }
 
+function util_get_running_time() {
+    local container_name=$1
+    local start=$(docker inspect --format='{{.State.StartedAt}}' $container_name | xargs date +%s.%N -d)
+    local end=$(docker inspect --format='{{.State.FinishedAt}}' $container_name | xargs date +%s.%N -d)
+    local running_time=$(echo $end - $start | tr -d $'\t' | bc)
+
+    echo $running_time
+}
 function init() {
-    docker rm -f $(docker ps -a | grep "grpc_server\|grpc_app_\|grpc_exp_server\|grpc_exp_app" | awk '{print $1}') > /dev/null 2>&1
-    docker network rm $NETWORK
-    docker network create --driver=bridge --subnet=$SUBNETMASK $NETWORK
+    docker rm -f $(docker ps -a | grep "grpc_server\|grpc_app_\|grpc_exp_server\|grpc_exp_app\|pocket\|monolithic" | awk '{print $1}') > /dev/null 2>&1    docker network rm $NETWORK
+    # docker network create --driver=bridge --subnet=$SUBNETMASK $NETWORK
 }
 
 function finalize() {
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
-}
-
-function health_check() {
-    init
-    # Run a server
-    _run_d_server grpc_exp_server grpc_exp_server_00 $NETWORK 5
-
-    # Run a client with hello
-    _run_client grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK python3.6 detect.py --hello
-}
-
-function health_check_dev() {
-    init
-    # Run a server
-    _run_d_server_dev grpc_exp_server grpc_exp_server_00 $NETWORK 5
-
-    # Run a client with hello
-    _run_client_dev grpc_exp_client grpc_exp_app_00 grpc_exp_server_00 $NETWORK "bash -c \"git pull && python3.6 detect.py --hello && perf stat -p $! -e cycles,page-faults\""
 }
 
 # deprecated
@@ -82,15 +76,14 @@ function build_image() {
 }
 
 function build_shmem() {
-    docker rmi -f $(docker image ls | grep "grpc_exp_shmem_server\|grpc_exp_shmem_client" | awk '{print $1}')
+    # docker rmi -f $(docker image ls | grep "grpc_exp_shmem_server\|grpc_exp_shmem_client" | awk '{print $1}')
 
     cp ../../yolov3.weights ./dockerfiles
-    docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
-    docker image build --no-cache -t grpc_exp_shmem_client_perf -f dockerfiles/Dockerfile.shmem.perf.idapp dockerfiles
-    docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
-
-    docker rmi -f grpc_exp_shmem_client
-    docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
+    # docker image build --no-cache -t grpc_exp_shmem_client -f dockerfiles/Dockerfile.shmem.idapp dockerfiles
+    # docker image build --no-cache -t grpc_exp_shmem_client_perf -f dockerfiles/Dockerfile.shmem.perf.idapp dockerfiles
+    # docker image build --no-cache -t grpc_exp_shmem_server -f dockerfiles/Dockerfile.shmem.idser dockerfiles
+    # docker image build --no-cache -t yolo-monolithic -f dockerfiles/Dockerfile.yolo.monolithic dockerfiles
+    docker image build --no-cache -t yolo-monolithic-perf -f dockerfiles/Dockerfile.yolo.perf.monolithic dockerfiles
 }
 
 function perf() {
@@ -272,80 +265,6 @@ function perf_ramfs() {
     init
 }
 
-function perf_redis() {
-    local numinstances=$1
-    local events=$2
-    local pid_list=()
-    local container_list=()
-
-    local server_container_name=grpc_exp_server_id_00
-    local server_image=grpc_exp_server
-
-    init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-
-    sudo python unix_multi_server.py &
-    _run_d_server_redis ${server_image} ${server_container_name} $NETWORK $SERVER_IP 5
-
-    
-
-    for i in $(seq 1 $numinstances); do
-        local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_id_${index}
-
-        _run_d_client_w_redis $i grpc_exp_client ${container_name} ${server_container_name} $NETWORK $SERVER_IP
-    done
-
-    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
-
-    for i in $(seq 1 $numinstances); do
-        local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_id_${index}
-        docker wait "${container_name}"
-    done
-
-    # for debugging
-    docker logs grpc_exp_app_id_0001
-    # docker logs grpc_exp_app_id_0004
-    exit
-
-    # Baseline: Dockerfiles in ~/settings/lightweight must be built in advance before executing the below commands.
-    server_container_name=grpc_exp_server_bin_00
-    server_image=grpc_server
-
-    init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-
-    sudo python unix_multi_server.py &
-    _run_d_server_redis ${server_image} ${server_container_name} $NETWORK $SERVER_IP 5
-
-    for i in $(seq 1 $numinstances); do
-        local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_bin_${index}
-
-        _run_d_client_w_redis $i grpc_client ${container_name} ${server_container_name} $NETWORK $SERVER_IP "python3.6 detect.py --image /images/meme.jpg"
-    done
-
-    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
-
-    for i in $(seq 1 $numinstances); do
-        local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_bin_${index}
-
-        docker wait "${container_name}"
-    done
-
-    # For debugging
-    docker logs grpc_exp_app_bin_0001
-    # docker logs grpc_exp_app_bin_0004
-    # exit
-
-    init
-    # sudo kill -9 $(ps aux | grep 'perf stat' | awk '{print $2}')
-}
-
 
 function perf_shmem() {
     local numinstances=$1
@@ -369,7 +288,7 @@ function perf_shmem() {
 
         # _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
         _run_d_client_shmem_dev $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image data/street.jpg'
-        sleep $(generate_rand_num) 3
+        sleep $(generate_rand_num 3)
     done
 
     sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
@@ -559,181 +478,458 @@ function perf_shmem_rlimit() {
     init
 }
 
+function measure_latency_monolithic() {
+    local numinstances=$1
+    local container_list=()
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-latency-monolithic)
+    local rusage_logging_file=tmp-service.log
+
+    mkdir -p ${rusage_logging_dir}
+    init
+
+
+    # 512mb, oom
+    # 512 + 256 = 768mb, oom
+    # 1024mb, ok
+    # 1024 + 256 = 1280mb
+    # 1024 + 512 = 1536mb
+    # 1024 + 1024 = 2048mb
+    docker \
+        run \
+            --name yolo-monolithic-0000 \
+            --memory=1024mb \
+            --cpus=1.2 \
+            --workdir='/root/yolov3-tf2' \
+            yolo-monolithic \
+            python3.6 detect.py path --image data/street.jpg
+
+    running_time=$(util_get_running_time yolo-monolithic-0000)
+    echo $running_time > "${rusage_logging_dir}"/yolo-monolithic-0000.latency
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker \
+            run \
+                -d \
+                --name=${container_name} \
+                --memory=1gb \
+                --cpus=1.2 \
+                --workdir='/root/yolov3-tf2' \
+                yolo-monolithic \
+                python3.6 detect.py path --image data/street.jpg
+        sleep $(generate_rand_num 3)
+    done
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker wait "${container_name}"
+        running_time=$(util_get_running_time "${container_name}")
+        echo $running_time > "${rusage_logging_dir}"/"${container_name}".latency
+        echo $running_time
+    done
+
+    local folder=$(realpath data/${TIMESTAMP}-${numinstances}-graph-monolithic)
+    mkdir -p $folder
+    for i in $(seq 0 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+        docker logs $container_name 2>&1 | grep "graph_construction_time" > $folder/$container_name.graph
+    done
+
+    folder=$(realpath data/${TIMESTAMP}-${numinstances}-inf-monolithic)
+    mkdir -p $folder
+    for i in $(seq 0 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+        docker logs $container_name 2>&1 | grep "inference_time" > $folder/$container_name.inf
+    done
+
+    # For debugging
+    docker logs -f yolo-monolithic-$(printf "%04d" $numinstances)
+}
+
+
+function measure_latency() {
+    local numinstances=$1
+    local container_list=()
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-latency)
+    local rusage_logging_file=tmp-service.log
+
+    local server_container_name=pocket-server-001
+    local server_image=grpc_exp_shmem_server
+
+    mkdir -p ${rusage_logging_dir}
+    init
+    _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 15
+
+    ./pocket/pocket \
+        run \
+            --measure-latency $rusage_logging_dir \
+            -d \
+            -b grpc_exp_shmem_client \
+            -t pocket-client-0000 \
+            -s ${server_container_name} \
+            --memory=768mb \
+            --cpus=1 \
+            --volume=$(pwd)/data:/data \
+            --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
+            --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+            --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
+            --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env CONTAINER_ID=pocket-client-0000 \
+            --workdir='/root/yolov3-tf2' \
+            -- python3.6 detect.py --object path --image data/street.jpg
+
+    sleep 5
+
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=pocket-client-${index}
+
+        ./pocket/pocket \
+            run \
+                --measure-latency $rusage_logging_dir \
+                -d \
+                -b grpc_exp_shmem_client \
+                -t ${container_name} \
+                -s ${server_container_name} \
+                --memory=768mb \
+                --cpus=1 \
+                --volume=$(pwd)/data:/data \
+                --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+                --volume=$(pwd)/../yolov3-tf2/images:/img \
+                --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
+                --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env CONTAINER_ID=${container_name} \
+                --workdir='/root/yolov3-tf2' \
+                -- python3.6 detect.py --object path --image data/street.jpg &
+        interval=$(generate_rand_num 3)
+        echo interval $interval
+        sleep $interval
+    done
+
+    wait
+
+    local folder=$(realpath data/${TIMESTAMP}-${numinstances}-graph)
+    mkdir -p $folder
+    for i in $(seq 0 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=pocket-client-${index}
+        docker logs $container_name 2>&1 | grep "graph_construction_time" > $folder/$container_name.graph
+    done
+
+    folder=$(realpath data/${TIMESTAMP}-${numinstances}-inf)
+    mkdir -p $folder
+    for i in $(seq 0 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=pocket-client-${index}
+        docker logs $container_name 2>&1 | grep "inference_time" > $folder/$container_name.inf
+    done
+
+    # For debugging
+    docker logs pocket-server-001
+    docker logs -f pocket-client-$(printf "%04d" $numinstances)
+}
+
+function measure_rusage_monolithic() {
+    local numinstances=$1
+    local container_list=()
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-rusage-monolithic)
+    local rusage_logging_file=tmp-service.log
+
+    mkdir -p ${rusage_logging_dir}
+    init
+
+
+    # 512mb, oom
+    # 512 + 256 = 768mb, oom
+    # 1024mb, ok
+    # 1024 + 256 = 1280mb
+    # 1024 + 512 = 1536mb
+    # 1024 + 1024 = 2048mb
+    docker \
+        run \
+            -di \
+            --name yolo-monolithic-0000 \
+            --memory=1024mb \
+            --cpus=1.2 \
+            --workdir='/root/yolov3-tf2' \
+            yolo-monolithic \
+            bash
+
+    docker \
+        exec \
+            yolo-monolithic-0000 \
+            python3.6 detect.py path --image data/street.jpg
+
+    ./pocket/pocket \
+        rusage \
+        measure yolo-monolithic-0000 --dir ${rusage_logging_dir} 
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker \
+            run \
+                -di \
+                --name=${container_name} \
+                --memory=1gb \
+                --cpus=1.2 \
+                --workdir='/root/yolov3-tf2' \
+                yolo-monolithic \
+                bash
+    done
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker \
+            exec \
+                ${container_name} \
+                python3.6 detect.py path --image data/street.jpg &
+        sleep $(generate_rand_num 3)
+    done
+
+    wait
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        ./pocket/pocket \
+            rusage \
+            measure ${container_name} --dir ${rusage_logging_dir} 
+    done
+
+    # For debugging
+    # docker logs -f yolo-monolithic-$(printf "%04d" $numinstances)
+}
+
+
+function measure_perf_monolithic() {
+    local numinstances=$1
+    local container_list=()
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-perf-monolithic)
+    local rusage_logging_file=tmp-service.log
+
+    mkdir -p ${rusage_logging_dir}
+    init
+
+
+    # 512mb, oom
+    # 512 + 256 = 768mb, oom
+    # 1024mb, ok
+    # 1024 + 256 = 1280mb
+    # 1024 + 512 = 1536mb
+    # 1024 + 1024 = 2048mb
+    docker \
+        run \
+            -d \
+            --name yolo-monolithic-0000 \
+            --memory=1024mb \
+            --cpus=1.2 \
+            --workdir='/root/yolov3-tf2' \
+            --cap-add SYS_ADMIN \
+            --cap-add IPC_LOCK \
+            --volume=$(pwd)/data:/data \
+            yolo-monolithic-perf \
+            perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf-monolithic/yolo-monolithic-0000.perf.log python3.6 detect.py path --image data/street.jpg
+
+    docker \
+        wait \
+            yolo-monolithic-0000
+
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker \
+            run \
+                -d \
+                --name=${container_name} \
+                --memory=1gb \
+                --cpus=1.2 \
+                --workdir='/root/yolov3-tf2' \
+                --cap-add SYS_ADMIN \
+                --cap-add IPC_LOCK \
+                --volume=$(pwd)/data:/data \
+                yolo-monolithic-perf \
+                perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf-monolithic/${container_name}.perf.log python3.6 detect.py path --image data/street.jpg
+        sleep $(generate_rand_num 3)
+    done
+
+    for i in $(seq 1 $numinstances); do
+        local index=$(printf "%04d" $i)
+        local container_name=yolo-monolithic-${index}
+
+        docker \
+            wait \
+                ${container_name}        
+    done
+
+
+    # For debugging
+    # docker logs -f yolo-monolithic-$(printf "%04d" $numinstances)
+}
+
+
 
 function measure_rusage() {
     local numinstances=$1
     local container_list=()
-    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-rusage)
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-rusage)
     local rusage_logging_file=tmp-service.log
 
-    local server_container_name=grpc_exp_server_shmem_00
+    local server_container_name=pocket-server-001
     local server_image=grpc_exp_shmem_server
 
     mkdir -p ${rusage_logging_dir}
-
     init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-
-    sudo python unix_multi_server.py &
     _run_d_server_shmem_rlimit ${server_image} ${server_container_name} $NETWORK 15
 
+    ### rusage measure needs 'd' flag
     ./pocket/pocket \
         run \
             --rusage $rusage_logging_dir \
             -d \
             -b grpc_exp_shmem_client \
-            -t grpc_exp_app_shmem_0000 \
+            -t pocket-client-0000 \
             -s ${server_container_name} \
-            -n $NETWORK \
-            --memory=512mb \
+            --memory=768mb \
             --cpus=1 \
             --volume=$(pwd)/data:/data \
-            --volume=$(pwd)/sockets:/sockets \
+            --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
             --volume=$(pwd)/../yolov3-tf2/images:/img \
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-            --env SERVER_ADDR=${SERVER_IP} \
-            --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
+            --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
-            -- python3.6 detect.py --object path --image data/street.jpg
-
+            -- python3.6 detect.py --object path --image data/street.jpg &
 
     ./pocket/pocket \
         wait \
-        grpc_exp_app_shmem_0000
+        pocket-client-0000
 
-
+    sleep 5
 
     sudo ./pocket/pocket \
         rusage \
         init ${server_container_name} --dir ${rusage_logging_dir} 
 
+    sleep 5
 
-
-    local start=$(date +%s.%N)
+    ### Firing multiple instances with rusage flag requires & at the end.
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
-        # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object path --image data/street.jpg'
-        # _run_d_client_shmem_rlimit $i grpc_exp_shmem_client ${container_name} ${server_container_name} $NETWORK 'python3.6 detect.py --object shmem --image /img/photographer.jpg'
         ./pocket/pocket \
-                run \
-                    -d \
-                    --rusage $rusage_logging_dir \
-                    -b grpc_exp_shmem_client \
-                    -t ${container_name} \
-                    -s ${server_container_name} \
-                    -n $NETWORK \
-                    --memory=512mb \
-                    --cpus=1 \
-                    --volume=$(pwd)/data:/data \
-                    --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../yolov3-tf2/images:/img \
-                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
-                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-                    --env SERVER_ADDR=${SERVER_IP} \
-                    --env CONTAINER_ID=${container_name} \
-                    --workdir='/root/yolov3-tf2' \
-                    -- python3.6 detect.py --object path --image data/street.jpg
+            run \
+                --rusage $rusage_logging_dir \
+                -d \
+                -b grpc_exp_shmem_client \
+                -t ${container_name} \
+                -s ${server_container_name} \
+                --memory=768mb \
+                --cpus=1 \
+                --volume=$(pwd)/data:/data \
+                --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+                --volume=$(pwd)/../yolov3-tf2/images:/img \
+                --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
+                --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env CONTAINER_ID=${container_name} \
+                --workdir='/root/yolov3-tf2' \
+                -- python3.6 detect.py --object path --image data/street.jpg &
         sleep $(generate_rand_num 3)
     done
 
-    sudo bash -c "echo 1 > /proc/sys/kernel/nmi_watchdog"
-
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
         # docker wait "${container_name}"
         ./pocket/pocket \
             wait \
                 ${container_name}
-
     done
 
     ./pocket/pocket \
         rusage \
         measure ${server_container_name} --dir ${rusage_logging_dir} 
-
-    local end=$(date +%s.%N)
-    local elapsed_time=$(echo $end - $start | tr -d $'\t' | bc)
-    echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
-
-    # For debugging
-    docker logs grpc_exp_server_shmem_00
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
-    # docker ps -a
-    # ls /sys/fs/cgroup/memory/docker/
 }
 
 function measure_cprofile() {
     local numinstances=$1
     local container_list=()
-    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-cprofile)
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-cprofile)
     local rusage_logging_file=tmp-service.log
 
-    local server_container_name=grpc_exp_server_shmem_00
+    local server_container_name=pocket-server-001
     local server_image=grpc_exp_shmem_server
 
     mkdir -p ${rusage_logging_dir}
-
     init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
-    sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
-
-    sudo python unix_multi_server.py &
-    _run_d_server_shmem_rlimit_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP 15
+    _run_d_server_shmem_rlimit_cProfile ${server_image} ${server_container_name} $NETWORK $TIMESTAMP $numinstances 15
 
     ./pocket/pocket \
         run \
             --cprofile $rusage_logging_dir \
             -d \
             -b grpc_exp_shmem_client \
-            -t grpc_exp_app_shmem_0000 \
+            -t pocket-client-0000 \
             -s ${server_container_name} \
-            -n $NETWORK \
-            --memory=512mb \
+            --memory=768mb \
             --cpus=1 \
             --volume=$(pwd)/data:/data \
-            --volume=$(pwd)/sockets:/sockets \
+            --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
             --volume=$(pwd)/../yolov3-tf2/images:/img \
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-            --env SERVER_ADDR=${SERVER_IP} \
-            --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
+            --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
-            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            -- python3.6 -m cProfile -o /data/${TIMESTAMP}-${numinstances}-cprofile/pocket-client-0000.cprofile detect.py --object path --image data/street.jpg
 
     ./pocket/pocket \
         wait \
-        grpc_exp_app_shmem_0000
+        pocket-client-0000
 
-    local start=$(date +%s.%N)
+    sleep 5
+
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
         ./pocket/pocket \
-                run \
-                    -d \
-                    --cprofile $rusage_logging_dir \
-                    -b grpc_exp_shmem_client \
-                    -t ${container_name} \
-                    -s ${server_container_name} \
-                    -n $NETWORK \
-                    --memory=512mb \
-                    --cpus=1 \
-                    --volume=$(pwd)/data:/data \
-                    --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../yolov3-tf2/images:/img \
-                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
-                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-                    --env SERVER_ADDR=${SERVER_IP} \
-                    --env CONTAINER_ID=${container_name} \
-                    --workdir='/root/yolov3-tf2' \
-                    -- python3.6 -m cProfile -o /data/${TIMESTAMP}-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
+            run \
+                --cprofile $rusage_logging_dir \
+                -d \
+                -b grpc_exp_shmem_client \
+                -t ${container_name} \
+                -s ${server_container_name} \
+                --memory=768mb \
+                --cpus=1 \
+                --volume=$(pwd)/data:/data \
+                --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+                --volume=$(pwd)/../yolov3-tf2/images:/img \
+                --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
+                --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env CONTAINER_ID=${container_name} \
+                --workdir='/root/yolov3-tf2' \
+                -- python3.6 -m cProfile -o /data/${TIMESTAMP}-${numinstances}-cprofile/${container_name}.cprofile detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
@@ -741,12 +937,14 @@ function measure_cprofile() {
 
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
         ./pocket/pocket \
             wait \
                 ${container_name}
     done
+
+    sleep 3
 
     ./pocket/pocket \
         service \
@@ -754,37 +952,28 @@ function measure_cprofile() {
 
     sleep 3
 
-    for filename in data/$TIMESTAMP-cprofile/* ; do
+    for filename in data/$TIMESTAMP-${numinstances}-cprofile/* ; do
         echo $filename
         if [[ "$filename" == *.cprofile ]]; then
             ./pocket/parseprof -f "$filename"
         fi
     done
 
-    local end=$(date +%s.%N)
-    local elapsed_time=$(echo $end - $start | tr -d $'\t' | bc)
-    echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
-
     # For debugging
-    docker logs grpc_exp_server_shmem_00
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
-    # docker ps -a
-    # ls /sys/fs/cgroup/memory/docker/
+    docker logs -f pocket-client-$(printf "%04d" $numinstances)
 }
 
 function measure_perf() {
     local numinstances=$1
     local container_list=()
-    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-perf)
+    local rusage_logging_dir=$(realpath data/${TIMESTAMP}-${numinstances}-perf)
     local rusage_logging_file=tmp-service.log
 
-    local server_container_name=grpc_exp_server_shmem_00
+    local server_container_name=pocket-server-001
     local server_image=grpc_exp_shmem_server
 
     mkdir -p ${rusage_logging_dir}
-
     init
-    sudo kill -9 $(ps aux | grep unix_multi | awk '{print $2}') > /dev/null 2>&1
     sudo bash -c "echo 0 > /proc/sys/kernel/nmi_watchdog"
 
     # sudo python unix_multi_server.py &
@@ -794,55 +983,57 @@ function measure_perf() {
         run \
             --perf $rusage_logging_dir \
             -d \
-            -b grpc_exp_shmem_client \
-            -t grpc_exp_app_shmem_0000 \
+            -b grpc_exp_shmem_client_perf \
+            -t pocket-client-0000 \
             -s ${server_container_name} \
-            -n $NETWORK \
-            --memory=512mb \
+            --memory=768mb \
             --cpus=1 \
             --volume=$(pwd)/data:/data \
-            --volume=$(pwd)/sockets:/sockets \
-            --volume=$(pwd)/../images:/img \
+            --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+            --volume=$(pwd)/../yolov3-tf2/images:/img \
             --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
             --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-            --env SERVER_ADDR=${SERVER_IP} \
-            --env CONTAINER_ID=grpc_exp_app_shmem_0000 \
+            --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+            --env CONTAINER_ID=pocket-client-0000 \
             --workdir='/root/yolov3-tf2' \
-            -- python3.6 detect.py --object path --image data/street.jpg
+            -- perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf/pocket-client-0000.perf.log python3.6 detect.py --object path --image data/street.jpg
 
 
+    sleep 5
     ./pocket/pocket \
         wait \
-        grpc_exp_app_shmem_0000
+        pocket-client-0000
+
+    docker ps -a
+
+    sleep 5
 
     local perf_record_pid=$(sudo ./pocket/pocket \
         service \
         perf ${server_container_name} --dir ${rusage_logging_dir} --counters cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses)
 
-    local start=$(date +%s.%N)
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
         ./pocket/pocket \
-                run \
-                    -d \
-                    --perf $rusage_logging_dir \
-                    -b grpc_exp_shmem_client_perf \
-                    -t ${container_name} \
-                    -s ${server_container_name} \
-                    -n $NETWORK \
-                    --memory=512mb \
-                    --cpus=1 \
-                    --volume=$(pwd)/data:/data \
-                    --volume=$(pwd)/sockets:/sockets \
-                    --volume=$(pwd)/../yolov3-tf2/images:/img \
-                    --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
-                    --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
-                    --env SERVER_ADDR=${SERVER_IP} \
-                    --env CONTAINER_ID=${container_name} \
-                    --workdir='/root/yolov3-tf2' \
-                    -- perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-perf/$container_name.perf.log python3.6 detect.py --object path --image data/street.jpg
+            run \
+                -d \
+                --perf $rusage_logging_dir \
+                -b grpc_exp_shmem_client_perf \
+                -t ${container_name} \
+                -s ${server_container_name} \
+                --memory=768mb \
+                --cpus=1 \
+                --volume=$(pwd)/data:/data \
+                --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
+                --volume=$(pwd)/../yolov3-tf2/images:/img \
+                --volume=$(pwd)/../yolov3-tf2:/root/yolov3-tf2 \
+                --volume=$(pwd)/../tfrpc/client:/root/tfrpc/client \
+                --env RSRC_REALLOC_RATIO=${RSRC_RATIO} \
+                --env CONTAINER_ID=$container_name \
+                --workdir='/root/yolov3-tf2' \
+                -- perf stat -e cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses -o /data/$TIMESTAMP-${numinstances}-perf/$container_name.perf.log python3.6 detect.py --object path --image data/street.jpg
         sleep $(generate_rand_num 3)
     done
 
@@ -850,7 +1041,7 @@ function measure_perf() {
 
     for i in $(seq 1 $numinstances); do
         local index=$(printf "%04d" $i)
-        local container_name=grpc_exp_app_shmem_${index}
+        local container_name=pocket-client-${index}
 
         ./pocket/pocket \
             wait \
@@ -864,15 +1055,9 @@ function measure_perf() {
 
     sleep 3
 
-    local end=$(date +%s.%N)
-    local elapsed_time=$(echo $end - $start | tr -d $'\t' | bc)
-    echo shmem $numinstances $start $end $elapsed_time >> data/end-to-end
-
     # For debugging
-    docker logs grpc_exp_server_shmem_00
-    docker logs -f grpc_exp_app_shmem_$(printf "%04d" $numinstances)
-    # docker ps -a
-    # ls /sys/fs/cgroup/memory/docker/
+    docker logs ${server_container_name}
+    docker logs -f pocket-client-$(printf "%04d" $numinstances)
 }
 
 function measure_static_1() {
@@ -1139,6 +1324,18 @@ case $COMMAND in
         ;;
     'perf-shmem-rlimit')
         perf_shmem_rlimit $NUMINSTANCES cpu-cycles,page-faults,minor-faults,major-faults,cache-misses,LLC-load-misses,LLC-store-misses,dTLB-load-misses,iTLB-load-misses
+        ;;
+    'latency-mon')
+        measure_latency_monolithic $NUMINSTANCES
+        ;;
+    'rusage-mon')
+        measure_rusage_monolithic $NUMINSTANCES
+        ;;
+    'perf-mon')
+        measure_perf_monolithic $NUMINSTANCES
+        ;;
+    'latency')
+        measure_latency $NUMINSTANCES
         ;;
     'rusage')
         measure_rusage $NUMINSTANCES

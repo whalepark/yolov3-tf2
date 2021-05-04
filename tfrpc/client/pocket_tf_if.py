@@ -90,6 +90,7 @@ class TFFunctions(IntEnum):
     TF_SHAPE = 0x00000005
     TF_RESHAPE = 0x00000006
     TENSOR_DIVISION = 0x00000007
+    # TENSOR_SHAPE = 0x00000008
 
     TF_CONFIG_EXPERIMENTAL_LIST__PHYSICAL__DEVICES = 0x10000001
     TF_CONFIG_EXPERIMENTAL_SET__MEMORY__GROWTH = 0x10000002
@@ -108,8 +109,11 @@ class TFFunctions(IntEnum):
     TF_IMAGE_DECODE__IMAGE = 0x1000000f
     TF_EXPAND__DIMS = 0x10000010
     TF_IMAGE_RESIZE = 0x10000011
+    TF_KERAS_APPLICATIONS_MOBILENETV2 = 0x10000012
 
     TF_MODEL_LOAD_WEIGHTS = 0x20000001
+
+    NP_ARGMAX = 0x30000001
 
 
 class TFDtypes(Enum):
@@ -188,6 +192,7 @@ class TFDataType:
 
     class Tensor:
         tensor_division = empty_function
+        get_shape = empty_function
 
         @classmethod
         def make_tensor(cls, dict):
@@ -209,7 +214,8 @@ class TFDataType:
                         tensor = None
             else:
                 for key, value in dict.items():
-                    self.__setattr__(key, value)
+                    # self.__setattr__(key, value)
+                    self.__dict__[key] = value
 
         def set_value(self, value):
             self.value = value
@@ -243,22 +249,35 @@ class TFDataType:
             else:
                 raise Exception('Only client can call this!')
 
+        # @property
+        # def shape(self):
+        #     if self._shape is not None:
+        #         return self._shape
+        #     else:
+        #         ret = TFDataType.Tensor.get_shape(self.to_dict())
+        #         self._shape = ret
+        #         return ret
+
 
 
     class Model(Tensor):
         load_weights = empty_function
-        def __init__ (self, name = None, obj_id = None, dict = None):
+        def __init__ (self, name = None, obj_id = None, already_built=False, dict = None):
             if dict == None:
                 self._typename = 'tf.keras.Model'
                 self.name = name
                 self.obj_id = obj_id
+                self.already_built=already_built
             else:
                 for key, value in dict.items():
                     self.__setattr__(key, value)
 
         def load_weights(self, filepath, by_name=False, skip_mismatch=False):
             if POCKET_CLIENT is True:
-                TFDataType.Model.load_weights(self, filepath, by_name=False, skip_mismatch=False)
+                if self.already_built is False:
+                    TFDataType.Model.load_weights(self, filepath, by_name=False, skip_mismatch=False)
+                else:
+                    pass
             else:
                 raise Exception('Only client can call this!')
 

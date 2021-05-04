@@ -13,4 +13,9 @@ scripts/ramfs
 temp
 
 scripts/data/*
+scripts/moved_data/*
+mobilenetv2/data/*
+mobilenetv2/moved_data/*
 scripts/dockerfiles/yolov3.weights
+data/yolov3.weights
+scripts/yolov3.weights

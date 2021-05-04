@@ -8,18 +8,16 @@ sudo chgrp -R $me data
 
 
 # commands=("latency-mon" "rusage-mon" "perf-mon" "latency" "rusage" "perf" "cprofile")
-commands=("perf" "perf-mon")
+commands=("perf")
 
 
-for command in "${commands[@]}"; do
-    for i in 1 5 10; do
-        for j in 1 2 3 4 5 6 7 8 9 10; do
-            bash exp_script.sh $command -n=$i --ratio=0.5
-        done
-    done
-done
-
-
+# for command in "${commands[@]}"; do
+#     for i in 1 5 10; do
+#         for j in 1 2 3 4 5 6 7 8 9 10; do
+#             bash exp_script.sh $command -n=$i --ratio=0.5
+#         done
+#     done
+# done
 
 for command in "${commands[@]}"; do
     for i in 1 5 10; do

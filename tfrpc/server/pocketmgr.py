@@ -1,21 +1,40 @@
-import sys
+import sys, os
 import json
 import tensorflow as tf
 import numpy as np
 from absl import flags
 from absl.flags import FLAGS
+from enum import Enum
+from multiprocessing import Queue
+import math
 
 from time import sleep
 from sysv_ipc import Semaphore, SharedMemory, MessageQueue, IPC_CREX, BusyError
-from threading import Thread
-from pocket_tf_if import PocketControl, TFFunctions, ReturnValue, TFDataType, CLIENT_TO_SERVER, SERVER_TO_CLIENT, SharedMemoryChannel
+from threading import Thread, Lock
 
+from pocket_tf_if import PocketControl, TFFunctions, ReturnValue, TFDataType, CLIENT_TO_SERVER, SERVER_TO_CLIENT, SharedMemoryChannel
+os.chdir('/root/yolov3-tf2')
 
 GLOBAL_SLEEP = 0.01
 LOCAL_SLEEP = 0.0001
 POCKETD_SOCKET_PATH = '/tmp/pocketd.sock'
+DEVICE_LIST_AVAILABLE = False
+DEVICE_LIST = []
+ADD_INTERVAL = 0.01
+DEDUCT_INTERVAL = 0.01
 
+def debug(*args):
+    import inspect
+    filename = inspect.stack()[1].filename
+    lineno = inspect.stack()[1].lineno
+    caller = inspect.stack()[1].function
+    print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
+
+cpu_lock = Lock()
+mem_lock = Lock()
 class Utils:
+    resource_move_queue = None
+
     @staticmethod
     def get_container_id():
         cg = open('/proc/self/cgroup')
@@ -25,6 +44,123 @@ class Utils:
                 cid = line.strip().split('/')[-1]
                 # debug(cid)
                 return cid
+    
+    @staticmethod
+    def round_up_to_even(f):
+        return int(math.ceil(f / 2.) * 2)
+
+    @staticmethod
+    def get_memory_limit(client_id = None):
+        with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as limit_in_bytes:
+            memory_limit = float(limit_in_bytes.read().strip())
+        return memory_limit
+
+    @staticmethod
+    def get_cpu_limit(client_id = None):
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'r') as cfs_period_us:
+            cpu_denominator = float(cfs_period_us.read().strip())
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'r') as cfs_quota_us:
+            cpu_numerator = float(cfs_quota_us.read().strip())
+        return cpu_numerator/cpu_denominator
+
+    @staticmethod
+    def request_memory_move():
+        with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'r') as limit_in_bytes:
+            memory_limit = float(limit_in_bytes.read().strip()) * RSRC_REALLOC_RATIO
+        return memory_limit
+
+                
+    @staticmethod
+    def request_cpu_move():
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'r') as cfs_period_us:
+            cpu_denominator = float(cfs_period_us.read().strip())
+        with open(f'/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'r') as cfs_quota_us:
+            cpu_numerator = float(cfs_quota_us.read().strip())
+        return (cpu_numerator/cpu_denominator) * RSRC_REALLOC_RATIO, cpu_numerator, cpu_denominator
+
+    @staticmethod
+    def deduct_resource(client_id, mem, cpu, cpu_denom):
+        global DEDUCT_INTERVAL
+        mem_float = Utils.get_memory_limit(client_id) - mem
+        cpu_float = (Utils.get_cpu_limit(client_id) - cpu) * cpu_denom
+
+        mem_int = Utils.round_up_to_even(mem_float)
+        cpu_int = Utils.round_up_to_even(cpu_float)
+
+        mem_fail = False
+        cpu_fail = False
+
+        debug(f'old-->cpu={Utils.get_cpu_limit()}, mem={Utils.get_memory_limit()}')
+
+        try:
+            if mem_int < 100:
+                raise Exception('mem shortage')
+            with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'w') as limit_in_bytes:
+                limit_in_bytes.write(str(mem_int).strip())
+        except Exception as e:
+            mem_fail = True
+            debug(repr(e), e)
+
+        try:
+            if cpu_int < 100000:
+                raise Exception('mem shortage')
+            with open('/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'w') as cfs_quota_us:
+                cfs_quota_us.write(str(cpu_int).strip())
+        except Exception as e:
+            cpu_fail = True
+            debug(repr(e), e)
+
+        if mem_fail or cpu_fail:
+            DEDUCT_INTERVAL *= 2
+            request = ResourceMoveRequest(ResourceMoveRequest.Command.GIVEBACK, 
+                                          None,
+                                          mem if mem_fail else 0, 
+                                          cpu if cpu_fail else 0,
+                                          cpu_denom)
+            Utils.resource_move_queue.put(request)
+        else:
+            DEDUCT_INTERVAL = 0.01
+        debug(f'new-->cpu={Utils.get_cpu_limit()}, mem={Utils.get_memory_limit()}')
+
+    @staticmethod
+    def add_resource(client_id, mem, cpu, cpu_denom):
+        global ADD_INTERVAL
+        mem_float = Utils.get_memory_limit() + mem
+        cpu_float = (Utils.get_cpu_limit() + cpu) * cpu_denom
+
+        mem_int = Utils.round_up_to_even(mem_float)
+        cpu_int = Utils.round_up_to_even(cpu_float)
+
+        mem_fail = False
+        cpu_fail = False
+
+        debug(f'old-->cpu={Utils.get_cpu_limit()}, mem={Utils.get_memory_limit()}')
+
+        try:
+            with open('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'w') as limit_in_bytes:
+                limit_in_bytes.write(str(mem_int).strip())
+        except Exception as e:
+            mem_fail = True
+            debug(repr(e), e)
+
+        try:
+            with open('/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'w') as cfs_quota_us:
+                cfs_quota_us.write(str(cpu_int).strip())
+        except Exception as e:
+            cpu_fail = True
+            debug(repr(e), e)
+
+        if mem_fail or cpu_fail:
+            ADD_INTERVAL *= 2
+            request = ResourceMoveRequest(ResourceMoveRequest.Command.ADD, 
+                                          None,
+                                          mem if mem_fail else 0, 
+                                          cpu if cpu_fail else 0,
+                                          cpu_denom)
+            Utils.resource_move_queue.put(request)
+        else:
+            ADD_INTERVAL = 0.01
+        debug(f'new-->cpu={Utils.get_cpu_limit()}, mem={Utils.get_memory_limit()}')
 
 ### moved from apps
 class BatchNormalization(tf.keras.layers.BatchNormalization):
@@ -101,13 +237,6 @@ yolo_anchor_masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 # flags.DEFINE_float('yolo_score_threshold', 0.5, 'score threshold')
 
 
-def debug(*args):
-    import inspect
-    filename = inspect.stack()[1].filename
-    lineno = inspect.stack()[1].lineno
-    caller = inspect.stack()[1].function
-    print(f'debug>> [{filename}:{lineno}, {caller}]', *args)
-
 def stack_trace():
     import traceback
     traceback.print_tb()
@@ -138,12 +267,12 @@ class TensorFlowServer:
         if model_name in PocketManager.get_instance().model_dict:
             exist_value = True
             model = PocketManager.get_instance().model_dict[model_name]
-            keras_model = TFDataType.Model(model_name, id(model)).to_dict()
+            keras_model = TFDataType.Model(model_name, id(model), already_built=True).to_dict()
             PocketManager.get_instance().add_object_to_per_client_store(client_id, model)
         else:
             exist_value = False
 
-            debug(f'exist={exist_value}, kerasModel={keras_model}')
+        # debug(f'exist={exist_value}, kerasModel={keras_model}')
 
         return ReturnValue.OK.value, (exist_value, keras_model)
 
@@ -174,7 +303,15 @@ class TensorFlowServer:
                 return ReturnValue.OK.value, ret_list
             else:
                 PocketManager.get_instance().add_object_to_per_client_store(client_id, ret)
-                return ReturnValue.OK.value, TFDataType.Tensor(ret.name, id(ret), ret.shape.as_list()).to_dict()
+                try:
+                    name = ret.name
+                except AttributeError as e:
+                    name=None
+                try:
+                    shape = ret.shape.as_list()
+                except AttributeError as e:
+                    shape = None
+                return ReturnValue.OK.value, TFDataType.Tensor(name, id(ret), shape).to_dict()
         finally:
             pass
 
@@ -219,6 +356,22 @@ class TensorFlowServer:
             return ReturnValue.OK.value, TFDataType.Tensor(None, id(tensor), tensor.shape.as_list()).to_dict()
         finally:
             pass
+
+    # @staticmethod
+    # def tensor_shape(client_id, mock_dict):
+    #     try:
+    #         # debug(f'mock_dict={mock_dict} other={other}')
+    #         object = PocketManager.get_instance().get_real_object_with_mock(client_id, mock_dict)
+    #         shape = object.shape.as_list()
+    #     except Exception as e:
+    #         import inspect
+    #         from inspect import currentframe, getframeinfo
+    #         frameinfo = getframeinfo(currentframe())
+    #         return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+    #     else:
+    #         return ReturnValue.OK.value, shape
+    #     finally:
+    #         pass
 
     # @staticmethod
     # def __substitute_closure_vars_with_context(function, context):
@@ -311,19 +464,33 @@ class TensorFlowServer:
             return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, returned_tensor)
-            return ReturnValue.OK.value, TFDataType.Tensor(returned_tensor.name, 
+            try:
+                name = returned_tensor.name
+            except AttributeError as e:
+                name=None
+            try:
+                shape = returned_tensor.shape.as_list()
+            except AttributeError as e:
+                shape = None
+            return ReturnValue.OK.value, TFDataType.Tensor(name, 
                                                            id(returned_tensor), 
-                                                           returned_tensor.shape.as_list()).to_dict()
+                                                           shape).to_dict()
         finally:
             pass
 
 
     @staticmethod
     def tf_config_experimental_list__physical__devices(client_id, device_type):
-        device_list = tf.config.experimental.list_physical_devices(device_type)
-        return_list = []
-        for elem in device_list:
-            return_list.append(TFDataType.PhysicalDevice(elem.__dict__))
+        global DEVICE_LIST, DEVICE_LIST_AVAILABLE
+        if DEVICE_LIST_AVAILABLE:
+            return_list = DEVICE_LIST
+        else:
+            device_list = tf.config.experimental.list_physical_devices(device_type)
+            return_list = []
+            DEVICE_LIST_AVAILABLE = True
+            for elem in device_list:
+                return_list.append(TFDataType.PhysicalDevice(dict=elem.__dict__))
+            DEVICE_LIST = return_list
             # return_list.append(TFDataType.PhysicalDevice(elem.name, elem.device_type).to_dict())
         return ReturnValue.OK.value, return_list
 
@@ -569,13 +736,15 @@ class TensorFlowServer:
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
             return ReturnValue.OK.value, TFDataType.Tensor(name=None,
-                                                          obj_id=id(tensor)).to_dict()
+                                                          obj_id=id(tensor), 
+                                                          shape=tensor.shape.as_list()).to_dict()
         finally:
             pass
 
     @staticmethod
     def model_load_weights(client_id, model, filepath, by_name=False, skip_mismatch=False):
         try:
+            debug(client_id, model)
             model = PocketManager.get_instance().get_real_object_with_mock(client_id, model)
             model.load_weights(filepath=filepath, by_name=by_name, skip_mismatch=skip_mismatch)
         except Exception as e:
@@ -626,7 +795,58 @@ class TensorFlowServer:
         else:
             PocketManager.get_instance().add_object_to_per_client_store(client_id, tensor)
             return ReturnValue.OK.value, TFDataType.Tensor(name=None,
-                                                          obj_id=id(tensor)).to_dict()
+                                                          obj_id=id(tensor),
+                                                          shape=tensor.shape.as_list()).to_dict()
+        finally:
+            pass
+
+    @staticmethod
+    def tf_keras_applications_MobileNetV2(client_id, args, **kwargs):
+        try:
+            if 'mobilenetv2' in PocketManager.get_instance().model_dict:
+                model = PocketManager.get_instance().model_dict['mobilenetv2']
+                PocketManager.get_instance().add_object_to_per_client_store(client_id, model)
+                return ReturnValue.OK.value, TFDataType.Model(name='mobilenetv2',
+                                                            obj_id=id(model),
+                                                            already_built=True).to_dict()
+            real_args = []
+            PocketManager.get_instance().disassemble_args(client_id, args, real_args)
+
+            real_kwargs = {}
+            PocketManager.get_instance().disassemble_kwargs(client_id, kwargs, real_kwargs)
+
+            real_kwargs['input_shape'] = tuple(real_kwargs['input_shape'])
+
+            model = tf.keras.applications.MobileNetV2(*real_args, **real_kwargs) ###
+        except Exception as e:
+            import inspect
+            from inspect import currentframe, getframeinfo
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': inspect.stack()[0][3]}
+        else:
+            PocketManager.get_instance().add_object_to_per_client_store(client_id, model)
+            PocketManager.get_instance().add_built_model(name='mobilenetv2', model=model)
+            return ReturnValue.OK.value, TFDataType.Model(name='mobilenetv2',
+                                                          obj_id=id(model)).to_dict()
+        finally:
+            pass
+
+
+class NumpyServer:
+    @staticmethod
+    def np_argmax(client_id, a, axis=None, out=None):
+        try:
+            tensor = PocketManager.get_instance().get_real_object_with_mock(client_id, a)
+            argmax = np.argmax(tensor, axis, out).item()
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            debug(tb)
+            from inspect import currentframe, getframeinfo, stack
+            frameinfo = getframeinfo(currentframe())
+            return ReturnValue.EXCEPTIONRAISED.value, {'exception': e.__class__.__name__, 'message': str(e), 'filename':frameinfo.filename, 'lineno': frameinfo.lineno, 'function': stack()[0][3]}
+        else:
+            return ReturnValue.OK.value, argmax
         finally:
             pass
 
@@ -645,6 +865,8 @@ tf_function_dict = {
     TensorFlowServer.tf_reshape,
     TFFunctions.TENSOR_DIVISION:
     TensorFlowServer.tensor_division,
+    # TFFunctions.TENSOR_SHAPE:
+    # TensorFlowServer.tensor_shape,
 
     TFFunctions.TF_CONFIG_EXPERIMENTAL_LIST__PHYSICAL__DEVICES: 
     TensorFlowServer.tf_config_experimental_list__physical__devices,
@@ -680,10 +902,27 @@ tf_function_dict = {
     TensorFlowServer.tf_expand__dims,
     TFFunctions.TF_IMAGE_RESIZE:
     TensorFlowServer.tf_image_resize,
+    TFFunctions.TF_KERAS_APPLICATIONS_MOBILENETV2:
+    TensorFlowServer.tf_keras_applications_MobileNetV2,
 
     TFFunctions.TF_MODEL_LOAD_WEIGHTS:
     TensorFlowServer.model_load_weights,
+
+    TFFunctions.NP_ARGMAX:
+    NumpyServer.np_argmax,
 }
+
+class ResourceMoveRequest:
+    class Command(Enum):
+        ADD         = 1
+        GIVEBACK    = 2
+
+    def __init__(self, command, client, mem, cpu, cpu_denom):
+        self.command = command
+        self.client_id = client
+        self.memory = float(mem)
+        self.cpu = float(cpu)
+        self.cpu_denom = float(cpu_denom)
 
 class PocketManager:
     universal_key = 0x1001 # key for message queue
@@ -708,30 +947,35 @@ class PocketManager:
         self.per_client_object_store = {}
         self.model_dict = {}
         self.shmem_dict = {}
+        self.rsrc_mgr_thread = Thread(target=self.handle_resource_move_request)
+        self.rsrc_mgr_thread.daemon=True
+        self.resource_move_queue = Queue()
         PocketManager.__instance = self
+        Utils.resource_move_queue = self.resource_move_queue
 
     def start(self):
         # debug('start!')
         self.gq_thread.start()
+        self.rsrc_mgr_thread.start()
         self.handle_clients_thread.start()
 
         self.handle_clients_thread.join()
         self.gq_thread.join()
 
-    def return_resource(self, client_id):
-        import socket
-        my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        my_socket.connect(POCKETD_SOCKET_PATH)
-        service_id = Utils.get_container_id()
-        args_dict = {'sender': 'BE',
-                     'command': 'resource',
-                     'subcommand': 'return', 'client_id': client_id, 'service_id': service_id}
-        json_data_to_send = json.dumps(args_dict)
-        my_socket.send(json_data_to_send.encode('utf-8'))
-        data_received = my_socket.recv(1024)
-        my_socket.close()
+    # def return_resource(self, client_id):
+    #     import socket
+    #     my_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    #     my_socket.connect(POCKETD_SOCKET_PATH)
+    #     service_id = Utils.get_container_id()
+    #     args_dict = {'sender': 'BE',
+    #                  'command': 'resource',
+    #                  'subcommand': 'return', 'client_id': client_id, 'service_id': service_id}
+    #     json_data_to_send = json.dumps(args_dict)
+    #     my_socket.send(json_data_to_send.encode('utf-8'))
+    #     data_received = my_socket.recv(1024)
+    #     my_socket.close()
 
-    def clean_up(self, client_id, queue):
+    def clean_up(self, client_id, queue, args_dict):
         self.per_client_object_store.pop(client_id, None)
         self.shmem_dict.pop(client_id, None)
 
@@ -741,13 +985,41 @@ class PocketManager:
 
         return_byte_obj = json.dumps(return_dict)
         queue.send(return_byte_obj, type = reply_type)
-
-        # self.queues_dict[client_id].remove()
         self.queues_dict.pop(client_id)
 
-        # def notify_start(self, app_name, server_name):
-        t=Thread(target=self.return_resource, args=[client_id])
-        t.start()
+        request = ResourceMoveRequest(ResourceMoveRequest.Command.GIVEBACK, 
+                                      args_dict['client_id'],
+                                      args_dict['mem'], 
+                                      args_dict['cpu'],
+                                      args_dict['cpu_denom'])             
+        self.resource_move_queue.put(request)
+
+        # t=Thread(target=self.return_resource, args=[client_id])
+        # t.start()
+
+    def handle_resource_move_request(self): #@@@
+        # debug('resource move request!')
+        while True:
+            request = self.resource_move_queue.get()
+            client_id = request.client_id
+            mem = request.memory
+            cpu = request.cpu
+            cpu_denom = request.cpu_denom
+            debug(request.__dict__)
+            try: 
+                if  request.command == ResourceMoveRequest.Command.ADD:
+                    # debug(f'ADD  | from {request.client_id[0:8]} to {request.service_id[0:8]}')
+                    sleep(ADD_INTERVAL)
+                    Utils.add_resource(None, mem, cpu, cpu_denom)
+                elif request.command == ResourceMoveRequest.Command.GIVEBACK:
+                    # debug(f'GIVEBACK | from {request.service_id[0:8]} to {request.client_id[0:8]}')
+                    sleep(DEDUCT_INTERVAL)
+                    Utils.deduct_resource(None, mem, cpu, cpu_denom)
+            except OSError as e:
+                print(repr(e))
+                print(e)
+            # debug(f'remaining_cpu={Utils.get_cpu_limit()}')
+            # debug(f'remaining_mem={Utils.get_memory_limit()}')
 
 
     def pocket_new_connection(self):
@@ -766,12 +1038,24 @@ class PocketManager:
                 self.per_client_object_store[args_dict['client_id']] = {}
                 self.send_ack_to_client(args_dict['client_id'])
                 self.shmem_dict[args_dict['client_id']] = SharedMemoryChannel(args_dict['client_id'])
+                request = ResourceMoveRequest(ResourceMoveRequest.Command.ADD, 
+                                              args_dict['client_id'],
+                                              args_dict['mem'], 
+                                              args_dict['cpu'],
+                                              args_dict['cpu_denom'])
+                self.resource_move_queue.put(request)
             elif type == PocketControl.DISCONNECT:
-                pass
-                self.queues_dict[args_dict['client_id']].remove()
+                pass ### @@@ remove
                 self.queues_dict.pop(args_dict['client_id'])
                 self.per_client_object_store.pop(args_dict['client_id'], None)
                 self.shmem_dict.pop(args_dict['client_id'], None)
+
+                request = ResourceMoveRequest(ResourceMoveRequest.Command.GIVEBACK, 
+                                              args_dict['client_id'],
+                                              args_dict['mem'], 
+                                              args_dict['cpu'],
+                                              args_dict['cpu_denom'])                
+                self.resource_move_queue.put(request)
             elif type == PocketControl.HELLO:
                 return_dict = {'result': ReturnValue.OK.value, 'message': args_dict['message']}
                 return_byte_obj = json.dumps(return_dict)
@@ -789,7 +1073,7 @@ class PocketManager:
                     raw_type = args_dict.pop('raw_type')
 
                     if raw_type == int(PocketControl.DISCONNECT) and args_dict.pop('tf', True) is False:
-                        self.clean_up(client_id, queue)
+                        self.clean_up(client_id, queue, args_dict)
                         continue
 
                     function_type = TFFunctions(raw_type)
@@ -802,7 +1086,7 @@ class PocketManager:
                         return_dict.update({'actual_return_val': ret})
                     else:
                         return_dict.update(ret)
-                        # debug(f'\033[91mreturn_dict={return_dict}\033[0m')
+                    # debug(f'\033[91mreturn_dict={return_dict}\033[0m')
                     return_byte_obj = json.dumps(return_dict)
 
                     queue.send(return_byte_obj, type = reply_type)

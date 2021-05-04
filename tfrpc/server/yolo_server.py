@@ -1062,7 +1062,6 @@ if __name__ == '__main__':
 
     mgr = PocketManager()
     mgr.start()
-
     exit()
 
     msgq = MessageQueue(universal_key, IPC_CREX)

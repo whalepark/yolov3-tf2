@@ -330,19 +330,18 @@ function _run_d_server_shmem_rlimit() {
         -d \
         --privileged \
         --name=$container \
-        --workdir='/root/yolov3-tf2' \
+        --workdir='/root' \
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
-        --cpus=1.0 \
-        --memory=1024mb \
+        --cpus=2.0 \
+        --memory=2gb \
         --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
-        --volume=/var/lib/docker/overlay2:/layers \
-        --volume=$(pwd)/ramfs:/ramfs \
-        --volume=$(pwd)/..:/root/yolov3-tf2 \
-        --volume=$(pwd)/../images:/img \
+        --volume=$(pwd)/../tfrpc/server:/root/tfrpc/server \
+        --volume=$(pwd)/../yolov3-tf2/:/root/yolov3-tf2 \
+        --volume=$(pwd)/../yolov3-tf2/images:/img \
         $image \
         python tfrpc/server/yolo_server.py
         # bash -c "git pull && python tfrpc/server/yolo_server.py" ## Todo: subtitue with the line below after debug
@@ -357,7 +356,8 @@ function _run_d_server_shmem_rlimit_cProfile() {
     local container=$2
     local network=$3
     local timestamp=$4
-    local pause=$([[ "$#" == 5 ]] && echo $5 || echo 5)
+    local numinstances=$5
+    local pause=$([[ "$#" == 6 ]] && echo $6 || echo 5)
         # --cpuset-cpus=0 \
     docker run \
         -d \
@@ -367,18 +367,16 @@ function _run_d_server_shmem_rlimit_cProfile() {
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
-        --cpus=1.0 \
-        --memory=1024mb \
+        --cpus=2.0 \
+        --memory=2gb \
         --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
-        --volume=/var/lib/docker/overlay2:/layers \
-        --volume=$(pwd)/ramfs:/ramfs \
         --volume=$(pwd)/../tfrpc/server:/root/tfrpc/server \
         --volume=$(pwd)/../yolov3-tf2/:/root/yolov3-tf2 \
         --volume=$(pwd)/../yolov3-tf2/images:/img \
         $image \
-        python -m cProfile -o /data/${timestamp}-cprofile/${container}.cprofile tfrpc/server/yolo_server.py
+        python -m cProfile -o /data/${timestamp}-${numinstances}-cprofile/${container}.cprofile tfrpc/server/yolo_server.py
 
     sleep $pause
     echo 'Server bootup!'
@@ -457,19 +455,18 @@ function _run_d_server_shmem_rlimit_perf() {
         -d \
         --privileged \
         --name=$container \
-        --workdir='/root/yolov3-tf2' \
+        --workdir='/root' \
         --env YOLO_SERVER=1 \
         --ip=$SERVER_IP \
         --ipc=shareable \
         --cpus=2.0 \
-        --memory=1024mb \
+        --memory=2gb \
         --volume $(pwd)/pocket/tmp/pocketd.sock:/tmp/pocketd.sock \
         --volume $(pwd)/data:/data \
         --volume=$(pwd)/sockets:/sockets \
-        --volume=/var/lib/docker/overlay2:/layers \
-        --volume=$(pwd)/ramfs:/ramfs \
-        --volume=$(pwd)/..:/root/yolov3-tf2 \
-        --volume=$(pwd)/../images:/img \
+        --volume=$(pwd)/../tfrpc/server:/root/tfrpc/server \
+        --volume=$(pwd)/../yolov3-tf2/:/root/yolov3-tf2 \
+        --volume=$(pwd)/../yolov3-tf2/images:/img \
         $image \
         python tfrpc/server/yolo_server.py
         # ls -al /data/$timestamp
