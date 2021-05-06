@@ -24,6 +24,7 @@ g_yolo = None
 
 
 def main(_argv):
+    global g_yolo
     for i in (1, 2):
         S = time.time()
         physical_devices = tf.config.experimental.list_physical_devices('GPU')
