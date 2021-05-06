@@ -25,6 +25,7 @@ g_yolo = None
 
 def main(_argv):
     for i in (1, 2):
+        S = time.time()
         physical_devices = tf.config.experimental.list_physical_devices('GPU')
         if len(physical_devices) > 0:
             tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -38,8 +39,8 @@ def main(_argv):
             else:
                 yolo = YoloV3(classes=FLAGS.num_classes)
                 g_yolo = yolo
+                yolo.load_weights(FLAGS.weights).expect_partial()
 
-        yolo.load_weights(FLAGS.weights).expect_partial()
         t2 = time.time()
         logging.info('weights loaded')
         logging.info(f'graph_construction_time_{i} {t2-t1}')
@@ -74,6 +75,8 @@ def main(_argv):
         img = draw_outputs(img, (boxes, scores, classes, nums), class_names)
         cv2.imwrite(FLAGS.output, img)
         logging.info('output saved to: {}'.format(FLAGS.output))
+        E = time.time()
+        logging.info(f'phase_{i}_time: {E-S}')
 
 
 if __name__ == '__main__':
